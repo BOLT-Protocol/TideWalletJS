@@ -29,3 +29,8 @@ const tidewallet = require('./src/index');
 
     const exPub = tidewallet.PaperWallet.getExtendedPublicKey(seed);
   ```
+
+## Used Libraries
+[web3](https://web3js.readthedocs.io/en/v1.3.4/)
+[bitcoinjs-lib](https://github.com/bitcoinjs/bitcoinjs-lib)
+[bip39](https://github.com/bitcoinjs/bip39)
