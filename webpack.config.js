@@ -1,0 +1,89 @@
+// const path = require("path")
+
+// module.exports = {
+//   entry: path.resolve(__dirname, "src/index.js"),
+//   output: {
+//     path: path.resolve(__dirname, "dist"),
+//     filename: "tidewallet.js",
+//     library: "$",
+//     libraryTarget: "umd",
+//   },
+//   module: {
+//     rules: [
+//       {
+//         test: /\.(js)$/,
+//         exclude: /node_modules/,
+//         use: "babel-loader",
+//       },
+//     ],
+//   },
+//   mode: "development",
+// }
+
+const path = require("path");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+const nodeExternals = require("webpack-node-externals");
+
+const generalConfig = {
+  watchOptions: {
+    aggregateTimeout: 600,
+    ignored: /node_modules/,
+  },
+  plugins: [
+    new CleanWebpackPlugin({
+      cleanStaleWebpackAssets: false,
+      cleanOnceBeforeBuildPatterns: [path.resolve(__dirname, "./dist")],
+    })
+  ],
+  module: {
+    rules: [
+      {
+        test: /\.(js)$/,
+        exclude: /node_modules/,
+        use: "babel-loader",
+      },
+    ],
+  },
+  resolve: {
+    extensions: [".tsx", ".ts", ".js"],
+  },
+};
+
+const nodeConfig = {
+  entry: "./src/index.js",
+  target: "node",
+  externals: [nodeExternals()],
+  output: {
+    path: path.resolve(__dirname, "./dist"),
+    filename: "tidewallet.node.js",
+    libraryTarget: "umd",
+    libraryExport: "default",
+  },
+};
+
+const browserConfig = {
+  entry: "./src/index.js",
+  target: "web",
+  output: {
+    path: path.resolve(__dirname, "./dist"),
+    filename: "tidewallet.min.js",
+    libraryTarget: "umd",
+    globalObject: "this",
+    libraryExport: "default",
+    umdNamedDefine: true,
+  },
+};
+
+module.exports = (env, argv) => {
+  if (argv.mode === "development") {
+    generalConfig.devtool = "cheap-module-source-map";
+  } else if (argv.mode === "production") {
+  } else {
+    throw new Error("Specify env");
+  }
+
+  Object.assign(nodeConfig, generalConfig);
+  Object.assign(browserConfig, generalConfig);
+
+  return [nodeConfig, browserConfig];
+};
