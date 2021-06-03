@@ -24,8 +24,6 @@ class PaperWallet {
 
     const xPub = root.neutered().toBase58();
 
-    console.log(xPub);
-
     return xPub;
   }
 
