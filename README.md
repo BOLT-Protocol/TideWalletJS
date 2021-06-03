@@ -15,10 +15,16 @@
     ```
 
 ## Node
+    
+    const tidewallet = require('./src/index');
+    
 
-```
-const tidewallet = require('./src/index');
-```
+### Account {}
+- properties
+    - messenger<Subject$>
+    - accounts
+    - currencies
+
 
 ### PaperWallet
 
@@ -32,5 +38,7 @@ const tidewallet = require('./src/index');
 
 ## Used Libraries
 [web3](https://web3js.readthedocs.io/en/v1.3.4/)
+
 [bitcoinjs-lib](https://github.com/bitcoinjs/bitcoinjs-lib)
+
 [bip39](https://github.com/bitcoinjs/bip39)
