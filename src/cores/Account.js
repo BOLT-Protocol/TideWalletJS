@@ -1,4 +1,6 @@
 const { Subject } = require("rxjs");
+const AccountServiceBase = require("../services/accountServiceBase");
+const EthereumService = require("../services/ethereumService");
 
 class AccountCore {
   static instance;
@@ -26,7 +28,13 @@ class AccountCore {
     this._initAccounts();
   }
 
-  _initAccounts() {}
+  _initAccounts() {
+    // Example:
+    //const svc = new EthereumService(new AccountServiceBase());
+    // svc.init("ACCOUNT_ID");
+    // console.log(svc.accountId);
+    // console.log(svc.base);
+  }
 
   close() {
     this._isInit = false;

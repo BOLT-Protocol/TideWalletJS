@@ -17,7 +17,4 @@ if (isBrowser()) {
   window.Buffer = require("buffer").Buffer;
   window.tidewallet = tidewallet;
 }
-
-console.log(isBrowser());
-
 module.exports = tidewallet;
