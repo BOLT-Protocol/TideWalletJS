@@ -11,6 +11,14 @@ class Cryptor {
 
     return result;
   }
+
+  static randomBytes(length) {
+    let hexStr = '';
+    if (length > 0) {
+      hexStr = utils.randomHex(length).substr(2);
+    }
+    return Buffer.from(hexStr, 'hex');
+  }
 }
 
 module.exports = Cryptor;

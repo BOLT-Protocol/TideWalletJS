@@ -1,6 +1,8 @@
 const keythereum = require("keythereum");
 const bitcoin = require("bitcoinjs-lib");
 
+const Cryptor = require('../helpers/Cryptor')
+
 class PaperWallet {
   static EXT_PATH = "m/84'/3324'/0'";
   static EXT_CHAININDEX = 0;
@@ -31,11 +33,31 @@ class PaperWallet {
 
   /**
    * @method createWallet
-   * @param {string} key
+   * @param {string} privateKey
    * @param {string} password
    * @returns {object} keyObject
    */
-  static createWallet() {}
+  static createWallet(privateKey, password) {
+    // Note: if options is unspecified, the values in keythereum.constants are used.
+    const options = {
+      kdf: "pbkdf2",
+      cipher: "aes-128-ctr",
+      kdfparams: {
+        c: 262144,
+        dklen: 32,
+        prf: "hmac-sha256"
+      }
+    };
+
+    let pk = privateKey;
+    if (privateKey.startsWith('0x')) pk = privateKey.substr(2);
+    const bufPk = Buffer.from(pk, 'hex');
+
+    const salt = Cryptor.randomBytes(32);
+    const iv = Cryptor.randomBytes(16);
+    const keyObject = keythereum.dump(password, bufPk, salt, iv, options);
+    return keyObject;
+  }
 
   /**
    * @method recoverFromJson
@@ -55,10 +77,12 @@ class PaperWallet {
 
   /**
    * @method magicSeed
-   * @param {Buffer} pk
+   * @param {string} pk
    * @returns {string} pk used keccak256 twice
    */
-  static magicSeed() {}
+  static magicSeed(pk) {
+    return Cryptor.keccak256round(pk, 2)
+  }
 
   /**
    * @method getPubKey
@@ -101,14 +125,18 @@ class PaperWallet {
    * @param {object} wallet - keyObject
    * @returns {string} wallet to string
    */
-  static walletToJson(wallet) {}
+  static walletToJson(wallet) {
+    return JSON.stringify(wallet);
+  }
 
   /**
    * @method jsonToWallet
    * @param {string} walletStr - keyObject string
    * @returns {object} keyObject
    */
-  static jsonToWallet(walletStr) {}
+  static jsonToWallet(walletStr) {
+    return JSON.parse(walletStr);
+  }
 }
 
 module.exports = PaperWallet;
