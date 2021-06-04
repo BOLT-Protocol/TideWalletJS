@@ -10,13 +10,8 @@ const tidewallet = {
   User,
 };
 
-const isBrowser = () => {
-  try {
-    return this === window;
-  } catch (e) {
-    return false;
-  }
-};
+var isBrowser=new Function("try {return this===window;}catch(e){ return false;}");
+
 
 if (isBrowser()) {
   window.Buffer = require("buffer").Buffer;
