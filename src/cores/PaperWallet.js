@@ -105,10 +105,10 @@ class PaperWallet {
     const path = `${PaperWallet.EXT_PATH}/${chainIndex}/${keyIndex}`
     const root = bitcoin.bip32.fromSeed(seed);
     const child = root.derivePath(path);
-    // TODO: compress
     if (!compressed) {
-      return child.privateKey.toString('hex');
+      return child.publicKey.toString('hex');
     }
+    return Cryptor.compressedKey(child.publicKey);
   }
 
   /**
@@ -128,6 +128,8 @@ class PaperWallet {
     if (!compressed) {
       return child.privateKey.toString('hex');
     }
+    return Cryptor.compressedKey(child.privateKey);
+
   }
 
   /**
