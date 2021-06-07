@@ -3,6 +3,7 @@ const Account = require("./cores/Account");
 const Trader = require("./cores/Trader");
 const User = require("./cores/User");
 const Agent = require("./helpers/httpAgent");
+const M = require("./helpers/Mnemonic");
 
 const tidewallet = {
   PaperWallet,
@@ -18,18 +19,11 @@ var isBrowser = function () {
     return false;
   }
 };
-const agent = new Agent();
 
-agent.setToken("123");
-
-agent.get("/blockchain").then((res) => {
-  console.log(res);
-  console.log(res.data);
-});
 if (isBrowser()) {
   window.Buffer = require("buffer").Buffer;
   window.tidewallet = tidewallet;
 }
 
-console.log(isBrowser())
+console.log(isBrowser());
 module.exports = tidewallet;
