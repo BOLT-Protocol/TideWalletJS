@@ -1,4 +1,8 @@
 const { utils } = require("web3");
+const EthUtils = require('ethereumjs-util');
+const { BN } = EthUtils;
+
+// ++ use native functions
 
 class Cryptor {
   static keccak256round(str, round = 2) {
@@ -10,6 +14,14 @@ class Cryptor {
     }
 
     return result;
+  }
+
+  static randomBytes(length) {
+    let hexStr = '';
+    if (length > 0) {
+      hexStr = utils.randomHex(length).substr(2);
+    }
+    return Buffer.from(hexStr, 'hex');
   }
 }
 
