@@ -2,22 +2,15 @@ const PaperWallet = require("./cores/PaperWallet");
 const Account = require("./cores/Account");
 const Trader = require("./cores/Trader");
 const User = require("./cores/User");
-const Agent = require("./helpers/httpAgent");
-const M = require("./helpers/Mnemonic");
+const { isBrowser } = require("./helpers/env");
+const DBOperator = require("./database/dbOperator");
 
 const tidewallet = {
   PaperWallet,
   Account,
   Trader,
   User,
-};
-
-var isBrowser = function () {
-  try {
-    return this === window;
-  } catch (e) {
-    return false;
-  }
+  DBOperator,
 };
 
 if (isBrowser()) {
