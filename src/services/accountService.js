@@ -1,21 +1,36 @@
+/**
+ @abstract
+**/
 class AccountService {
-    init() {}
+  syncInterval = 10 * 10 * 1000;
 
-    start() {}
-    
-    stop() {}
-    
-    getReceivingAddress() {}
-    
-    getChangingAddress() {}
-    
-    getTransactionFee() {}
-    
-    publishTransaction() {}
-    
-    updateTransaction() {}
+  lastSyncTimestamp = 0;
 
-    updateCurrency() {}
+  get accountId() {}
 
-    synchro() {}
+  get base() {}
+
+  get timer() {}
+
+  init(accountId, base, interval) {}
+
+  start() {}
+
+  stop() {}
+
+  getReceivingAddress() {}
+
+  getChangingAddress() {}
+
+  getTransactionFee() {}
+
+  publishTransaction() {}
+
+  updateTransaction() {}
+
+  updateCurrency() {}
+
+  synchro() {}
 }
+
+module.exports = AccountService;

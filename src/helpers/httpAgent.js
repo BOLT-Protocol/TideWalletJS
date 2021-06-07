@@ -1,5 +1,11 @@
+const axios = require("axios");
+const { url } = require("../constants/config");
+
 class HTTPAgent {
   static instance;
+  axios = axios.create({
+    baseURL: url,
+  });
 
   constructor() {
     if (!HTTPAgent.instance) {
@@ -9,19 +15,50 @@ class HTTPAgent {
     return HTTPAgent.instance;
   }
 
-  setInterceptor() {}
+  setInterceptor() {
+    // TODO: retry, logger?
+  }
 
-  setToken() {}
+  setToken(token) {
+    this.axios.defaults.headers.common["token"] = token;
+  }
 
-  get() {}
+  _request(request) {
+    return request().then((res) => {
+      if (!res.data) {
+        return {
+          success: fasle,
+        };
+      }
 
-  post() {}
+      return {
+        success: res.data.success,
+        data: res.data.payload,
+        message: res.data.message,
+        code: res.data.code,
+      };
+    });
+  }
 
-  delete() {}
+  get(path) {
+    return this._request(() => this.axios.get(path));
+  }
 
-  put() {}
+  post() {
+    return this._request(() => this.axios.post(path));
+  }
 
-  _request() {}
+  delete() {
+    return this._request(() => this.axios.delete(path));
+  }
 
-  _refreshToken() {}
+  put() {
+    return this._request(() => this.axios.put(path));
+  }
+
+  _refreshToken() {
+    //TODO:
+  }
 }
+
+module.exports = HTTPAgent;
