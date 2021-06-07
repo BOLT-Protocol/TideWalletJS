@@ -2,6 +2,8 @@ const { utils } = require("web3");
 const EthUtils = require('ethereumjs-util');
 const { BN } = EthUtils;
 
+// ++ use native functions
+
 class Cryptor {
   static keccak256round(str, round = 2) {
     let result = str.replace('0x', '');
