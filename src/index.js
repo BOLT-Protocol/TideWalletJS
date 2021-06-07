@@ -10,7 +10,13 @@ const tidewallet = {
   User,
 };
 
-var isBrowser=new Function("try {return this===window;}catch(e){ return false;}");
+var isBrowser = function () {
+  try {
+    return this === window;
+  } catch (e) {
+    return false;
+  }
+};
 
 
 if (isBrowser()) {
