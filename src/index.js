@@ -2,6 +2,8 @@ const PaperWallet = require("./cores/PaperWallet");
 const Account = require("./cores/Account");
 const Trader = require("./cores/Trader");
 const User = require("./cores/User");
+const Agent = require("./helpers/httpAgent");
+const M = require("./helpers/Mnemonic");
 
 const tidewallet = {
   PaperWallet,
@@ -10,11 +12,18 @@ const tidewallet = {
   User,
 };
 
-var isBrowser=new Function("try {return this===window;}catch(e){ return false;}");
-
+var isBrowser = function () {
+  try {
+    return this === window;
+  } catch (e) {
+    return false;
+  }
+};
 
 if (isBrowser()) {
   window.Buffer = require("buffer").Buffer;
   window.tidewallet = tidewallet;
 }
+
+console.log(isBrowser());
 module.exports = tidewallet;
