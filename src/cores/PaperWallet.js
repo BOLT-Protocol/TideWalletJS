@@ -61,19 +61,27 @@ class PaperWallet {
 
   /**
    * @method recoverFromJson
-   * @param {string} content
+   * @param {string} keyObjectJson
    * @param {string} password
-   * @returns {object} keyObject
+   * @returns {string} privateKey
    */
-  static recoverFromJson() {}
+  static recoverFromJson(keyObjectJson, password) {
+    const keyObject = PaperWallet.jsonToWallet(keyObjectJson);
+    const pk = keythereum.recover(password, keyObject);
+    return pk.toString('hex');
+  }
 
   /**
    * @method updatePassword
    * @param {object} oriKeyObject
+   * @param {string} oriPassword
    * @param {string} newPassword
    * @return {object} keyObject
    */
-  static updatePassword() {}
+  static updatePassword(oriKeyObject, oriPassword, newPassword) {
+    const pk = keythereum.recover(oriPassword, oriKeyObject);
+    return PaperWallet.createWallet(pk.toString('hex'), newPassword);
+  }
 
   /**
    * @method magicSeed
@@ -93,7 +101,15 @@ class PaperWallet {
    * @param {boolean} [compressed] - default true
    * @returns {string}
    */
-  static getPubKey(seed, chainIndex, keyIndex, path, compressed) {}
+  static getPubKey(seed, chainIndex, keyIndex, path, compressed = true) {
+    const path = `${PaperWallet.EXT_PATH}/${chainIndex}/${keyIndex}`
+    const root = bitcoin.bip32.fromSeed(seed);
+    const child = root.derivePath(path);
+    // TODO: compress
+    if (!compressed) {
+      return child.privateKey.toString('hex');
+    }
+  }
 
   /**
    * @method getPriKey
@@ -104,7 +120,15 @@ class PaperWallet {
    * @param {boolean} [compressed] - default true
    * @returns {string}
    */
-  static getPriKey(seed, chainIndex, keyIndex, path, compressed) {}
+  static getPriKey(seed, chainIndex, keyIndex, path, compressed = true) {
+    const path = `${PaperWallet.EXT_PATH}/${chainIndex}/${keyIndex}`
+    const root = bitcoin.bip32.fromSeed(seed);
+    const child = root.derivePath(path);
+    // TODO: compress
+    if (!compressed) {
+      return child.privateKey.toString('hex');
+    }
+  }
 
   /**
    * @method getExtendedPublicKey
