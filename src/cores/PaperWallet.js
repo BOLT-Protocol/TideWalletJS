@@ -89,7 +89,10 @@ class PaperWallet {
    * @returns {string} pk used keccak256 twice
    */
   static magicSeed(pk) {
-    return Cryptor.keccak256round(pk, 2)
+    if (pk.length < 64) {
+      return Cryptor.keccak256round(pk, 2)
+    }
+    return pk;
   }
 
   /**
