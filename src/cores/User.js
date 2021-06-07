@@ -1,5 +1,8 @@
 const Cryptor = require('./../helpers/Cryptor');
 const rlp = require('./../helpers/rlp');
+// const PaperWallet = require('./PaperWallet');
+const HTTPAgent = require('./../helpers/httpAgent');
+const config = require('./../constants/config');
 
 class User {  
   constructor() {
@@ -26,26 +29,22 @@ class User {
 
   /**
    * get nonce
-   * @param {String} userIdentifierBuffer
-   * @returns {boolean}
+   * @param {String} userIdentifier
+   * @returns {String}
    */
-  // comment is for test
-  _getNonce(userIdentifier, nonce) {
-    // const cafeca = 0xcafeca;
-    // let nonce = cafeca;
+  _getNonce(userIdentifier) {
+    const cafeca = '0xcafeca';
+    let nonce = cafeca;
 
     const getString = (nonce) => Cryptor
-      .keccak256round(userIdentifier, rlp.toBuffer(nonce), 1)
+      .keccak256round((Number(userIdentifier) + Number(nonce)).toString(16), 1)
       .slice(0, 3)
       .toLowerCase();
 
-    return getString(nonce)
-    if (getString(nonce) === 'cfc')
-    return rlp.toBuffer(nonce);
-    // while (getString(nonce) != 'cfc') {
-    //   nonce =`0x${(Number(nonce)+1).toString(16)}`
-    // }
-    // return rlp.toBuffer(nonce);
+    while (getString(nonce) != 'cfc') {
+      nonce =`0x${(Number(nonce)+1).toString(16)}`
+    }
+    return nonce
   }
 
   /**
@@ -57,14 +56,14 @@ class User {
    * @param {Number} userInfo.timestamp
    * @returns {String} password
    */
-  getPassword({ userIdentifier, userId, installId, timestamp}) {
+  getPassword({ userIdentifier, userId, installId, timestamp }) {
     const pwseed = Cryptor.keccak256round(
       Cryptor.keccak256round(
         Cryptor.keccak256round(userIdentifier || this.thirdPartyId, 1) + 
         Cryptor.keccak256round(userId || this.id, 1)
       ) +
       Cryptor.keccak256round(
-        rlp.toBuffer(rlp.toBuffer(timestamp).slice(3, 6)) + 
+        rlp.toBuffer(rlp.toBuffer(`${timestamp}`).slice(3, 6)) + 
         Cryptor.keccak256round(installId || this.installId, 1)
       )
     )
@@ -80,17 +79,20 @@ class User {
    * @param {String} userInfo.userSecret
    * @param {String} userInfo.installId
    * @param {Number} userInfo.timestamp
-   * @returns {String} password
+   * @returns {Object} result 
+   * @returns {String} result.key
+   * @returns {String} result.password
+   * @returns {String} result.extend
    */
   _generateCredentialData({ userIdentifier, userId, userSecret, installId, timestamp}) {
     const nonce = this._getNonce(userIdentifier);
 
-    const main = (Number(userIdentifier) + Number(nonce)).toString(16).slice(0, 4)
-    const extend = Cryptor.keccak256round(nonce, 1).slice(0, 4);
+    const _main = (Number(userIdentifier) + Number(nonce)).toString(16).slice(0, 4)
+    const _extend = Cryptor.keccak256round(nonce, 1).slice(0, 4);
     const seed = Cryptor.keccak256round(
       Cryptor.keccak256round(
-        Cryptor.keccak256round(main, 1) +
-        Cryptor.keccak256round(extend, 1)
+        Cryptor.keccak256round(_main, 1) +
+        Cryptor.keccak256round(_extend, 1)
       ) +
       Cryptor.keccak256round(
         Cryptor.keccak256round(userId, 1) +
@@ -100,26 +102,97 @@ class User {
 
     const key = Cryptor.keccak256round(seed);
     const password = this.getPassword({ userIdentifier, userId, installId, timestamp });
-    const extend = hex.encode(extendBuffer);
 
-    return { key, password, extend};
+    return { key, password, extend: `0x${_extend}` };
   }
 
   /**
-   * generate Credential Data
-   * @param {Object} userInfo
-   * @param {String} userInfo.userIdentifier
-   * @param {String} userInfo.userId
-   * @param {String} userInfo.userSecret
-   * @param {String} userInfo.installId
-   * @param {Number} userInfo.timestamp
-   * @returns {String} password
+   * create user
+   * @param {String} userIdentifier
+   * @returns {} success
    */
-  createUser() {}
+  async createUser(userIdentifier) {
+    // TODO: const installId = await this._prefManager.getInstallationId();
+    const installId = ''
 
-  _getUser() {}
+    const user = await this._getUser(userIdentifier)
+    const userId = user[0];
+    const userSecret = user[1];
+    const timestamp = Math.floor(new Date() / 1000)
+    const credentialData = this._generateCredentialData({ userIdentifier, userId, userSecret, installId, timestamp })
 
-  _registerUser() {}
+    // TODO: const wallet = await compute(PaperWallet.createWallet, credentialData);
+    const wallet = ''
+    // TODO: const seed = await compute(PaperWallet.magicSeed, wallet.privateKey.privateKey);
+    const seed = ''
+    // const extPK = PaperWallet.getExtendedPublicKey(seed);
+    const extPK = ''
+
+    const success = await this._registerUser({
+      extendPublicKey: extPK,
+      installId,
+      wallet,
+      userId,
+      userIdentifier,
+      timestamp,
+    });
+
+    return success;
+  }
+
+
+  /**
+   * get user
+   * @param {String} userIdentifier
+   * @returns {String[]} [userId, userSecret]
+   */
+  async _getUser(userIdentifier) {
+    let userId = ''
+    let userSecret = ''
+
+    const _res = await HTTPAgent().post(config.url + '/user/id', {"id": userIdentifier});
+    if (_res.success) {
+      userId = _res.data['user_id'];
+      userSecret = _res.data['user_secret'];
+
+      return [userId, userSecret];
+    } else {
+      return [];
+    }
+  }
+
+  async _registerUser({ extendPublicKey, installId, wallet, userId, userIdentifier, timestamp }) {
+    const payload = {
+      wallet_name: "TideWallet3", // ++ inform backend to update [Emily 04/01/2021]
+      extend_public_key: extendPublicKey,
+      install_id: installId,
+      app_uuid: installId,
+      fcm_token: ''
+    };
+
+    const res = await HTTPAgent().post(`${config.url}/user`, payload);
+
+    if (res.success) {
+      // TODO:
+      // this._prefManager.setAuthItem(AuthItem.fromJson(res.data));
+
+      // String keystore = await compute(PaperWallet.walletToJson, wallet);
+
+      // UserEntity user = UserEntity(
+      //     // res.data['user_id'], // ++ inform backend to update userId become radom hex[Emily 04/01/2021]
+      //     userId,
+      //     keystore,
+      //     userIdentifier,
+      //     installId,
+      //     timestamp,
+      //     false);
+      // await DBOperator().userDao.insertUser(user);
+
+      // await this._initUser(user);
+    }
+
+    return res.success;
+  }
 
   createUserWithSeed() {}
 
@@ -142,7 +215,7 @@ class User {
    * @method createWallet
    * @param {object} user - db user table
    */
-  _initUser() {
+  _initUser(user) {
     this.id = user.userId
     this.thirdPartyId = user.thirdPartyId;
     this.installId = user.installId;

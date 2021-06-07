@@ -1,35 +1,31 @@
 const User = require("../src/cores/User");
 
-test("test", () => {
-    // const seed = Buffer.from('35f8af7f1bdb4c53446f43c6f22ba0b525634ab556229fffd0f1813cc75b3a2c', 'hex');
-    const _user = new User()
-    let nonce = '0xcafeca';
 
-    const tmp = _user._getNonce('35f8af7f1bdb4c53446f43c6f22ba0b525634ab556229fffd0f1813cc75b3a2c', nonce)
-    nonce =`0x${(Number(nonce)+1).toString(16)}`
-    console.log('nonce:', nonce);
-    console.log('tmp:', tmp);
-    const tmp2 = _user._getNonce('35f8af7f1bdb4c53446f43c6f22ba0b525634ab556229fffd0f1813cc75b3a2c', nonce)
-    nonce =`0x${(Number(nonce)+1).toString(16)}`
-    console.log('nonce:', nonce);
-    console.log('tmp:', tmp2);
-    const tmp3 = _user._getNonce('35f8af7f1bdb4c53446f43c6f22ba0b525634ab556229fffd0f1813cc75b3a2c', nonce)
-    nonce =`0x${(Number(nonce)+1).toString(16)}`
-    console.log('nonce:', nonce);
-    console.log('tmp:', tmp3);
-    const tmp4 = _user._getNonce('35f8af7f1bdb4c53446f43c6f22ba0b525634ab556229fffd0f1813cc75b3a2c', nonce)
-    nonce =`0x${(Number(nonce)+1).toString(16)}`
-    console.log('nonce:', nonce);
-    console.log('tmp:', tmp4);
-    const tmp5 = _user._getNonce('35f8af7f1bdb4c53446f43c6f22ba0b525634ab556229fffd0f1813cc75b3a2c', nonce)
-    nonce =`0x${(Number(nonce)+1).toString(16)}`
-    console.log('nonce:', nonce);
-    console.log('tmp:', tmp5);
-    const tmp6 = _user._getNonce('35f8af7f1bdb4c53446f43c6f22ba0b525634ab556229fffd0f1813cc75b3a2c', nonce)
-    nonce =`0x${(Number(nonce)+1).toString(16)}`
-    console.log('nonce:', nonce);
-    console.log('tmp:', tmp6);
+const _user = new User()
+const userIdentifier = '0x123'
+const userId = '0x456'
+const userSecret = '0x1'
+const installId = '0x789'
+const timestamp = Math.floor(new Date() / 1000)
 
-    expect(tmp).toBe('xpub6CFP3LWKoXn9p3YrJ5RygQHKba9p2QJ8dk7uqe3XxhjZrRH9EUnsExXy4EMTPkDrZ77npmeo12negCaXKiWiVro5JUcPYLxHCYBkTQJxiKV');
+test.only("User _getNonce ", () => {
+    const nonce = _user._getNonce(userIdentifier)
+    expect(nonce).toBe('0xcb002e');
+});
 
+test.only("User getPassword ", () => {
+    const passwd = _user.getPassword({
+        userIdentifier, userId, installId, timestamp
+    })
+    expect(passwd).toBe('6e68c9174ed0001757c001942a0ef97bf996f489e902e99ef3abe4d1c5bbe96c');
+});
+
+
+test.only("User _generateCredentialData ", () => {
+    const credential = _user._generateCredentialData({
+        userIdentifier, userId, userSecret, installId, timestamp
+    })
+    expect(credential.key).toBe('21d6d820188914741f9b5df762ca7470d8153ef9fda36553c44ec9df9e9bf95c');
+    expect(credential.password).toBe('6e68c9174ed0001757c001942a0ef97bf996f489e902e99ef3abe4d1c5bbe96c');
+    expect(credential.extend).toBe('0x5eb8');
 });

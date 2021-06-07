@@ -5,7 +5,7 @@ class rlp {
     return /^0x[0-9A-Fa-f]*/.test(value)
   }
   static toBuffer(data) {
-    if (data === null) return Buffer.from()
+    if (data === null) return Buffer.from(0)
     if (Buffer.isBuffer(data)) return data
 
     if (typeof data === 'string') {
