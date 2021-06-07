@@ -36,6 +36,20 @@
     const exPub = tidewallet.PaperWallet.getExtendedPublicKey(seed);
   ```
 
+### Helpers
+- HTTPAgent
+    ```
+    const agent = new Agent();
+
+    // Set token to headers
+    agent.setToken("token_123");
+
+    agent.get("/blockchain").then((res) => {
+        // ...
+    });
+
+    ```
+
 ## Used Libraries
 [web3](https://web3js.readthedocs.io/en/v1.3.4/)
 

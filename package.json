@@ -20,6 +20,7 @@
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
+    "axios": "^0.21.1",
     "bitcoinjs-lib": "^5.2.0",
     "keythereum": "^1.2.0",
     "rxjs": "^7.1.0",
