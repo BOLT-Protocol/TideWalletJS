@@ -11,7 +11,7 @@ class PaperWallet {
   /**
    * keyObject{
    *   address: "008aeeda4d805471df9b2a5b0f38a0c3bcba786b",
-   *   Crypto: {
+   *   crypto: {
    *     cipher: "aes-128-ctr",
    *     ciphertext: "5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46",
    *     cipherparams: {
@@ -66,9 +66,14 @@ class PaperWallet {
    * @returns {string} privateKey
    */
   static recoverFromJson(keyObjectJson, password) {
-    const keyObject = PaperWallet.jsonToWallet(keyObjectJson);
-    const pk = keythereum.recover(password, keyObject);
-    return pk.toString('hex');
+    try {
+      const keyObject = PaperWallet.jsonToWallet(keyObjectJson);
+      const pk = keythereum.recover(password, keyObject);
+      return pk.toString('hex');
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
   }
 
   /**
@@ -89,7 +94,7 @@ class PaperWallet {
    * @returns {string} pk used keccak256 twice
    */
   static magicSeed(pk) {
-    if (pk.length < 64) {
+    if (pk.length < 128) {
       return Cryptor.keccak256round(pk, 2)
     }
     return pk;
@@ -100,17 +105,19 @@ class PaperWallet {
    * @param {Buffer} seed bip seed
    * @param {number} chainIndex - integer for hdwallet chainIndex
    * @param {number} keyIndex - integer for hdwallet keyIndex
+   * @param {object} options
    * @param {string} [path] - default EXT_PATH
    * @param {boolean} [compressed] - default true
    * @returns {string}
    */
-  static getPubKey({seed, chainIndex, keyIndex, path = PaperWallet.EXT_PATH, compressed = true}) {
+  static getPubKey(seed, chainIndex, keyIndex, options = {}) {
+    const {path = PaperWallet.EXT_PATH, compressed = true } = options;
     const dPath = `${path}/${chainIndex}/${keyIndex}`;
     const root = bitcoin.bip32.fromSeed(seed);
     const child = root.derivePath(dPath);
-    // TODO: uncompress
-    // if (!compressed) {
-    // }
+    if (!compressed) {
+      return bitcoin.ECPair.fromPublicKey(child.publicKey, { compressed: false }).publicKey.toString('hex');
+    }
     return child.publicKey.toString('hex');
   }
 
@@ -119,17 +126,15 @@ class PaperWallet {
    * @param {Buffer} seed bip seed
    * @param {number} chainIndex - integer for hdwallet chainIndex
    * @param {number} keyIndex - integer for hdwallet keyIndex
+   * @param {object} options
    * @param {string} [path] - default EXT_PATH
-   * @param {boolean} [compressed] - default true
    * @returns {string}
    */
-  static getPriKey({seed, chainIndex, keyIndex, path = PaperWallet.EXT_PATH, compressed = true}) {
+  static getPriKey(seed, chainIndex, keyIndex, options = {}) {
+    const {path = PaperWallet.EXT_PATH } = options;
     const dPath = `${path}/${chainIndex}/${keyIndex}`;
     const root = bitcoin.bip32.fromSeed(seed);
     const child = root.derivePath(dPath);
-    // TODO: uncompress
-    // if (!compressed) {
-    // }
     return child.privateKey.toString('hex');
   }
 
