@@ -47,7 +47,10 @@
 ### How To Use (DRAFT 2021.06.07)
 - Build JS Library
 ```shell
+git clone https://github.com/BOLT-Protocol/TideWalletJS
 cd TideWalletJS
+sudo npm i -g browserify
+npm i
 npm run build
 ```
 
