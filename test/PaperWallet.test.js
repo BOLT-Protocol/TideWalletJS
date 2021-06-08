@@ -64,8 +64,7 @@ test('getPubKey uncompressed', () => {
 
 test('getPriKey', () => {
     const seed = Buffer.from('35f8af7f1bdb4c53446f43c6f22ba0b525634ab556229fffd0f1813cc75b3a2c', 'hex');
-    const expectPrik = 'KxSfNeheiQshTzhfugUxh7EPjwKR13HYP5TP9hRMw9UpLYyXMnMc'   // from https://iancoleman.io/bip39/
-    // const expectPrik = '24800a8f675f2b9b911e9551bf5bab69b238c531e61c566937cca4c83257730a' // from our class
+    const expectPrik = '24800a8f675f2b9b911e9551bf5bab69b238c531e61c566937cca4c83257730a'
     const pubk = PaperWallet.getPriKey(seed, 0, 0);
 
     expect(pubk).toBe(expectPrik);
