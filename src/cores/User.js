@@ -33,17 +33,23 @@ class User {
    * @returns {String}
    */
   _getNonce(userIdentifier) {
-    const cafeca = '0xcafeca';
+    const cafeca = 0xcafeca;
     let nonce = cafeca;
 
     const getString = (nonce) => Cryptor
-      .keccak256round((Number(userIdentifier) + Number(nonce)).toString(16), 1)
+      .keccak256round(
+        Buffer.concat([
+          Buffer.from(userIdentifier, 'utf8'), 
+          rlp.toBuffer(nonce)
+        ]).toString('hex')
+      , 1)
       .slice(0, 3)
       .toLowerCase();
 
     while (getString(nonce) != 'cfc') {
-      nonce =`0x${(Number(nonce)+1).toString(16)}`
+      nonce = Number(nonce)+1
     }
+
     return nonce
   }
 
@@ -58,14 +64,22 @@ class User {
    */
   getPassword({ userIdentifier, userId, installId, timestamp }) {
     const pwseed = Cryptor.keccak256round(
-      Cryptor.keccak256round(
-        Cryptor.keccak256round(userIdentifier || this.thirdPartyId, 1) + 
-        Cryptor.keccak256round(userId || this.id, 1)
-      ) +
-      Cryptor.keccak256round(
-        rlp.toBuffer(rlp.toBuffer(`${timestamp}`).slice(3, 6)) + 
-        Cryptor.keccak256round(installId || this.installId, 1)
-      )
+      Buffer.concat([
+        Buffer.from(Cryptor.keccak256round(
+          Buffer.concat([
+            Buffer.from(Cryptor.keccak256round(userIdentifier || this.thirdPartyId, 1)),
+            Buffer.from(Cryptor.keccak256round(userId || this.id, 1))
+          ]).toString('hex')
+        )),
+        Buffer.from(Cryptor.keccak256round(
+          Buffer.concat([
+            Buffer.from(Cryptor.keccak256round(
+              rlp.toBuffer(rlp.toBuffer(timestamp).toString('hex').slice(3, 6)).toString('hex'), 1
+            )),
+            Buffer.from(Cryptor.keccak256round(installId || this.installId, 1))
+          ]).toString('hex')
+        ))
+      ]).toString('hex')
     )
     const password = Cryptor.keccak256round(pwseed);
     return password;
@@ -121,12 +135,9 @@ class User {
     const timestamp = Math.floor(new Date() / 1000)
     const credentialData = this._generateCredentialData({ userIdentifier, userId, userSecret, installId, timestamp })
 
-    // TODO: const wallet = await compute(PaperWallet.createWallet, credentialData);
-    const wallet = ''
-    // TODO: const seed = await compute(PaperWallet.magicSeed, wallet.privateKey.privateKey);
-    const seed = ''
-    // const extPK = PaperWallet.getExtendedPublicKey(seed);
-    const extPK = ''
+    const wallet = await PaperWallet.createWallet(credentialData);
+    const seed = await PaperWallet.magicSeed(wallet.privateKey.privateKey);
+    const extPK = PaperWallet.getExtendedPublicKey(seed);
 
     const success = await this._registerUser({
       extendPublicKey: extPK,
@@ -176,9 +187,9 @@ class User {
       // TODO:
       // this._prefManager.setAuthItem(AuthItem.fromJson(res.data));
 
-      // String keystore = await compute(PaperWallet.walletToJson, wallet);
+      const keystore = await PaperWallet.walletToJson(wallet);
 
-      // UserEntity user = UserEntity(
+      // const user = UserEntity(
       //     // res.data['user_id'], // ++ inform backend to update userId become radom hex[Emily 04/01/2021]
       //     userId,
       //     keystore,
