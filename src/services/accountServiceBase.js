@@ -4,17 +4,62 @@ class AccountServiceBase extends AccountService {
     super();
   }
 
-  get accountId() {
-    return this._accountId;
+  _pushResult() {
+    // TODO:
   }
 
-  get base() {
-    return this._base;
-  }
-
+  /**
+   @override
+  **/
   init(accountId, base, interval) {
     this._accountId = accountId;
     this._base = base;
+
+    this.synchro();
+  }
+
+  /**
+   @override
+  **/
+  async start() {}
+
+  /**
+   @override
+  **/
+  stop() {
+    clearInterval(this.timer);
+  }
+
+  /**
+   @override
+  **/
+  getReceivingAddress() {}
+
+  /**
+   @override
+  **/
+  getChangingAddress() {}
+  /**
+   @override
+  **/
+  getTransactionFee() {}
+  /**
+   @override
+  **/
+  publishTransaction() {}
+  /**
+   @override
+  **/
+  updateTransaction() {}
+  /**
+   @override
+  **/
+  updateCurrency() {}
+  /**
+   @override
+  **/
+  synchro() {
+    this._pushResult();
   }
 }
 
