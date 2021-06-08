@@ -1,10 +1,10 @@
 const AccountServiceDecorator = require("./accountServiceDecorator");
-
+const { ACCOUNT } = require("../models/account.model");
 class EthereumService extends AccountServiceDecorator {
   constructor(service) {
     super();
     this.service = service;
-    this._base = "ETH";
+    this._base = ACCOUNT.ETH;
     this.syncInterval = 15000;
   }
 
@@ -31,36 +31,50 @@ class EthereumService extends AccountServiceDecorator {
   stop() {
     this.service.stop();
   }
+
   /**
    @override
   **/
   getReceivingAddress() {}
+
   /**
    @override
   **/
   getChangingAddress() {}
+
   /**
    @override
   **/
   getTransactionFee() {}
+
   /**
    @override
   **/
   publishTransaction() {}
+
   /**
    @override
   **/
   updateTransaction() {}
+
   /**
    @override
   **/
   updateCurrency() {}
+
   /**
    @override
   **/
   synchro() {
     this.service.synchro();
   }
+
+  // 
+  addToken() {}
+
+  estimateGasLimit() {}
+
+  getNonce() {}
 }
 
 module.exports = EthereumService;

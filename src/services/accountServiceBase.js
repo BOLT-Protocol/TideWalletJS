@@ -39,22 +39,27 @@ class AccountServiceBase extends AccountService {
    @override
   **/
   getChangingAddress() {}
+
   /**
    @override
   **/
   getTransactionFee() {}
+  
   /**
    @override
   **/
   publishTransaction() {}
+  
   /**
    @override
   **/
   updateTransaction() {}
+  
   /**
    @override
   **/
   updateCurrency() {}
+  
   /**
    @override
   **/
