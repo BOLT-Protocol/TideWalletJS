@@ -63,23 +63,25 @@ class User {
    * @returns {String} password
    */
   getPassword({ userIdentifier, userId, installId, timestamp }) {
+    const userIdentifierBuff = Buffer.from(userIdentifier, 'utf8').toString('hex')
+    const installIdBuff = Buffer.from(installId).toString('hex')
     const pwseed = Cryptor.keccak256round(
       Buffer.concat([
         Buffer.from(Cryptor.keccak256round(
           Buffer.concat([
-            Buffer.from(Cryptor.keccak256round(userIdentifier || this.thirdPartyId, 1)),
+            Buffer.from(Cryptor.keccak256round(userIdentifierBuff || this.thirdPartyId, 1)),
             Buffer.from(Cryptor.keccak256round(userId || this.id, 1))
-          ]).toString('hex')
+          ]).toString()
         )),
         Buffer.from(Cryptor.keccak256round(
           Buffer.concat([
             Buffer.from(Cryptor.keccak256round(
               rlp.toBuffer(rlp.toBuffer(timestamp).toString('hex').slice(3, 6)).toString('hex'), 1
             )),
-            Buffer.from(Cryptor.keccak256round(installId || this.installId, 1))
-          ]).toString('hex')
+            Buffer.from(Cryptor.keccak256round(installIdBuff || this.installId, 1))
+          ]).toString()
         ))
-      ]).toString('hex')
+      ]).toString()
     )
     const password = Cryptor.keccak256round(pwseed);
     return password;
@@ -101,23 +103,35 @@ class User {
   _generateCredentialData({ userIdentifier, userId, userSecret, installId, timestamp}) {
     const nonce = this._getNonce(userIdentifier);
 
-    const _main = (Number(userIdentifier) + Number(nonce)).toString(16).slice(0, 4)
-    const _extend = Cryptor.keccak256round(nonce, 1).slice(0, 4);
+    const userIdentifierBuff = Buffer.from(userIdentifier, 'utf8').toString('hex')
+    const _main = Buffer.concat([
+      Buffer.from(userIdentifierBuff, 'utf8'), 
+      rlp.toBuffer(nonce)
+    ]).toString().slice(0, 16)
+    
+    const _extend = Cryptor.keccak256round(rlp.toBuffer(nonce).toString('hex'), 1).slice(0, 8);
+
     const seed = Cryptor.keccak256round(
-      Cryptor.keccak256round(
-        Cryptor.keccak256round(_main, 1) +
-        Cryptor.keccak256round(_extend, 1)
-      ) +
-      Cryptor.keccak256round(
-        Cryptor.keccak256round(userId, 1) +
-        Cryptor.keccak256round(userSecret, 1)
-      )
+      Buffer.concat([
+        Buffer.from(Cryptor.keccak256round(
+          Buffer.concat([
+            Buffer.from(Cryptor.keccak256round(_main, 1)),
+            Buffer.from(Cryptor.keccak256round(_extend, 1))
+          ]).toString()
+        )),
+        Buffer.from(Cryptor.keccak256round(
+          Buffer.concat([
+            Buffer.from(Cryptor.keccak256round(userId, 1)),
+            Buffer.from(Cryptor.keccak256round(userSecret, 1))
+          ]).toString()
+        ))
+      ]).toString()
     );
 
     const key = Cryptor.keccak256round(seed);
     const password = this.getPassword({ userIdentifier, userId, installId, timestamp });
 
-    return { key, password, extend: `0x${_extend}` };
+    return { key, password, extend: _extend };
   }
 
   /**

@@ -1,4 +1,5 @@
 const rlp = require("../src/helpers/rlp");
+const Cryptor = require('../src/helpers/Cryptor');
 const User = require("../src/cores/User");
 
 
@@ -14,22 +15,49 @@ test("User _getNonce ", () => {
     expect(nonce).toBe(13305180);
 });
 
-test.only("User getPassword ", () => {
+test("User getPassword ", () => {
     const passwd = _user.getPassword({
         userIdentifier, userId, installId, timestamp
     })
-    console.log('passwd:', passwd);
     expect(passwd).toBe('72012f0e20235377c36eaee6c1daf6e49e172b63c21091a480c0f44bdfebbe1b');
 });
 
-// test("userid + usernonce -> seed", () => {
-// })
+test("userid + usernonce -> seed", () => {
+    const nonce = _user._getNonce(userIdentifier);
 
-// test("User _generateCredentialData ", () => {
-//     const credential = _user._generateCredentialData({
-//         userIdentifier, userId, userSecret, installId, timestamp
-//     })
-//     expect(credential.key).toBe('21d6d820188914741f9b5df762ca7470d8153ef9fda36553c44ec9df9e9bf95c');
-//     expect(credential.password).toBe('6e68c9174ed0001757c001942a0ef97bf996f489e902e99ef3abe4d1c5bbe96c');
-//     expect(credential.extend).toBe('0x5eb8');
-// });
+    const userIdentifierBuff = Buffer.from(userIdentifier, 'utf8').toString('hex')
+    
+    const _main = Buffer.concat([
+        Buffer.from(userIdentifierBuff, 'utf8'), 
+        rlp.toBuffer(nonce)
+    ]).toString().slice(0, 16)
+
+    const _extend = Cryptor.keccak256round(rlp.toBuffer(nonce).toString('hex'), 1).slice(0, 8);
+
+    const seed = Cryptor.keccak256round(
+        Buffer.concat([
+            Buffer.from(Cryptor.keccak256round(
+                Buffer.concat([
+                    Buffer.from(Cryptor.keccak256round(_main, 1)),
+                    Buffer.from(Cryptor.keccak256round(_extend, 1))
+                ]).toString()
+            )),
+            Buffer.from(Cryptor.keccak256round(
+                Buffer.concat([
+                    Buffer.from(Cryptor.keccak256round(userId, 1)),
+                    Buffer.from(Cryptor.keccak256round(userSecret, 1))
+                ]).toString()
+            ))
+        ]).toString()
+    );
+    expect(seed).toBe('e48f77df468d4890f92392568451e7f73e1757c4287c02b04b8b7d9dba063a13');
+})
+
+test("User _generateCredentialData ", () => {
+    const credential = _user._generateCredentialData({
+        userIdentifier, userId, userSecret, installId, timestamp
+    })
+    expect(credential.key).toBe('b174d55db852ead122fab60519242e9da34106a46c1d36bffd5a741e52cf8f31');
+    expect(credential.password).toBe('72012f0e20235377c36eaee6c1daf6e49e172b63c21091a480c0f44bdfebbe1b');
+    expect(credential.extend).toBe('8b37c50f');
+});
