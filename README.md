@@ -75,3 +75,18 @@ tidewallet.sync();
 const paperwallet = tidewallet.backup();
 tidewallet.close();
 ```
+
+- Database
+```javascript
+const accountModel = {
+  id: "string",
+  name: "string",
+  enable: "boolean"
+};
+const accountORM = database.modelFactory(accountModel);
+accountORM.create({ id: "tw19023487", name: "Vincent", enable: true });
+const myAccount = accountORM.findOne({ id: "tw19023487" });
+const accountList = accountORM.find({ enable: true });
+accountORM.deleteOne({ id: "tw19023487" });
+accountORM.delete({ enable: true });
+```
