@@ -3,7 +3,40 @@ const { isBrowser } = require("../helpers/env");
 
 class DBOperator {
   static instance;
-  db = isBrowser() ? new IndexedDB() : null;
+  database = null;
+  _isInit = false;
+
+  get userDao() {
+    return this.database.userDao;
+  }
+
+  get accountDao() {
+    return this.database.accountDao;
+  }
+
+  get currencyDao() {
+    return this.database.currencyDao;
+  }
+
+  get transactionDao() {
+    return this.database.transactionDao;
+  }
+
+  get networkDao() {
+    return this.database.networkDao;
+  }
+
+  get accountCurrencyDao() {
+    return this.database.accountCurrencyDao;
+  }
+
+  get utxoDao() {
+    return this.database.utxoDao;
+  }
+
+  get exchangeRateDao() {
+    return this.database.exchangeRateDao;
+  }
 
   constructor() {
     if (!DBOperator.instance) {
@@ -12,10 +45,17 @@ class DBOperator {
 
     return DBOperator.instance;
   }
+
+  init(inMemory = false) {
+    if (this._isInit) return;
+    this.database = isBrowser() ? new IndexedDB() : null;
+    this._isInit = true;
+  }
+
+  down() {
+    if (!this.database) return;
+    this.database.close();
+  }
 }
 
 module.exports = DBOperator;
-
-// if (isBrowser()) {
-//   window.DBOperator = DBOperator;
-// }
