@@ -11,7 +11,7 @@ class PaperWallet {
   /**
    * keyObject{
    *   address: "008aeeda4d805471df9b2a5b0f38a0c3bcba786b",
-   *   Crypto: {
+   *   crypto: {
    *     cipher: "aes-128-ctr",
    *     ciphertext: "5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46",
    *     cipherparams: {
@@ -66,9 +66,14 @@ class PaperWallet {
    * @returns {string} privateKey
    */
   static recoverFromJson(keyObjectJson, password) {
-    const keyObject = PaperWallet.jsonToWallet(keyObjectJson);
-    const pk = keythereum.recover(password, keyObject);
-    return pk.toString('hex');
+    try {
+      const keyObject = PaperWallet.jsonToWallet(keyObjectJson);
+      const pk = keythereum.recover(password, keyObject);
+      return pk.toString('hex');
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
   }
 
   /**
@@ -89,7 +94,7 @@ class PaperWallet {
    * @returns {string} pk used keccak256 twice
    */
   static magicSeed(pk) {
-    if (pk.length < 64) {
+    if (pk.length < 128) {
       return Cryptor.keccak256round(pk, 2)
     }
     return pk;
