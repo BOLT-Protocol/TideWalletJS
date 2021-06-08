@@ -1,11 +1,10 @@
 const PaperWallet = require("../src/cores/PaperWallet");
 
 describe('keystore', () => {
-    const pk = '0x4870782b37630d2309f64e770c98cb048d3cd3faf11db8aba515aaa081d63f98';
+    const pk = '929cb0a76cccbb93283832c5833d53ce7048c085648eb367a9e63c44c146b35d';
     const pw1 = '123';
     const pw2 = 'asd';
     let keyStore;
-    let strKeyStore;
     test('createWallet', () => {
         keyStore = PaperWallet.createWallet(pk, pw1);
 
@@ -16,7 +15,7 @@ describe('keystore', () => {
         const jsonKeystore = PaperWallet.walletToJson(keyStore);
         const result = PaperWallet.recoverFromJson(jsonKeystore, pw1);
 
-        expect(`0x${result}`).toBe(pk);
+        expect(result).toBe(pk);
     });
 
     test('recoverFromJson with wrong password', () => {
@@ -33,7 +32,7 @@ describe('keystore', () => {
         const result = PaperWallet.recoverFromJson(jsonKeystore, pw2);
 
         expect(worngPasswordResult).toBe(null);
-        expect(`0x${result}`).toBe(pk);
+        expect(result).toBe(pk);
     });
 })
 
@@ -65,10 +64,11 @@ test('getPubKey uncompressed', () => {
 
 test('getPriKey', () => {
     const seed = Buffer.from('35f8af7f1bdb4c53446f43c6f22ba0b525634ab556229fffd0f1813cc75b3a2c', 'hex');
-    const expectPubk = '24800a8f675f2b9b911e9551bf5bab69b238c531e61c566937cca4c83257730a'
+    const expectPrik = 'KxSfNeheiQshTzhfugUxh7EPjwKR13HYP5TP9hRMw9UpLYyXMnMc'   // from https://iancoleman.io/bip39/
+    // const expectPrik = '24800a8f675f2b9b911e9551bf5bab69b238c531e61c566937cca4c83257730a' // from our class
     const pubk = PaperWallet.getPriKey(seed, 0, 0);
 
-    expect(pubk).toBe(expectPubk);
+    expect(pubk).toBe(expectPrik);
 })
 
 test("getExtendedPublicKey", () => {
