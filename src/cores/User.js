@@ -208,7 +208,24 @@ class User {
 
   checkWalletBackup() {}
 
-  backupWallet() {}
+  /**
+   * backupWallet
+   * @returns isBackup
+   */
+  backupWallet() {
+    try {
+      // TODO get user from db
+      // UserEntity _user = await DBOperator().userDao.findUser();
+
+      // TODO save backup status to db
+      // await DBOperator().userDao.updateUser(_user.copyWith(backupStatus: true));
+      this.isBackup = true;
+    } catch (e) {
+      console.log(e);
+    }
+
+    return this.isBackup;
+  }
 
   /**
    * init user

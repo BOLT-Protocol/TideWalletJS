@@ -29,3 +29,14 @@ test.only("User _generateCredentialData ", () => {
     expect(credential.password).toBe('6e68c9174ed0001757c001942a0ef97bf996f489e902e99ef3abe4d1c5bbe96c');
     expect(credential.extend).toBe('0x5eb8');
 });
+
+
+
+
+
+
+
+test("User backupWallet ", () => {
+    const result = _user.backupWallet();
+    expect(result).toBeTruthy();
+});
