@@ -53,7 +53,7 @@ npm run build
 
 - Import Library
 ```html
-<script src="./TideWallet.js" type="text/javascript"></script>
+<script src="./lib/TideWallet.js" type="text/javascript"></script>
 ```
 
 - Use
