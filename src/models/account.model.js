@@ -7,6 +7,13 @@ const ACCOUNT_EVT = {
   ToggleDisplayCurrency: "ToggleDisplayCurrency",
 };
 
+const ACCOUNT = {
+  ETH: 'ETH',
+  BTC: 'BTC',
+  CFC: 'CFC'
+}
+
 module.exports = {
   ACCOUNT_EVT,
+  ACCOUNT
 };

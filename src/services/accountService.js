@@ -6,11 +6,33 @@ class AccountService {
 
   lastSyncTimestamp = 0;
 
-  get accountId() {}
+  _timer = null;
+  _base = null;
+  _accountId = null;
 
-  get base() {}
+  get accountId() {
+    return this._accountId;
+  }
 
-  get timer() {}
+  set accountId(id) {
+    this._accountId = id;
+  }
+
+  get base() {
+    return this._base;
+  }
+
+  set base(base) {
+    this._base = base;
+  }
+
+  get timer() {
+    return this._timer;
+  }
+
+  set timer(timer) {
+    this._timer = timer;
+  }
 
   init(accountId, base, interval) {}
 
