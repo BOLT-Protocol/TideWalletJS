@@ -29,7 +29,7 @@ class TideWalletCommunicator {
       if (res.success) {
         this.token = res.data.token;
         this.tokenSecret = res.data.tokenSecret;
-        return { token: res.data.token, tokenSecret: res.data.tokenSecret, userID: res.data.user_id }
+        return { token: res.data.token, tokenSecret: res.data.tokenSecret, userID: res.data.user_id };
       }
       return { userID: null, message: res.message };
     } catch (error) {
@@ -41,12 +41,12 @@ class TideWalletCommunicator {
   // 9. User Token Verify
   async login(token, tokenSecret) {
     try {
-      this.token = token;
-      this.tokenSecret = tokenSecret;
-      this.httpAgent.setToken(token);
       const res = await this.httpAgent.get(this.apiURL + '/token/verify?token=' + this.token);
       if (res.success) {
-        return { userID: res.data.user_id }
+        this.token = token;
+        this.tokenSecret = tokenSecret;
+        this.httpAgent.setToken(token);
+        return { userID: res.data.user_id };
       }
       return { userID: null, message: res.message };
     } catch (error) {
@@ -55,7 +55,30 @@ class TideWalletCommunicator {
   }
 
   // 1. List Supported Blockchains
+  async BlockchainList() {
+    try {
+      const res = await this.httpAgent.get(this.apiURL + '/blockchain');
+      if (res.success) {
+        return { BlockchainList: res.data };
+      }
+      return { BlockchainList: null, message: res.message };
+    } catch (error) {
+      return { BlockchainList: null, message: error };
+    }
+  }
 
+  // 2. Get Blockchain Detail
+  async BlockchainDetail(blockchainID) {
+    try {
+      const res = await this.httpAgent.get(this.apiURL + '/blockchain/' + blockchainID);
+      if (res.success) {
+        return { BlockchainDetail: res.data };
+      }
+      return { BlockchainList: null, message: res.message };
+    } catch (error) {
+      return { BlockchainList: null, message: error };
+    }
+  }
 }
 
 module.exports = TideWalletCommunicator;
