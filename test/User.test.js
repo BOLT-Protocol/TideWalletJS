@@ -1,4 +1,5 @@
 const User = require("../src/cores/User");
+const PaperWallet = require('../src/cores/PaperWallet')
 
 
 const _user = new User()
@@ -33,6 +34,12 @@ test.only("User _generateCredentialData ", () => {
 
 
 
+
+test("User restorePaperWallet ", () => {
+    const keystore = PaperWallet.createWallet()
+    const result = _user.restorePaperWallet();
+    expect(result).toBeTruthy();
+});
 
 
 
