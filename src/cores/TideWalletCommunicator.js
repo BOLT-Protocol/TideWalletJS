@@ -35,7 +35,6 @@ class TideWalletCommunicator {
     } catch (error) {
       return { userID: null, message: error };
     }
-    // return { token, tokenSecret, userID };
   }
 
   // 9. User Token Verify
@@ -70,13 +69,27 @@ class TideWalletCommunicator {
   // 2. Get Blockchain Detail
   async BlockchainDetail(blockchainID) {
     try {
+      if (!blockchainID) return { BlockchainList: null, message: 'invalid input' };
       const res = await this.httpAgent.get(this.apiURL + '/blockchain/' + blockchainID);
       if (res.success) {
         return { BlockchainDetail: res.data };
       }
-      return { BlockchainList: null, message: res.message };
+      return { BlockchainDetail: null, message: res.message };
     } catch (error) {
-      return { BlockchainList: null, message: error };
+      return { BlockchainDetail: null, message: error };
+    }
+  }
+
+  // 3. List Supported Currencies
+  async CurrencyList() {
+    try {
+      const res = await this.httpAgent.get(this.apiURL + '/currency');
+      if (res.success) {
+        return { CurrencyList: res.data };
+      }
+      return { CurrencyList: null, message: res.message };
+    } catch (error) {
+      return { CurrencyList: null, message: error };
     }
   }
 }

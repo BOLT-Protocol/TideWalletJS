@@ -2,6 +2,7 @@ const TideWalletCommunicator = require('../src/cores/TideWalletCommunicator');
 const PaperWallet = require('../src/cores/PaperWallet');
 
 const twc = new TideWalletCommunicator({ apiURL: 'https://staging.tidewallet.io/api/v1', apiKey:'123', apiSecret: '123'});
+// const twc = new TideWalletCommunicator({ apiURL: 'http://127.0.0.1/api/v1', apiKey:'123', apiSecret: '123'});
 
 const seed = PaperWallet.magicSeed(Math.floor(Math.random() * 1000000).toString());
 
@@ -34,6 +35,26 @@ test('regist', async () => {
 test('login', async () => {
   expect.assertions(1);
   const res = await twc.login(testData.token, testData.tokenSecret);
-  console.log(res)
   expect(res.userID).toBe(testData.userID);
+})
+
+test('BlockchainList', async () => {
+  const res = await twc.BlockchainList();
+  console.log(res);
+  // ++ 補條件
+  // expect(res.userID).toBe(testData.userID);
+})
+
+test('BlockchainDetail', async () => {
+  const res = await twc.BlockchainDetail('80000000');
+  console.log(res);
+  // ++ 補條件
+  // expect(res.userID).toBe(testData.userID);
+})
+
+test('CurrencyList', async () => {
+  const res = await twc.CurrencyList('80000000');
+  console.log(res);
+  // ++ 補條件
+  // expect(res.userID).toBe(testData.userID);
 })
