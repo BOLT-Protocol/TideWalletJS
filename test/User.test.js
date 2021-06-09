@@ -1,6 +1,7 @@
 const rlp = require("../src/helpers/rlp");
 const Cryptor = require('../src/helpers/Cryptor');
 const User = require("../src/cores/User");
+const PaperWallet = require('../src/cores/PaperWallet')
 
 
 const _user = new User()
@@ -60,4 +61,21 @@ test("User _generateCredentialData ", () => {
     expect(credential.key).toBe('b174d55db852ead122fab60519242e9da34106a46c1d36bffd5a741e52cf8f31');
     expect(credential.password).toBe('72012f0e20235377c36eaee6c1daf6e49e172b63c21091a480c0f44bdfebbe1b');
     expect(credential.extend).toBe('8b37c50f');
+});
+
+
+
+
+
+test("User restorePaperWallet ", () => {
+    const keystore = PaperWallet.createWallet()
+    const result = _user.restorePaperWallet();
+    expect(result).toBeTruthy();
+});
+
+
+
+test("User backupWallet ", () => {
+    const result = _user.backupWallet();
+    expect(result).toBeTruthy();
 });

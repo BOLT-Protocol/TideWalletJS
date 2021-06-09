@@ -1,6 +1,6 @@
 const Cryptor = require('./../helpers/Cryptor');
 const rlp = require('./../helpers/rlp');
-// const PaperWallet = require('./PaperWallet');
+const PaperWallet = require('./PaperWallet');
 const HTTPAgent = require('./../helpers/httpAgent');
 const config = require('./../constants/config');
 
@@ -227,13 +227,56 @@ class User {
 
   validPaperWallet() {}
 
-  restorePaperWallet() {}
+  /**
+   * restorePaperWallet
+   * @param {string} keystore 
+   * @returns keyObject
+   */
+  restorePaperWallet(keystore) {
+    const w = PaperWallet.jsonToWallet(keystore)
+    return w;
+  }
 
-  restoreUser() {}
+  /**
+   * restoreUser
+   * @param {string} keystoreJson 
+   * @param {string} password 
+   * @returns success or not
+   */
+  restoreUser(keystoreJson, password) {
+  }
 
-  checkWalletBackup() {}
+  /**
+   * checkWalletBackup
+   * @returns isBackup
+   */
+  async checkWalletBackup() {
+    // TODO get user from db
+    // UserEntity _user = await DBOperator().userDao.findUser();
+    // if (_user != null) {
+    //   return _user.backupStatus;
+    // }
+    return false;
+  }
 
-  backupWallet() {}
+  /**
+   * backupWallet
+   * @returns isBackup
+   */
+  async backupWallet() {
+    try {
+      // TODO get user from db
+      // UserEntity _user = await DBOperator().userDao.findUser();
+
+      // TODO save backup status to db
+      // await DBOperator().userDao.updateUser(_user.copyWith(backupStatus: true));
+      this.isBackup = true;
+    } catch (e) {
+      console.log(e);
+    }
+
+    return this.isBackup;
+  }
 
   /**
    * init user
