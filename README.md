@@ -38,8 +38,13 @@
 ### DB Operator
 - example
     ```
-    const dbOperator = new DBOperator();
-    dbOperator.init();
+    const dbOperator = new tidewallet.DBOperator();
+    dbOperator.init().then((result) => {
+      // ...
+    }).catch(e => {
+      console.log(e);
+    })
+
     dbOperator.userDao.findUser();
     ```
 

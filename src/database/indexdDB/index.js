@@ -9,7 +9,11 @@ class IndexedDB {
   constructor() {}
   db = null;
 
-  createDB(dbName = DB_NAME, dbVersion = DB_VERSION) {
+  init() {
+    return this._createDB();
+  }
+
+  _createDB(dbName = DB_NAME, dbVersion = DB_VERSION) {
     const request = indexedDB.open(dbName, dbVersion);
 
     return new Promise((resolve, reject) => {
