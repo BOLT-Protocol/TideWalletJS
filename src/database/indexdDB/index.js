@@ -6,6 +6,23 @@ const OBJ_TX = "transaction";
 const OBJ_UTXO = "utxo";
 const OBJ_USER = "user";
 const OBJ_CURRENCY = "currency";
+const OBJ_NETWORK = "network";
+
+// primary key ?
+function _uuid() {
+  var d = Date.now();
+  if (
+    typeof performance !== "undefined" &&
+    typeof performance.now === "function"
+  ) {
+    d += performance.now();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    var r = (d + Math.random() * 16) % 16 | 0;
+    d = Math.floor(d / 16);
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
 
 class IndexedDB {
   constructor() {}
@@ -13,6 +30,9 @@ class IndexedDB {
   _userDao = null;
   _accountDao = null;
   _currencyDao = null;
+  _networkDao = null;
+  _txDao = null;
+  _utxoDao = null;
 
   init() {
     return this._createDB();
@@ -35,6 +55,9 @@ class IndexedDB {
         this._userDao = new UserDao(this.db, OBJ_USER);
         this._accountDao = new AccountDao(this.db, OBJ_ACCOUNT);
         this._currencyDao = new CurrencyDao(this.db, OBJ_CURRENCY);
+        this._networkDao = new NetworkDao(this.db, OBJ_NETWORK);
+        this._txDao = new TransactionDao(this.db, OBJ_TX);
+        this._utxoDao = new UtxoDao(this.db, OBJ_UTXO);
 
         resolve(this.db);
       };
@@ -54,6 +77,7 @@ class IndexedDB {
       const txs = this.db.createObjectStore(OBJ_TX, {
         keyPath: "transaction_id",
       });
+      let txIndex = txs.createIndex("accountcurrency_id", "accountcurrency_id");
 
       const currency = this.db.createObjectStore(OBJ_CURRENCY, {
         keyPath: "currency_id",
@@ -62,6 +86,14 @@ class IndexedDB {
 
       const user = this.db.createObjectStore(OBJ_USER, {
         keyPath: "user_id",
+      });
+
+      const network = this.db.createObjectStore(OBJ_NETWORK, {
+        keyPath: "network_id",
+      });
+
+      const utxo = this.db.createObjectStore(OBJ_UTXO, {
+        keyPath: "utxo_id",
       });
     }
   }
@@ -92,10 +124,7 @@ class IndexedDB {
   }
 
   get networkDao() {
-    return {
-      findAllNetworks: () => [],
-      insertNetworks: (networks) => true,
-    };
+    return this._networkDao;
   }
 
   get exchangeRateDao() {
@@ -106,20 +135,12 @@ class IndexedDB {
   }
 
   get transactionDao() {
-    return {
-      findAllTransactionsById: (id) => [],
-      insertTransaction: (tx) => true,
-      updateTransaction: (tx) => true,
-      insertTransactions: (txs) => true,
-    };
+    return this._txDao;
   }
 
   get utxo() {
-    return {
-      findAllJoinedUtxosById: (id) => [],
-      insertUtxo: (utxo) => true,
-      insertUtxos: (utxos) => true,
-    };
+    // TODO:
+    return _utxoDao;
   }
 }
 
@@ -381,6 +402,92 @@ class CurrencyDao extends DAO {
 
   findAllCurrenciesByAccountId(accountId) {
     return this._readAll(accountId, "account_id");
+  }
+}
+
+class NetworkDao extends DAO {
+  /**
+   * @override
+   */
+  static entity() {
+    networkId, network, coinType, publish, chainId;
+
+    return {
+      network_id: networkId,
+      network,
+      coin_type: coinType,
+      publish,
+      chain_id: chainId,
+    };
+  }
+  constructor(db, name) {
+    super(db, name);
+  }
+
+  findAllNetworks() {
+    return this._readAll();
+  }
+  insertNetworks(networks) {
+    return this._writeAll(networks);
+  }
+}
+
+class TransactionDao extends DAO {
+  /**
+   * @override
+   */
+  static entity({
+    accountcurrencyId,
+    txId,
+    confirmation,
+    sourceAddress,
+    destinctionAddress,
+    gasPrice,
+    gasUsed,
+    note,
+    fee,
+    status,
+    timestamp,
+    direction,
+    amount,
+  }) {
+    return {
+      transaction_id: accountcurrencyId + txId,
+      accountcurrency_id: accountcurrencyId,
+      tx_id: txId,
+      confirmation,
+      source_address: sourceAddress,
+      destinction_address: destinctionAddress,
+      gas_price: gasPrice,
+      gas_used: gasUsed,
+      note,
+      fee,
+      status,
+      timestamp,
+      direction,
+      amount,
+    };
+  }
+
+  findAllTransactionsById(acId) {
+    return this._readAll(acId, "accountcurrency_id");
+  }
+
+  insertTransaction(entity) {
+    return this._write(entity);
+  }
+
+  updateTransaction(entity) {
+    return this._update(entity);
+  }
+  insertTransactions(txs) {
+    return this._writeAll(txs);
+  }
+}
+
+class UtxoDao extends DAO {
+  constructor(db, name) {
+    super(db, name);
   }
 }
 
