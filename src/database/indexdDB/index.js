@@ -9,7 +9,8 @@ const OBJ_USER = "user";
 class IndexedDB {
   constructor() {}
   db = null;
-  _userDao;
+  _userDao = null;
+  _accountDao = null;
 
   init() {
     return this._createDB();
@@ -22,24 +23,12 @@ class IndexedDB {
       //on upgrade needed
       request.onupgradeneeded = (e) => {
         this.db = e.target.result;
-
-        const accounts = this.db.createObjectStore(OBJ_ACCOUNTS, {
-          keyPath: "account_id",
-        });
-        const txs = this.db.createObjectStore(OBJ_TXS, {
-          keyPath: "transaction_id",
-        });
-
-        const user = this.db.createObjectStore(OBJ_USER, {
-          keyPath: "user_id",
-        });
-
+        this._createTable();
         resolve(this.db);
       };
 
       request.onsuccess = (e) => {
         this.db = e.target.result;
-        console.log("DB OPENED");
         this._userDao = new UserDao(this.db, OBJ_USER);
         resolve(this.db);
       };
@@ -47,6 +36,19 @@ class IndexedDB {
       request.onerror = (e) => {
         reject(this.db);
       };
+    });
+  }
+
+  _createTable() {
+    const accounts = this.db.createObjectStore(OBJ_ACCOUNTS, {
+      keyPath: "account_id",
+    });
+    const txs = this.db.createObjectStore(OBJ_TXS, {
+      keyPath: "transaction_id",
+    });
+
+    const user = this.db.createObjectStore(OBJ_USER, {
+      keyPath: "user_id",
     });
   }
 
@@ -59,12 +61,7 @@ class IndexedDB {
   }
 
   get accountDao() {
-    return {
-      findAllAccounts: () => [],
-      findAccount: (id) => null,
-      insertAccount: (account) => true,
-      insertAccounts: (accounts) => true,
-    };
+    return _accountDao;
   }
 
   get currencyDao() {
@@ -148,6 +145,23 @@ class DAO {
       tx.onabort = () => {
         console.log("Write DB Error: Transaction Abort");
 
+        reject(false);
+      };
+    });
+  }
+
+  _writeAll(entities) {
+    return new Promise((resolve, reject) => {
+      const tx = this._db.transaction(this._name, "readwrite");
+      entities.forEach((entity) => {
+        tx.objectStore(this._name).put(entity);
+      });
+
+      tx.oncomplete = (e) => {
+        resolve(true);
+      };
+
+      tx.onabort = (e) => {
         reject(false);
       };
     });
@@ -279,6 +293,41 @@ class UserDao extends DAO {
     return this._delete(1);
   }
 }
+
+class AccountDao extends DAO {
+  constructor(db, name) {
+    super(db, name);
+  }
+
+  /**
+   * @override
+   */
+  static entity({ accountId, userId, networkId, accountIndex }) {
+    return {
+      account_id: accountId,
+      user_id: userId,
+      network_id: networkId,
+      account_index: accountIndex,
+    };
+  }
+
+  findAllAccounts() {
+    return this._readAll();
+  }
+
+  findAccount(accountId) {
+    return this._read(accountId);
+  }
+
+  insertAccount(accountEntiry) {
+    return this._write(accountEntiry);
+  }
+
+  insertAccounts(accounts) {
+    return this._writeAll(accounts);
+  }
+}
+
 // module.exports = IndexedDB;
 
 window.IndexedDB = IndexedDB;
