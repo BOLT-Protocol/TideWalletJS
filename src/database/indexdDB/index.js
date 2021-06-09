@@ -7,6 +7,8 @@ const OBJ_UTXO = "utxo";
 const OBJ_USER = "user";
 const OBJ_CURRENCY = "currency";
 const OBJ_NETWORK = "network";
+const OBJ_ACCOUNT_CURRENCY = "accountcurrency";
+const OBJ_EXCHANGE_RATE = "exchange_rate";
 
 // primary key ?
 function _uuid() {
@@ -32,7 +34,9 @@ class IndexedDB {
   _currencyDao = null;
   _networkDao = null;
   _txDao = null;
+  _accountcurrencyDao = null;
   _utxoDao = null;
+  _exchangeRateDao = null;
 
   init() {
     return this._createDB();
@@ -58,6 +62,11 @@ class IndexedDB {
         this._networkDao = new NetworkDao(this.db, OBJ_NETWORK);
         this._txDao = new TransactionDao(this.db, OBJ_TX);
         this._utxoDao = new UtxoDao(this.db, OBJ_UTXO);
+        this._accountcurrencyDao = new AccountCurrencyDao(
+          this.db,
+          OBJ_ACCOUNT_CURRENCY
+        );
+        this._exchangeRateDao = new ExchangeRateDao(this.db, OBJ_EXCHANGE_RATE);
 
         resolve(this.db);
       };
@@ -95,6 +104,18 @@ class IndexedDB {
       const utxo = this.db.createObjectStore(OBJ_UTXO, {
         keyPath: "utxo_id",
       });
+
+      const accountcurrency = this.db.createObjectStore(OBJ_ACCOUNT_CURRENCY, {
+        keyPath: "accountcurrency_id",
+      });
+      let accountcurrencyIndex = accountcurrency.createIndex(
+        "account_id",
+        "account_id"
+      );
+
+      const rate = this.db.createObjectStore(OBJ_EXCHANGE_RATE, {
+        keyPath: "exchange_rate_id",
+      });
     }
   }
 
@@ -115,12 +136,7 @@ class IndexedDB {
   }
 
   get accountCurrencyDao() {
-    return {
-      findOneByAccountyId: (id) => null,
-      findAllCurrencies: () => [],
-      insertAccount: () => true,
-      insertCurrencies: (currencies) => true,
-    };
+    return this._accountcurrencyDao;
   }
 
   get networkDao() {
@@ -128,10 +144,7 @@ class IndexedDB {
   }
 
   get exchangeRateDao() {
-    return {
-      insertExchangeRates: (rates) => true,
-      findAllExchageRates: () => [],
-    };
+    return this._exchangeRateDao;
   }
 
   get transactionDao() {
@@ -485,6 +498,74 @@ class TransactionDao extends DAO {
   }
 }
 
+class AccountCurrencyDao extends DAO {
+  static entity({
+    accountcurrencyId,
+    accountId,
+    currencyId,
+    balance,
+    numberOfUsedExternalKey,
+    numberOfUsedInternalKey,
+    lastSyncTime,
+  }) {
+    return {
+      accountcurrency_id: accountcurrencyId,
+      account_id: accountId,
+      currency_id: currencyId,
+      balance,
+      number_of_used_external_key: numberOfUsedExternalKey,
+      number_of_used_internal_key: numberOfUsedInternalKey,
+      last_sync_time: lastSyncTime,
+    };
+  }
+  constructor(db, name) {
+    super(db, name);
+  }
+
+  findOneByAccountyId(id) {
+    return this._read(id);
+  }
+
+  findAllCurrencies() {
+    return this._readAll();
+  }
+
+  findJoinedByAccountId(accountId) {
+    return this._readAll(accountId, "account_id");
+  }
+
+  insertAccount(entity) {
+    return this._write(entity);
+  }
+
+  insertCurrencies(currencies) {
+    return this._writeAll(currencies);
+  }
+}
+
+class ExchangeRateDao extends DAO {
+  static entity({ exchangeRateId, name, rate, lastSyncTime, type }) {
+    return {
+      exchange_rate_id: exchangeRateId,
+      name,
+      rate,
+      lastSyncTime,
+      type,
+    };
+  }
+  constructor(db, name) {
+    super(db, name);
+  }
+
+  insertExchangeRates(rates) {
+    return this._writeAll(rates);
+  }
+
+  findAllExchageRates() {
+    return this._readAll();
+  }
+}
+
 class UtxoDao extends DAO {
   constructor(db, name) {
     super(db, name);
@@ -494,9 +575,9 @@ class UtxoDao extends DAO {
 // *************************************************** //
 // if only use on browser, comment out this line
 // *************************************************** //
-// module.exports = IndexedDB;
+module.exports = IndexedDB;
 
 // *************************************************** //
 // If not only using on browser, comment out this line
 // *************************************************** //
-window.IndexedDB = IndexedDB;
+// window.IndexedDB = IndexedDB;
