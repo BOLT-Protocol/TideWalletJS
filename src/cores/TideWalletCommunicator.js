@@ -19,10 +19,21 @@ class TideWalletCommunicator {
   // 7. User Regist
   async register(installID, appUUID, extendPublicKey) {
     try {
-      const res = this.httpAgent.post(this.apiURL + `user`, {installID, appUUID, extendPublicKey});
-
+      const body = {
+        wallet_name: 'TideWallet3',
+        extend_public_key: extendPublicKey,
+        install_id: installID,
+        app_uuid: appUUID
+      }
+      const res = await this.httpAgent.post(this.apiURL + '/user', body);
+      if (res.success) {
+        this.token = res.data.token;
+        this.tokenSecret = res.data.tokenSecret;
+        return { token: res.data.token, tokenSecret: res.data.tokenSecret, userID: res.data.user_id }
+      }
+      return { userID: null, message: res.message };
     } catch (error) {
-      
+      return { userID: null, message: error };
     }
     // return { token, tokenSecret, userID };
   }
@@ -33,12 +44,11 @@ class TideWalletCommunicator {
       this.token = token;
       this.tokenSecret = tokenSecret;
       this.httpAgent.setToken(token);
-      const res = await this.httpAgent.get(this.apiURL + `/token/verify?token=${this.token}`);
-      console.log(res)
+      const res = await this.httpAgent.get(this.apiURL + '/token/verify?token=' + this.token);
       if (res.success) {
         return { userID: res.data.user_id }
       }
-      return { userID: null, message: 'invalid input' };
+      return { userID: null, message: res.message };
     } catch (error) {
       return { userID: null, message: error };
     }
