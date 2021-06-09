@@ -1,16 +1,18 @@
 const DB_NAME = "tidebitwallet";
-const DB_VERSION = "1";
+const DB_VERSION = 1;
 
-const OBJ_ACCOUNTS = "accounts";
-const OBJ_TXS = "transactions";
-const OBJ_UTXOS = "utxos";
+const OBJ_ACCOUNT = "account";
+const OBJ_TX = "transaction";
+const OBJ_UTXO = "utxo";
 const OBJ_USER = "user";
+const OBJ_CURRENCY = "currency";
 
 class IndexedDB {
   constructor() {}
   db = null;
   _userDao = null;
   _accountDao = null;
+  _currencyDao = null;
 
   init() {
     return this._createDB();
@@ -23,13 +25,17 @@ class IndexedDB {
       //on upgrade needed
       request.onupgradeneeded = (e) => {
         this.db = e.target.result;
-        this._createTable();
+        this._createTable(dbVersion);
         resolve(this.db);
       };
 
       request.onsuccess = (e) => {
         this.db = e.target.result;
+
         this._userDao = new UserDao(this.db, OBJ_USER);
+        this._accountDao = new AccountDao(this.db, OBJ_ACCOUNT);
+        this._currencyDao = new CurrencyDao(this.db, OBJ_CURRENCY);
+
         resolve(this.db);
       };
 
@@ -39,17 +45,25 @@ class IndexedDB {
     });
   }
 
-  _createTable() {
-    const accounts = this.db.createObjectStore(OBJ_ACCOUNTS, {
-      keyPath: "account_id",
-    });
-    const txs = this.db.createObjectStore(OBJ_TXS, {
-      keyPath: "transaction_id",
-    });
+  _createTable(version) {
+    if (version <= 1) {
+      const accounts = this.db.createObjectStore(OBJ_ACCOUNT, {
+        keyPath: "account_id",
+      });
 
-    const user = this.db.createObjectStore(OBJ_USER, {
-      keyPath: "user_id",
-    });
+      const txs = this.db.createObjectStore(OBJ_TX, {
+        keyPath: "transaction_id",
+      });
+
+      const currency = this.db.createObjectStore(OBJ_CURRENCY, {
+        keyPath: "currency_id",
+      });
+      let currencyIndex = currency.createIndex("account_id", "account_id");
+
+      const user = this.db.createObjectStore(OBJ_USER, {
+        keyPath: "user_id",
+      });
+    }
   }
 
   close() {
@@ -65,12 +79,7 @@ class IndexedDB {
   }
 
   get currencyDao() {
-    return {
-      insertCurrency: (currency) => true,
-      insertCurrencies: (currencies) => true,
-      findAllCurrencies: () => [],
-      findAllCurrenciesByAccountId: (id) => [],
-    };
+    return this._currencyDao;
   }
 
   get accountCurrencyDao() {
@@ -328,7 +337,59 @@ class AccountDao extends DAO {
   }
 }
 
+class CurrencyDao extends DAO {
+  /**
+   * @override
+   */
+  static entity({
+    currencyId,
+    name,
+    description,
+    symbol,
+    address,
+    totalSupply,
+    contract,
+    image,
+  }) {
+    return {
+      currency_id: currencyId,
+      name,
+      description,
+      symbol,
+      decimals,
+      address,
+      total_supply: totalSupply,
+      contract,
+      image,
+    };
+  }
+  constructor(db, name) {
+    super(db, name);
+  }
+
+  insertCurrency(currencyEntity) {
+    return this._write(currencyEntity);
+  }
+
+  insertCurrencies(currencies) {
+    return this._writeAll(currencies);
+  }
+
+  findAllCurrencies() {
+    return this._readAll();
+  }
+
+  findAllCurrenciesByAccountId(accountId) {
+    return this._readAll(accountId, "account_id");
+  }
+}
+
+// *************************************************** //
+// if only use on browser, comment out this line
+// *************************************************** //
 // module.exports = IndexedDB;
 
+// *************************************************** //
+// If not only using on browser, comment out this line
+// *************************************************** //
 window.IndexedDB = IndexedDB;
-window.DAO = DAO;
