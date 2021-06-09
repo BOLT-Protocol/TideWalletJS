@@ -11,6 +11,16 @@ class User {
     this.installId = null;
     this.timestamp = null;
     this.isBackup = false;
+
+    // mock
+    DBOperator = {
+      userDao: { 
+        insertUser: () => {},
+        updateUser: () => {},
+        deleteUser: () => {}
+      }
+    }
+
   }
 
   /**
@@ -137,7 +147,7 @@ class User {
   /**
    * create user
    * @param {String} userIdentifier
-   * @returns {} success
+   * @returns {Boolean} success
    */
   async createUser(userIdentifier) {
     // TODO: const installId = await this._prefManager.getInstallationId();
@@ -186,6 +196,17 @@ class User {
     }
   }
 
+  /**
+   * register user
+   * @param {Object} userInfo
+   * @param {String} userInfo.extendPublicKey
+   * @param {String} userInfo.installId
+   * @param {object} userInfo.wallet
+   * @param {String} userInfo.userId
+   * @param {String} userInfo.userIdentifier
+   * @param {Number} userInfo.timestamp
+   * @returns {String[]} [userId, userSecret]
+   */
   async _registerUser({ extendPublicKey, installId, wallet, userId, userIdentifier, timestamp }) {
     const payload = {
       wallet_name: "TideWallet3", // ++ inform backend to update [Emily 04/01/2021]
@@ -202,48 +223,105 @@ class User {
       // this._prefManager.setAuthItem(AuthItem.fromJson(res.data));
 
       const keystore = await PaperWallet.walletToJson(wallet);
+      // TODO: UserEntity
+      const user = {
+          // res.data['user_id'], // ++ inform backend to update userId become radom hex[Emily 04/01/2021]
+          user_id: userId,
+          keystore,
+          third_party_id: userIdentifier,
+          install_id: installId,
+          timestamp,
+          backup_status: false
+      }
+      await DBOperator.userDao.insertUser(user);
 
-      // const user = UserEntity(
-      //     // res.data['user_id'], // ++ inform backend to update userId become radom hex[Emily 04/01/2021]
-      //     userId,
-      //     keystore,
-      //     userIdentifier,
-      //     installId,
-      //     timestamp,
-      //     false);
-      // await DBOperator().userDao.insertUser(user);
-
-      // await this._initUser(user);
+      await this._initUser(user);
     }
 
     return res.success;
   }
 
-  createUserWithSeed() {}
-
-  verifyPassword() {}
-
-  updatePassword() {}
-
-  validPaperWallet() {}
-
   /**
-   * restorePaperWallet
-   * @param {string} keystore 
-   * @returns keyObject
+   * create user with seed
+   * @param {String} userIdentifier
+   * @param {String} seed
+   * @returns {Boolean} success
    */
-  restorePaperWallet(keystore) {
-    const w = PaperWallet.jsonToWallet(keystore)
-    return w;
+  async createUserWithSeed(userIdentifier, seed){
+    // String installId = await this._prefManager.getInstallationId();
+    const user = await _getUser(userIdentifier);
+    const userId = user[0];
+    const timestamp = Math.floor(new Date() / 1000);
+
+    const password = this.getPassword({ userIdentifier, userId, installId, timestamp });
+
+    const _seed = Buffer.from(seed)
+    const privateKey = PaperWallet.getPriKey(_seed, 0, 0);
+
+    const wallet = await  PaperWallet.createWallet(privateKey, password)
+    const extPK = PaperWallet.getExtendedPublicKey(seed);
+
+    const success = await this._registerUser({
+      extendPublicKey: extPK,
+      installId,
+      wallet,
+      userId,
+      userIdentifier,
+      timestamp,
+    });
+
+    return success;
   }
 
   /**
-   * restoreUser
-   * @param {string} keystoreJson 
-   * @param {string} password 
-   * @returns success or not
+   * verify password
+   * @param {String} password
+   * @returns {} not
    */
-  restoreUser(keystoreJson, password) {
+  verifyPassword(password) {
+    // return _seasonedPassword(password) == this._passwordHash;
+  }
+
+  /**
+   * update password
+   * @param {String} password
+   * @returns {}
+   */
+  updatePassword() {
+    const user = await DBOperator.userDao.findUser();
+
+    const wallet = await this.restorePaperWallet(user.keystore, oldPassword);
+  }
+
+  /**
+   * valid PaperWallet
+   * @param {String} wallet
+   * @returns {}
+   */
+  validPaperWallet(wallet) {
+    try {
+      const v = JSON.parse(wallet);
+
+      return v['crypto'] != null;
+    } catch (e) {
+      console.warn(e);
+    }
+
+    return false;
+  }
+
+  /**
+   * checkWalletBackup
+   * @param {String} oldPassword
+   * @param {String} newpassword
+   * @returns isBackup
+   */
+  async checkWalletBackup() {
+    const _user = await DBOperator.userDao.findUser();
+    if (_user != null) {
+      return _user.backupStatus;
+    }
+    return false;
   }
 
   /**
@@ -251,11 +329,10 @@ class User {
    * @returns isBackup
    */
   async checkWalletBackup() {
-    // TODO get user from db
-    // UserEntity _user = await DBOperator().userDao.findUser();
-    // if (_user != null) {
-    //   return _user.backupStatus;
-    // }
+    const _user = await DBOperator.userDao.findUser();
+    if (_user != null) {
+      return _user.backupStatus;
+    }
     return false;
   }
 
@@ -263,41 +340,73 @@ class User {
    * backupWallet
    * @returns isBackup
    */
-  async backupWallet() {
-    try {
-      // TODO get user from db
-      // UserEntity _user = await DBOperator().userDao.findUser();
-
-      // TODO save backup status to db
-      // await DBOperator().userDao.updateUser(_user.copyWith(backupStatus: true));
-      this.isBackup = true;
-    } catch (e) {
-      console.log(e);
+    async backupWallet() {
+      try {
+        const _user = await DBOperator.userDao.findUser();
+  
+        await DBOperator.userDao.updateUser(_user.copyWith({ backupStatus: true }));
+        _isBackup = true;
+      } catch (e) {
+        Log.error(e);
+      }
+  
+      return _isBackup;
     }
 
-    return this.isBackup;
+  /**
+   * init user
+   * @param {object} user - db user table
+   */
+  _initUser(user) {
+    this.id = user.user_id
+    this.thirdPartyId = user.third_party_id;
+    this.installId = user.install_id;
+    this.timestamp = user.timestamp;
+    this.isBackup = user.backup_status;
+    
+    // TODO: getAuthItem
+    // AuthItem item = await _prefManager.getAuthItem();
+    // if (item != null) {
+    //   HTTPAgent().setToken(item.token);
+    // }
   }
 
   /**
    * init user
-   * @method createWallet
-   * @param {object} user - db user table
+   * @param {String} password
+   * @returns {}
    */
-  _initUser(user) {
-    this.id = user.userId
-    this.thirdPartyId = user.thirdPartyId;
-    this.installId = user.installId;
-    this.timestamp = user.timestamp;
-    this.isBackup = user.backupStatus;
+  _seasonedPassword(password) {
+    const tmp = Cryptor.keccak256round(password, 3);
 
-    // TODO: _prefManager.getAuthItem and check is auth, or HTTPAgent().setToken(token);
+    const bytes = Buffer.from(tmp);
+    return String.fromCharCodes(bytes);
   }
 
-  _seasonedPassword() {}
+  /**
+   * get keystore
+   * @param {String} password
+   * @returns {String} keystore
+   */
+  async getKeystore() {
+    const user = await DBOperator.userDao.findUser();
 
-  getKeystore() {}
+    return user.keystore;
+  }
 
-  deleteUser() {}
+  /**
+   * delete keystore
+   * @returns {Boolean}
+   */
+  async deleteUser() {
+    const user = await DBOperator.userDao.findUser();
+    const item = await DBOperator.userDao.deleteUser(user);
+
+    if (item < 0) return false;
+
+    // await this._prefManager.clearAll();
+    return true;
+  }
 }
 
 module.exports = User;
