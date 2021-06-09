@@ -63,7 +63,7 @@ npm run build
 ```javascript
 const user = { OAuthID: 'myAppleID', TideWalletID: 'myTideWalletID', InstallID: 'myInstallID' };
 const api = { url: 'https://service.tidewallet.io' };
-const tidewallet = new TideWallet({ user, api, database });
+const tidewallet = new TideWallet({ user, api });
 tidewallet.on('ready', () => { /* do something */ });
 tidewallet.on('update', () => { /* do something */ });
 tidewallet.on('exception', () => { /* do something */ });
@@ -77,19 +77,4 @@ tidewallet.sendTransaction(transaction);
 tidewallet.sync();
 const paperwallet = tidewallet.backup();
 tidewallet.close();
-```
-
-- Database
-```javascript
-const accountModel = {
-  id: "string",
-  name: "string",
-  enable: "boolean"
-};
-const accountORM = database.modelFactory(accountModel);
-accountORM.create({ id: "tw19023487", name: "Vincent", enable: true });
-const myAccount = accountORM.findOne({ id: "tw19023487" });
-const accountList = accountORM.find({ enable: true });
-accountORM.deleteOne({ id: "tw19023487" });
-accountORM.delete({ enable: true });
 ```
