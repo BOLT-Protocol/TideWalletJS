@@ -15,16 +15,15 @@
     ```
 
 ## Node
-    
+
     const tidewallet = require('./src/index');
-    
 
 ### Account {}
-- properties
-    - messenger<Subject$>
-    - accounts
-    - currencies
 
+- properties
+  - messenger<Subject$>
+  - accounts
+  - currencies
 
 ### PaperWallet
 
@@ -36,21 +35,37 @@
     const exPub = tidewallet.PaperWallet.getExtendedPublicKey(seed);
   ```
 
+### DB Operator
+- example
+    ```
+    const dbOperator = new tidewallet.DBOperator();
+    dbOperator.init().then((result) => {
+      // ...
+    }).catch(e => {
+      console.log(e);
+    })
+
+    dbOperator.userDao.findUser();
+    ```
+
 ### Helpers
+
 - HTTPAgent
-    ```
-    const agent = new Agent();
 
-    // Set token to headers
-    agent.setToken("token_123");
+  ```
+  const agent = new Agent();
 
-    agent.get("/blockchain").then((res) => {
-        // ...
-    });
+  // Set token to headers
+  agent.setToken("token_123");
 
-    ```
+  agent.get("/blockchain").then((res) => {
+      // ...
+  });
+
+  ```
 
 ## Used Libraries
+
 [web3](https://web3js.readthedocs.io/en/v1.3.4/)
 
 [bitcoinjs-lib](https://github.com/bitcoinjs/bitcoinjs-lib)

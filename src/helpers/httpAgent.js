@@ -2,6 +2,7 @@ const axios = require("axios");
 const { url } = require("../constants/config");
 
 class HTTPAgent {
+
   static instance;
   axios = axios.create({
     baseURL: url,
@@ -11,7 +12,6 @@ class HTTPAgent {
     if (!HTTPAgent.instance) {
       HTTPAgent.instance = this;
     }
-
     return HTTPAgent.instance;
   }
 
@@ -44,16 +44,16 @@ class HTTPAgent {
     return this._request(() => this.axios.get(path));
   }
 
-  post() {
-    return this._request(() => this.axios.post(path));
+  post(path, body) {
+    return this._request(() => this.axios.post(path, body));
   }
 
-  delete() {
-    return this._request(() => this.axios.delete(path));
+  delete(path, body) {
+    return this._request(() => this.axios.delete(path, body));
   }
 
-  put() {
-    return this._request(() => this.axios.put(path));
+  put(path, body) {
+    return this._request(() => this.axios.put(path, body));
   }
 
   _refreshToken() {
