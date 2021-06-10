@@ -12,9 +12,12 @@ class User {
     this.timestamp = null;
     this.isBackup = false;
 
+    this._HTTPAgent = new HTTPAgent();
+
     // mock
-    DBOperator = {
+    this.DBOperator = {
       userDao: { 
+        findUser: () => {},
         insertUser: () => {},
         updateUser: () => {},
         deleteUser: () => {}
@@ -27,9 +30,10 @@ class User {
    * check user
    * @returns {boolean}
    */
-  checkUser() {
+  async checkUser() {
     // TODO: find user table
-    const user = ''
+    const user = await this.DBOperator.userDao.findUser();
+
     if (user != null) {
       this._initUser(user);
       return true;
@@ -147,21 +151,22 @@ class User {
   /**
    * create user
    * @param {String} userIdentifier
+   * @param {String} _installId
    * @returns {Boolean} success
    */
-  async createUser(userIdentifier) {
-    // TODO: const installId = await this._prefManager.getInstallationId();
-    const installId = ''
+  async createUser(userIdentifier, _installId = '') {
+    const installId = config.installId || _installId
 
     const user = await this._getUser(userIdentifier)
     const userId = user[0];
     const userSecret = user[1];
     const timestamp = Math.floor(new Date() / 1000)
     const credentialData = this._generateCredentialData({ userIdentifier, userId, userSecret, installId, timestamp })
-
-    const wallet = await PaperWallet.createWallet(credentialData);
-    const seed = await PaperWallet.magicSeed(wallet.privateKey.privateKey);
-    const extPK = PaperWallet.getExtendedPublicKey(seed);
+    const wallet = await PaperWallet.createWallet(credentialData.key, credentialData.password);
+    const privateKey = PaperWallet.recoverFromJson(JSON.stringify(wallet), credentialData.password)
+    const seed = await PaperWallet.magicSeed(privateKey);
+    const _seed = Buffer.from(seed)
+    const extPK = PaperWallet.getExtendedPublicKey(_seed);
 
     const success = await this._registerUser({
       extendPublicKey: extPK,
@@ -185,7 +190,7 @@ class User {
     let userId = ''
     let userSecret = ''
 
-    const _res = await HTTPAgent().post(config.url + '/user/id', {"id": userIdentifier});
+    const _res = await this._HTTPAgent.post(config.url + '/user/id', {"id": userIdentifier});
     if (_res.success) {
       userId = _res.data['user_id'];
       userSecret = _res.data['user_secret'];
@@ -216,7 +221,7 @@ class User {
       fcm_token: ''
     };
 
-    const res = await HTTPAgent().post(`${config.url}/user`, payload);
+    const res = await this._HTTPAgent.post(`${config.url}/user`, payload);
 
     if (res.success) {
       // TODO:
@@ -233,8 +238,7 @@ class User {
           timestamp,
           backup_status: false
       }
-      await DBOperator.userDao.insertUser(user);
-
+      await this.DBOperator.userDao.insertUser(user);
       await this._initUser(user);
     }
 
@@ -247,19 +251,17 @@ class User {
    * @param {String} seed
    * @returns {Boolean} success
    */
-  async createUserWithSeed(userIdentifier, seed){
-    // String installId = await this._prefManager.getInstallationId();
-    const user = await _getUser(userIdentifier);
+  async createUserWithSeed(userIdentifier, seed, _installId = ''){
+    const installId = config.installId || _installId
+    const user = await this._getUser(userIdentifier);
     const userId = user[0];
     const timestamp = Math.floor(new Date() / 1000);
-
     const password = this.getPassword({ userIdentifier, userId, installId, timestamp });
 
     const _seed = Buffer.from(seed)
     const privateKey = PaperWallet.getPriKey(_seed, 0, 0);
-
-    const wallet = await  PaperWallet.createWallet(privateKey, password)
-    const extPK = PaperWallet.getExtendedPublicKey(seed);
+    const wallet = await PaperWallet.createWallet(privateKey, password)
+    const extPK = PaperWallet.getExtendedPublicKey(_seed);
 
     const success = await this._registerUser({
       extendPublicKey: extPK,
@@ -274,7 +276,7 @@ class User {
   }
 
   /**
-   * verify password
+   * verify password - 
    * @param {String} password
    * @returns {} not
    */
@@ -283,12 +285,13 @@ class User {
   }
 
   /**
-   * update password
-   * @param {String} password
+   * update password - Deprecated
+   * @param {String} oldPassword
+   * @param {String} newpassword
    * @returns {}
    */
-  updatePassword() {
-    const user = await DBOperator.userDao.findUser();
+  async updatePassword(oldPassword, newpassword) {
+    const user = await this.DBOperator.userDao.findUser();
 
     const wallet = await this.restorePaperWallet(user.keystore, oldPassword);
   }
@@ -300,7 +303,9 @@ class User {
    */
   validPaperWallet(wallet) {
     try {
-      const v = JSON.parse(wallet);
+      let v = wallet;
+
+      if(typeof wallet === 'string') v = JSON.parse(wallet);
 
       return v['crypto'] != null;
     } catch (e) {
@@ -311,13 +316,31 @@ class User {
   }
 
   /**
+   * jsonToWallet
+   * @param {String} keystore
+   * @param {String} pwd
+   * @returns {WalletObject} wallet
+   */
+  async restorePaperWallet(keystore, pwd) {
+    try {
+      const w = PaperWallet.jsonToWallet(keystore);
+      // valid pwd
+      PaperWallet.recoverFromJson(keystore, pwd)
+      
+      return w;
+    } catch (e) {
+      return null
+    }
+  }
+
+  /**
    * checkWalletBackup
    * @param {String} oldPassword
    * @param {String} newpassword
    * @returns isBackup
    */
   async checkWalletBackup() {
-    const _user = await DBOperator.userDao.findUser();
+    const _user = await this.DBOperator.userDao.findUser();
     if (_user != null) {
       return _user.backupStatus;
     }
@@ -325,33 +348,22 @@ class User {
   }
 
   /**
-   * checkWalletBackup
-   * @returns isBackup
+   * backup wallet
+   * @returns {Boolean} isBackup
    */
-  async checkWalletBackup() {
-    const _user = await DBOperator.userDao.findUser();
-    if (_user != null) {
-      return _user.backupStatus;
-    }
-    return false;
-  }
+  async backupWallet() {
+    try {
+      const _user = await this.DBOperator.userDao.findUser();
 
-  /**
-   * backupWallet
-   * @returns isBackup
-   */
-    async backupWallet() {
-      try {
-        const _user = await DBOperator.userDao.findUser();
-  
-        await DBOperator.userDao.updateUser(_user.copyWith({ backupStatus: true }));
-        _isBackup = true;
-      } catch (e) {
-        Log.error(e);
-      }
-  
-      return _isBackup;
+      // TODO: updateUser condition
+      await this.DBOperator.userDao.updateUser({ backupStatus: true });
+      this.isBackup = true;
+    } catch (e) {
+      console.warn(e);
     }
+
+    return this.isBackup;
+  }
 
   /**
    * init user
@@ -377,10 +389,11 @@ class User {
    * @returns {}
    */
   _seasonedPassword(password) {
-    const tmp = Cryptor.keccak256round(password, 3);
+    // const tmp = Cryptor.keccak256round(password, 3);
 
-    const bytes = Buffer.from(tmp);
-    return String.fromCharCodes(bytes);
+    // const bytes = Buffer.from(tmp);
+    // return String.fromCharCodes(bytes);
+    // TODO: _prefManager.getAuthItem and check is auth, or HTTPAgent().setToken(token);
   }
 
   /**
@@ -389,7 +402,7 @@ class User {
    * @returns {String} keystore
    */
   async getKeystore() {
-    const user = await DBOperator.userDao.findUser();
+    const user = await this.DBOperator.userDao.findUser();
 
     return user.keystore;
   }
@@ -399,8 +412,8 @@ class User {
    * @returns {Boolean}
    */
   async deleteUser() {
-    const user = await DBOperator.userDao.findUser();
-    const item = await DBOperator.userDao.deleteUser(user);
+    const user = await this.DBOperator.userDao.findUser();
+    const item = await this.DBOperator.userDao.deleteUser(user);
 
     if (item < 0) return false;
 

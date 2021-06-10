@@ -3,6 +3,11 @@ const { url } = require("../constants/config");
 
 class HTTPAgent {
 
+  static instance;
+  axios = axios.create({
+    baseURL: url,
+  });
+
   constructor() {
     if (!HTTPAgent.instance) {
       HTTPAgent.instance = this;
@@ -39,15 +44,15 @@ class HTTPAgent {
     return this._request(() => this.axios.get(path));
   }
 
-  post() {
+  post(path) {
     return this._request(() => this.axios.post(path));
   }
 
-  delete() {
+  delete(path) {
     return this._request(() => this.axios.delete(path));
   }
 
-  put() {
+  put(path) {
     return this._request(() => this.axios.put(path));
   }
 

@@ -1,8 +1,7 @@
 const rlp = require("../src/helpers/rlp");
 const Cryptor = require('../src/helpers/Cryptor');
 const User = require("../src/cores/User");
-const PaperWallet = require('../src/cores/PaperWallet')
-
+const PaperWallet = require('../src/cores/PaperWallet');
 
 const _user = new User()
 const userIdentifier = 'test2ejknkjdniednwjq'
@@ -10,6 +9,35 @@ const userId = '3fa33d09a46d4e31087a3b24dfe8dfb46750ce534641bd07fed54d2f23e97a0f
 const userSecret = '971db42d2342f5e74a764e57e2d341103565f413a64f242d64b1f7024346a2e1'
 const installId = '11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249'
 const timestamp = 1623129204183
+
+describe('User checkUser', () => {
+    test("is find user", async () => {
+        {
+            const _user1 = new User()
+
+            // mock db return true
+            _user1.DBOperator.userDao.findUser = () => ({
+                user_id: 'test_id',
+                third_party_id: 'test_thirdPartyId',
+                install_id: 'test_installId',
+                timestamp: 'test_timestamp',
+                backup_status: 'test_isBackup',
+            })
+
+            const checkUser = await _user1.checkUser()
+            expect(checkUser).toBe(true);
+            expect(_user1.id).toBe('test_id');
+        }
+    });
+
+    test("not found user", async () => {
+        {
+            const _user2 = new User()
+            const checkUser = await _user2.checkUser()
+            expect(checkUser).toBe(false);
+        }
+    });
+})
 
 test("User _getNonce ", () => {
     const nonce = _user._getNonce(userIdentifier)
@@ -63,19 +91,138 @@ test("User _generateCredentialData ", () => {
     expect(credential.extend).toBe('8b37c50f');
 });
 
+test("User createUser ", async () => {
+    {
+        const _user1 = new User()
 
-
-
-
-test("User restorePaperWallet ", () => {
-    const keystore = PaperWallet.createWallet()
-    const result = _user.restorePaperWallet();
-    expect(result).toBeTruthy();
+        // mock api response
+        _user1._HTTPAgent = {
+            post: () => ({
+                success: true,
+                data: {
+                    user_id: userId,
+                    user_secret: userSecret
+                }
+            })
+        }
+        const success = await _user1.createUser(userIdentifier, installId)
+        expect(success).toBeTruthy();
+    }
 });
 
+test("User _registerUser", async () => {
+    {
+        const _user1 = new User()
 
+        // mock api response
+        _user1._HTTPAgent = {
+            post: () => ({
+                success: true,
+                data: {
+                    user_id: userId,
+                    user_secret: userSecret
+                }
+            })
+        }
 
-test("User backupWallet ", () => {
-    const result = _user.backupWallet();
+        const credentialData = _user1._generateCredentialData({ userIdentifier, userId, userSecret, installId, timestamp })
+        const wallet = await PaperWallet.createWallet(credentialData.key, credentialData.password);
+        const privateKey = PaperWallet.recoverFromJson(JSON.stringify(wallet), credentialData.password)
+        const seed = await PaperWallet.magicSeed(privateKey);
+        const _seed = Buffer.from(seed)
+        const extPK = PaperWallet.getExtendedPublicKey(_seed);
+
+        const result = await _user1._registerUser({ extendPublicKey: extPK, installId, wallet, userId, userIdentifier, timestamp })
+        expect(result).toBeTruthy();
+    }
+})
+
+test("User createUserWithSeed ", async () => {
+    {
+        const _seed = 'e48f77df468d4890f92392568451e7f73e1757c4287c02b04b8b7d9dba063a13';
+
+        const _user1 = new User()
+
+        // mock db return true
+        _user1.DBOperator.userDao.insertUser = () => ({
+            user_id: 'test_id',
+            third_party_id: 'test_thirdPartyId',
+            install_id: 'test_installId',
+            timestamp: 'test_timestamp',
+            backup_status: 'test_isBackup',
+        })
+
+        // mock api response
+        _user1._HTTPAgent = {
+            post: () => ({
+                success: true,
+                data: {
+                    user_id: userId,
+                    user_secret: userSecret
+                }
+            })
+        }
+        const success = await _user1.createUserWithSeed(userIdentifier, _seed, installId);
+        expect(success).toBeTruthy();
+    }
+})
+
+test('User validPaperWallet', async () => {
+    const credential = _user._generateCredentialData({
+        userIdentifier, userId, userSecret, installId, timestamp
+    })
+    const wallet = await PaperWallet.createWallet(credential.key, credential.password);
+    const result = _user.validPaperWallet(wallet)
     expect(result).toBeTruthy();
+})
+
+test('User restorePaperWallet', async () => {
+    const credential = _user._generateCredentialData({
+        userIdentifier, userId, userSecret, installId, timestamp
+    })
+    const wallet = await PaperWallet.createWallet(credential.key, credential.password);
+    const keystore = await PaperWallet.walletToJson(wallet);
+    const restoreWallet = await _user.restorePaperWallet(keystore, credential.password)
+    expect(typeof restoreWallet.address).toBe('string');
+})
+
+
+describe('User checkWalletBackup', () => {
+    test("is find user", () => {
+        {
+            const _user1 = new User()
+
+            // mock db return true
+            _user1.DBOperator.userDao.findUser = () => ({
+                user_id: 'test_id',
+                third_party_id: 'test_thirdPartyId',
+                install_id: 'test_installId',
+                timestamp: 'test_timestamp',
+                backup_status: 'test_isBackup',
+            })
+            
+            const result = _user1.backupWallet();
+            expect(result).toBeTruthy();
+        }
+    });
+
+
+    test.skip("not found user", () => {
+        const result = _user.backupWallet();
+        expect(result).toBeFalsy();
+    });
 });
+
+test('User _initUser', async () => {
+    {
+        const _user1 = new User()
+        _user1._initUser({
+            user_id: 'test_id',
+            third_party_id: 'test_thirdPartyId',
+            install_id: 'test_installId',
+            timestamp: 'test_timestamp',
+            backup_status: 'test_isBackup',
+        })
+        expect(_user1.id).toBe('test_id');
+    }
+})
