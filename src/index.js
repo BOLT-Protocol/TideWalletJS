@@ -4,6 +4,8 @@ const Trader = require("./cores/Trader");
 const User = require("./cores/User");
 const TideWalletCommunicator = require("./cores/TideWalletCommunicator");
 
+// ++ need update to use config
+// const Communicator = new TideWalletCommunicator({ apiURL: config.url, apiKey:config.apiKey, apiSecret: config.apiSecret});
 const Communicator = new TideWalletCommunicator({ apiURL: 'https://staging.tidewallet.io/api/v1', apiKey:'123', apiSecret: '123'});
 
 const tidewallet = {
