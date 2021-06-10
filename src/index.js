@@ -2,6 +2,8 @@ const PaperWallet = require("./cores/PaperWallet");
 const Account = require("./cores/Account");
 const Trader = require("./cores/Trader");
 const User = require("./cores/User");
+const { isBrowser } = require("./helpers/env");
+const DBOperator = require("./database/dbOperator");
 const TideWalletCommunicator = require("./cores/TideWalletCommunicator");
 
 // ++ need update to use config
@@ -13,6 +15,7 @@ const tidewallet = {
   Account,
   Trader,
   User,
+  DBOperator,
   Communicator,
 };
 
