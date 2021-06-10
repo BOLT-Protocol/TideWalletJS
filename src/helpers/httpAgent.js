@@ -44,16 +44,16 @@ class HTTPAgent {
     return this._request(() => this.axios.get(path));
   }
 
-  post(path) {
-    return this._request(() => this.axios.post(path));
+  post(path, body) {
+    return this._request(() => this.axios.post(path, body));
   }
 
-  delete(path) {
-    return this._request(() => this.axios.delete(path));
+  delete(path, body) {
+    return this._request(() => this.axios.delete(path, body));
   }
 
-  put(path) {
-    return this._request(() => this.axios.put(path));
+  put(path, body) {
+    return this._request(() => this.axios.put(path, body));
   }
 
   _refreshToken() {
