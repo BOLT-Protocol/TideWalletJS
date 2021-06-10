@@ -15,12 +15,13 @@ const testData = {
   install_id: '837267',
   app_uuid: '114570',
   extend_public_key: 'xpub6DPcAuKdfMTFTiCqcMfYsg69WHjPpAARyDdKb29KgBZ8T2mKFaA9DFazrPYmEQfhP6Y4p98sDG8hre2cdvTvpMmapunQPadxMBv4x1FZcCd',
-  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOiI3NGUzNDFkMi02YzE0LTQ4MmEtOTI3Mi1kZTQ5OTZlZGUzM2QiLCJpYXQiOjE2MjMyMjk4OTAsImV4cCI6MTY1NDc2NTg5MH0.ihRMgeTF5tBGaEjY4ULu-cWgSFpQWtd97nL80qOIsqs",
-  tokenSecret: "GhZcVTo3uPLVdafI9iMJRvwM2gLRcxcxBnRMC0TJ39XyZqBgTCURCvhWuPEEvLnQ2lPv3PA4uTEGVxIVAVQhOXZVl8jRTnKGL62q7XdQFaGfue9CyiSgHJdgQJBRdQAQ4jleN1k3Fh1RFYsjWE6A4wEgAaEQ7cSsSQHk5Edz4nTuTrvN5CiWGwsVAdIWJky595R37Iu5hClpWCGYf2Su1cKDHhmwPnp2uCFPEMjLddbsrSCDUa9cUm48DCpxkdsc",
+  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOiJjMGE2MWU4MS01NmQxLTQ3OTAtODJjMC0zZDhhZWM3OTE3OWEiLCJpYXQiOjE2MjMzMDU1NDcsImV4cCI6MTY1NDg0MTU0N30.Gz4rrf4o63EApIaFybosg5yIKd5sceM6tDZXr3VqSiw",
+  tokenSecret: "A0duKpk6vmmVfC4ocwapfIlIf8YADRUu3zcyoxI7FpeIedSYqKG4mfGGNUVk4MQCF2nuKVU9FYJ59cw2lmMEpjat8fISsQGWgaKGta0LsEKIUHYVugelkVvVfHrKjmRYtjLQkdpeNab1rWOtxKDy5TWpat92NC6dhrPcHjFa7CcDHeRObWxo9XXZGnfSU5JgHQSDDvlfiLtCBAI0ZpkYzae5CiqpsHJHZiqROmowdFs3UyqIGX55Sb0w9QnXBB0T",
   userID: "74e341d2-6c14-482a-9272-de4996ede33d"
 }
 
 test('regist', async () => {
+  expect.assertions(4);
   const res = await twc.register(testData.install_id, testData.app_uuid, testData.extend_public_key);
 
   expect(res.message).not.toBeDefined();
@@ -33,28 +34,25 @@ test('regist', async () => {
 })
 
 test('login', async () => {
-  expect.assertions(1);
+  expect.assertions(2);
   const res = await twc.login(testData.token, testData.tokenSecret);
+  expect(res.message).not.toBeDefined();
   expect(res.userID).toBe(testData.userID);
 })
 
-test('BlockchainList', async () => {
-  const res = await twc.BlockchainList();
-  console.log(res);
-  // ++ 補條件
-  // expect(res.userID).toBe(testData.userID);
+test('AccessTokenRenew', async () => {
+  const res = await twc.AccessTokenRenew();
+
+  expect(res.message).not.toBeDefined();
+  expect(res.token).toBeDefined();
+  expect(res.tokenSecret).toBeDefined();
+  testData.token = res.token;
+  testData.tokenSecret = res.tokenSecret;
 })
 
-test('BlockchainDetail', async () => {
-  const res = await twc.BlockchainDetail('80000000');
-  console.log(res);
-  // ++ 補條件
-  // expect(res.userID).toBe(testData.userID);
-})
-
-test('CurrencyList', async () => {
-  const res = await twc.CurrencyList('80000000');
-  console.log(res);
-  // ++ 補條件
-  // expect(res.userID).toBe(testData.userID);
-})
+// test.only('TokenInfo', async () => {
+//   const res = await twc.TokenInfo('8000003C', '0xc778417e063141139fce010982780140aa0cd5ab');
+//   console.log(res);
+//   // ++ 補條件
+//   // expect(res.userID).toBe(testData.userID);
+// })
