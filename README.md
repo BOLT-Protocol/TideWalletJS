@@ -72,7 +72,7 @@ tidewallet.UI.init({ user, api });
 let assetList = tidewallet.UI.getAssets();
 let assetDetail = tidewallet.UI.getAssetDetail({ assetID });
 let transactionDetail = tidewallet.UI.getTransactionDetail({ transactionID });
-let address = tidewallet.UI.getReceiveAddress({ coinType });
+let address = tidewallet.UI.getReceiveAddress({ accountID });
 let fee = tidewallet.UI.getTransactionFee({ to, amount, data });
 let transaction = tidewallet.UI.prepareTransaction({ to, amount, data, speed }); 
 tidewallet.UI.sendTransaction(transaction);
