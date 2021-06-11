@@ -33,4 +33,16 @@ if (isBrowser()) {
 }
 
 console.log(isBrowser());
+
+/// TEST AccountCore messenger
+const acc = new tidewallet.Account();
+acc.setMessenger();
+const i = acc.messenger.subscribe((v) => {
+  console.log(v)
+})
+
+acc.init();
+
+///
+
 module.exports = tidewallet;

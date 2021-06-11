@@ -2,13 +2,15 @@
  @abstract
 **/
 class AccountService {
-  syncInterval = 10 * 10 * 1000;
+  _syncInterval = 10 * 10 * 1000;
 
-  lastSyncTimestamp = 0;
+  _lastSyncTimestamp = 0;
 
   _timer = null;
   _base = null;
   _accountId = null;
+
+  _AccountCore = null;
 
   get accountId() {
     return this._accountId;
@@ -32,6 +34,14 @@ class AccountService {
 
   set timer(timer) {
     this._timer = timer;
+  }
+
+  get lastSyncTimestamp() {
+    return this._lastSyncTimestamp;
+  }
+
+  get AccountCore() {
+    return this._AccountCore;
   }
 
   init(accountId, base, interval) {}
