@@ -2,7 +2,7 @@ const emitter=require('events').EventEmitter;
 const BigNumber = require('bignumber.js');
 
 const TideWalletCommunicator = require('./TideWalletCommunicator');
-const HTTPAgent = require('./../helpers/httpAgent')   //temp
+const HTTPAgent = require('./../helpers/httpAgent')   // -- temp
 const User = require('./User')
 const config = require('./../constants/config');
 const PaperWallet = require('./PaperWallet');
@@ -17,8 +17,8 @@ class UI {
       exception: 'exception'
     }
 
-    this.url = null;                    // temp
-    this._HTTPAgent = new HTTPAgent()   // temp
+    this.url = null;                    // -- temp
+    this._HTTPAgent = new HTTPAgent()   // -- temp
 
     this._user = null;
     this._communicator = null;
@@ -37,12 +37,16 @@ class UI {
     // api = { url: 'https://service.tidewallet.io' };
     if (!user || !api) throw new Error('invalid input');
     this._communicator = new TideWalletCommunicator({ apiURL: api.url, apiKey: '123', apiSecret:'123' });
-    this.url = api.url; // temp
+
+    this.url = api.url; // -- temp
+    console.log('this.url', this.url);  // -- temp
+    
     this._user = new User();
     // const userCheck = await this._user.checkUser()
     // if (!userCheck) {
       const res = await this._createUser(user.OAuthID, user.InstallID);
     // }
+    return true;
   }
 
   async getAssets() {
@@ -68,10 +72,10 @@ class UI {
   async getTransactionFee({ blockchainID, from, to, amount, data }) {
     let gasLimit = 1;
     if (
-      blockchain_id === '8000003C'
-      || blockchain_id === 'F000003C'
-      || blockchain_id === '80000CFC'
-      || blockchain_id === '80001F51'
+      blockchainID === '8000003C'
+      || blockchainID === 'F000003C'
+      || blockchainID === '80000CFC'
+      || blockchainID === '80001F51'
     ) {
       const body = {
         fromAddress: from,
@@ -79,7 +83,8 @@ class UI {
         value: amount,
         data
       }
-      gasLimit = await this._communicator.GetGasLimit(blockchainID, body);
+      const resGasLimit = await this._communicator.GetGasLimit(blockchainID, body);
+      gasLimit = resGasLimit.gasLimit;
     }
     const bnGasLimit = new BigNumber(gasLimit);
     const fees = await this._communicator.GetFee(blockchainID);
