@@ -4,7 +4,7 @@ const AccountServiceBase = require("../services/accountServiceBase");
 const EthereumService = require("../services/ethereumService");
 const { network_publish } = require("../constants/config");
 const DBOperator = require("../database/dbOperator");
-const httpAgent = require("../helpers/httpAgent");
+const HttpAgent = require("../helpers/httpAgent");
 
 class AccountCore {
   static instance;
@@ -43,7 +43,7 @@ class AccountCore {
     this._debugMode = false;
     this._services = [];
     this._DBOperator = new DBOperator();
-    this._HttpAgent = new httpAgent();
+    this._HttpAgent = new HttpAgent();
 
     return AccountCore.instance;
   }

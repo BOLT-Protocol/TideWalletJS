@@ -1,13 +1,13 @@
 const { ACCOUNT_EVT } = require("../models/account.model");
 const AccountService = require("./accountService");
-const Agent = require("../helpers/httpAgent");
-
-const agent = new Agent();
+const DBOperator = require("../database/dbOperator");
+const HttpAgent = require("../helpers/httpAgent");
 class AccountServiceBase extends AccountService {
   constructor(AccountCore) {
     super();
-
     this._AccountCore = AccountCore;
+    this._DBOperator = new DBOperator();
+    this._HttpAgent = new HttpAgent();
   }
 
   /**
@@ -15,9 +15,10 @@ class AccountServiceBase extends AccountService {
    * @method _pushResult
    * @returns {void}
    */
-  _pushResult() {
-    // TODO: DB
-    const cs = [];
+  async _pushResult() {
+    const cs = await DBOperator.accountCurrencyDao.findJoinedByAccountId(
+      this._accountId
+    );
 
     this._AccountCore.currencies[this._accountId] = cs;
 
@@ -36,22 +37,18 @@ class AccountServiceBase extends AccountService {
    * @returns {Array} Concat of account and tokens array
    */
   async _getData() {
-    // TODO: Communicator get /wallet/account/${this._accountId}
-    const acc = null;
-
-    agent.get("/blockchain").then((res) => {
-      console.log(res);
-    });
+    const res = await this._HTTPAgent.get(`/wallet/account/${this._accountId}`);
+    const acc = res.data;
 
     if (acc) {
       const tokens = acc["tokens"];
-
-      // TODO: DB
-      const currs = [];
+      const currs = await this._DBOperator.currencyDao.findAllCurrencies();
       const newTokens = [];
 
       tokens.forEach((token) => {
-        const cur = _currs.find((c) => c.currencyId === token["token_id"]);
+        const index = currs.findIndex(
+          (c) => c.currencyId === token["token_id"]
+        );
 
         if (index < 0) {
           newTokens.push(cur);
@@ -61,8 +58,16 @@ class AccountServiceBase extends AccountService {
       if (newTokens.length > 0) {
         await Promise.all(
           newTokens.map((token) => {
-            // Communicator get /blockchain/${token['blockchain_id']}/token/${token['token_id']}
-            // TODO: DB
+            return new Promise(async (resolve, reject) => {
+              const res = await this.HTTPAgent.get(
+                `/blockchain/${token["blockchain_id"]}/token/${token["token_id"]}`
+              );
+              if (res.data != null) {
+                const token = this._DBOperator.currencyDao.entity(res.data);
+
+                await this._DBOperator.currencyDao.insertCurrency(token);
+              }
+            });
           })
         );
       }
@@ -79,16 +84,23 @@ class AccountServiceBase extends AccountService {
    * @returns {void}
    */
   async _getSupportedToken() {
-    // TODO: DB
-    const tokens = [];
+    const tokens =
+      await this._DBOperator.currencyDao.findAllCurrenciesByAccountId(
+        this._accountId
+      );
 
     if (tokens.length < 1) {
-      // TODO: DB
-      const acc = { networkId: 1 };
-      // TODO: Communicator get '/blockchain/${acc.networkId}/token?type=TideWallet'
-      const res = {};
+      const acc = await this._DBOperator.accountDao.findAccount(
+        this._accountId
+      );
+      const res = await this._HttpAgent.get(
+        `/blockchain/${acc.networkId}/token?type=TideWallet`
+      );
       if (res.data) {
-        // TOOD: DB
+        const tokens = res.data.map((t) =>
+          this._DBOperator.currencyDao.entity(t)
+        );
+        await this._DBOperator.currencyDao.insertCurrencies(tokens);
       }
     }
   }
@@ -134,13 +146,14 @@ class AccountServiceBase extends AccountService {
    * @returns {Array} The sorted transactions
    */
   async _getTransaction(currency) {
-    // TODO: Communicator get /wallet/account/txs/${currency.id
-    const res = {};
+    const res = await this._HTTPAgen.get(`/wallet/account/txs/${currency.id}`);
 
     if (res.success) {
-      const txs = res.data;
+      const txs = res.data.map((t) =>
+        this._DBOperator.transactionDao.entity(t)
+      );
 
-      // TODO: DB
+      await this._DBOperator.transactionDao.insertTransactions(txs);
     }
 
     return this._loadTransactions(currency.id);
@@ -153,8 +166,8 @@ class AccountServiceBase extends AccountService {
    * @returns {Array} The sorted transactions
    */
   async _loadTransactions(currencyId) {
-    // TODO: DB
-    const transactions = [];
+    const transactions =
+      await this._DBOperator.transactionDao.findAllTransactionsById(currencyId);
 
     const txNull = transactions.filter((t) => t.timestamp === null);
     const txReady = transactions.filter((t) => t.timestamp !== null);
@@ -167,12 +180,13 @@ class AccountServiceBase extends AccountService {
    * @method _getSettingTokens
    * @returns {void}
    */
-  _getSettingTokens() {
-    // TODO: DB
-    const acc = {};
+  async _getSettingTokens() {
+    const acc = await this._DBOperator.accountDao.findAccount(this._accountId);
 
-    // TODO: Commuicate /blockchain/${acc.networkId}/token?type=TideWallet
-    const res = {};
+    const res = await this._HTTPAgent.get(
+      `/blockchain/${acc.networkId}/token?type=TideWallet`
+    );
+
     if (res.success) {
       this._AccountCore.settingOptions += ds;
     }
@@ -191,8 +205,10 @@ class AccountServiceBase extends AccountService {
    * @override
    */
   async start() {
-    // TODO: DB
-    const select = null;
+    const select =
+      await this._DBOperator.accountCurrencyDao.findOneByAccountyId(
+        this._accountId
+      );
 
     await this._pushResult();
     await this._getSupportedToken();
@@ -203,9 +219,6 @@ class AccountServiceBase extends AccountService {
     } else {
       this._lastSyncTimestamp = 0;
     }
-
-    // TODO: Remove
-    this.synchro()
   }
 
   /**
@@ -250,10 +263,10 @@ class AccountServiceBase extends AccountService {
    * @override
    * @method updateTransaction
    * @param {string} currency The accountcurrency Id
-   * @param {Array} transactions The transaction list
+   * @param {Object} transaction The transaction
    * @returns {void}
    */
-  updateTransaction(currencyId, transactions) {
+  async updateTransaction(currencyId, transaction) {
     const currencies = this._AccountCore.currencies[this.accountId];
     const currency = currencies.find((c) => c.currencyId === currencyId);
 
@@ -264,7 +277,7 @@ class AccountServiceBase extends AccountService {
 
     this._AccountCore.messenger.next(txMsg);
 
-    // TODO: DB
+    await this._DBOperator.transactionDao.insertTransaction(transaction);
   }
 
   /**
@@ -276,12 +289,20 @@ class AccountServiceBase extends AccountService {
    * @param {Array} transactions The transaction list
    * @returns {void}
    */
-  updateCurrency(currencyId, payload) {
-    // TODO: DB
-    const acs = [];
+  async updateCurrency(currencyId, payload) {
+    const acs = await this._DBOperator.accountCurrencyDao.findAllCurrencies();
     const ac = acs.find((a) => a.currencyId === currencyId);
+    const updated = this._DBOperator.accountCurrencyDao.entity({
+      accountcurrency_id: ac.accountcurrencyId,
+      account_id: this._accountId,
+      currency_id: ac.currencyId,
+      balance: `${payload["balance"]}`,
+      number_of_used_external_key: ac.numberOfUsedExternalKey,
+      number_of_used_internal_key: ac.numberOfUsedInternalKey,
+      last_sync_time: Date.now(),
+    });
 
-    // TODO: DB
+    await this._DBOperator.accountCurrencyDao.insertAccount(updated);
     this._pushResult();
   }
 
@@ -297,8 +318,9 @@ class AccountServiceBase extends AccountService {
 
     if (now - this._lastSyncTimestamp > this._syncInterval || force) {
       const currs = await this._getData();
+      const v = currs.map((c) => this._DBOperator.accountCurrencyDao.entity(c));
 
-      // TODO: DB
+      await this._DBOperator.accountCurrencyDao.insertCurrencies(v);
     }
 
     await this._pushResult();

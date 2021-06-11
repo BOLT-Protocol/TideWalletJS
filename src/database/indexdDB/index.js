@@ -478,12 +478,12 @@ class TransactionDao extends DAO {
    */
   entity({
     accountcurrencyId,
-    txId,
-    confirmation,
-    sourceAddress,
-    destinctionAddress,
-    gasPrice,
-    gasUsed,
+    txid,
+    confirmations,
+    source_addresses,
+    destination_addresses,
+    gas_price,
+    gas_limit,
     note,
     fee,
     status,
@@ -492,14 +492,14 @@ class TransactionDao extends DAO {
     amount,
   }) {
     return {
-      transactionId: accountcurrencyId + txId,
+      transactionId: accountcurrencyId + txid,
       accountcurrencyId: accountcurrencyId,
-      txId: txId,
-      confirmation,
-      source_address: sourceAddress,
-      destinction_address: destinctionAddress,
-      gas_price: gasPrice,
-      gas_used: gasUsed,
+      txId: txid,
+      confirmation: confirmations,
+      sourceAddress: source_addresses,
+      destinctionAddress: destination_addresses,
+      gasPrice: gas_price,
+      gasUsed: gas_limit,
       note,
       fee,
       status,
@@ -528,21 +528,21 @@ class TransactionDao extends DAO {
 class AccountCurrencyDao extends DAO {
   entity({
     accountcurrency_id,
-    accountId,
-    currencyId,
+    account_id,
+    currency_id,
     balance,
-    numberOfUsedExternalKey,
-    numberOfUsedInternalKey,
-    lastSyncTime,
+    number_of_used_external_key,
+    number_of_used_internal_key,
+    last_sync_time,
   }) {
     return {
       accountcurrencyId: accountcurrency_id,
-      accountId: accountId,
-      currencyId: currencyId,
+      accountId: account_id,
+      currencyId: currency_id,
       balance,
-      number_of_used_external_key: numberOfUsedExternalKey,
-      number_of_used_internal_key: numberOfUsedInternalKey,
-      last_sync_time: lastSyncTime,
+      numberOfUsedExternalKey: number_of_used_external_key,
+      numberOfUsedInternalKey: number_of_used_internal_key,
+      lastSyncTime: last_sync_time,
     };
   }
   constructor(db, name) {
