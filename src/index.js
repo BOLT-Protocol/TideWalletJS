@@ -19,14 +19,6 @@ const tidewallet = {
   Communicator,
 };
 
-var isBrowser = function () {
-  try {
-    return this === window;
-  } catch (e) {
-    return false;
-  }
-};
-
 if (isBrowser()) {
   window.Buffer = require("buffer").Buffer;
   window.tidewallet = tidewallet;
