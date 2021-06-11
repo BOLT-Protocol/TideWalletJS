@@ -53,7 +53,6 @@ class IndexedDB {
       request.onupgradeneeded = (e) => {
         this.db = e.target.result;
         this._createTable(dbVersion);
-        resolve(this.db);
       };
 
       request.onsuccess = (e) => {
@@ -136,7 +135,7 @@ class IndexedDB {
   }
 
   get accountDao() {
-    return _accountDao;
+    return this._accountDao;
   }
 
   get currencyDao() {
@@ -161,7 +160,7 @@ class IndexedDB {
 
   get utxo() {
     // TODO:
-    return _utxoDao;
+    return this._utxoDao;
   }
 
   get prefDao() {
@@ -243,7 +242,7 @@ class DAO {
           }
         };
       } else {
-        request= store.get(value);
+        request = store.get(value);
         request.onsuccess = (e) => {
           resolve(e.target.result);
         };
@@ -370,12 +369,12 @@ class AccountDao extends DAO {
   /**
    * @override
    */
-  entity({ accountId, userId, networkId, accountIndex }) {
+  entity({ account_id, user_id, network_id, account_index }) {
     return {
-      accountId: accountId,
-      userId: userId,
-      networkId: networkId,
-      account_index: accountIndex,
+      accountId: account_id,
+      userId: user_id,
+      networkId: network_id,
+      accountIndex: account_index,
     };
   }
 
@@ -401,25 +400,30 @@ class CurrencyDao extends DAO {
    * @override
    */
   entity({
-    currencyId,
+    currency_id,
     name,
     description,
     symbol,
-    address,
-    totalSupply,
+    decimals,
+    // address,
+    total_supply,
     contract,
-    image,
+    type,
+    icon,
   }) {
+    const _type = type === 0 ? "fiat" : type === 1 ? "currency" : "token";
+
     return {
-      currencyId: currencyId,
+      currencyId: currency_id,
       name,
       description,
       symbol,
       decimals,
-      address,
-      total_supply: totalSupply,
+      address: contract,
+      totalSupply: total_supply,
       contract,
-      image,
+      type: _type,
+      image: icon,
     };
   }
   constructor(db, name) {
@@ -447,15 +451,13 @@ class NetworkDao extends DAO {
   /**
    * @override
    */
-  entity() {
-    networkId, network, coinType, publish, chainId;
-
+  entity({ network_id, network, coin_type, publish, chain_id }) {
     return {
-      networkId: networkId,
+      networkId: network_id,
       network,
-      coin_type: coinType,
+      coinType: coin_type,
       publish,
-      chainId: chainId,
+      chainId: chain_id,
     };
   }
   constructor(db, name) {
@@ -525,7 +527,7 @@ class TransactionDao extends DAO {
 
 class AccountCurrencyDao extends DAO {
   entity({
-    accountcurrencyId,
+    accountcurrency_id,
     accountId,
     currencyId,
     balance,
@@ -534,7 +536,7 @@ class AccountCurrencyDao extends DAO {
     lastSyncTime,
   }) {
     return {
-      accountcurrencyId: accountcurrencyId,
+      accountcurrencyId: accountcurrency_id,
       accountId: accountId,
       currencyId: currencyId,
       balance,

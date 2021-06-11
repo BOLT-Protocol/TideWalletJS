@@ -53,8 +53,9 @@ class DBOperator {
   async init(inMemory = false) {
     if (this._isInit) return;
     this.database = isBrowser() ? new IndexedDB() : null;
-    await this.database.init();
     this._isInit = true;
+
+    return this.database.init();
   }
 
   down() {
