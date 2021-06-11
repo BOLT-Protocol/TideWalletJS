@@ -22,19 +22,21 @@ class TideWalletCommunicator {
    * @param {string} installID 
    * @param {string} appUUID 
    * @param {string} extendPublicKey 
+   * @param {string} fcmToken
    * @returns {
    *  token: string,
    *  tokenSecret: string,
    *  userID: string
    * }
    */
-  async register(installID, appUUID, extendPublicKey) {
+  async register(installID, appUUID, extendPublicKey, fcmToken = '') {
     try {
       const body = {
         wallet_name: 'TideWallet3',
         extend_public_key: extendPublicKey,
         install_id: installID,
-        app_uuid: appUUID
+        app_uuid: appUUID,
+        fcm_token: fcmToken
       }
       const res = await this.httpAgent.post(this.apiURL + '/user', body);
       if (res.success) {
