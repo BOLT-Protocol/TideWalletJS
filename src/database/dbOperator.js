@@ -38,6 +38,10 @@ class DBOperator {
     return this.database.exchangeRateDao;
   }
 
+  get prefDao() {
+    return this.database.prefDao;
+  }
+
   constructor() {
     if (!DBOperator.instance) {
       DBOperator.instance = this;
