@@ -63,10 +63,12 @@ npm run build
 ```javascript
 const user = { OAuthID: 'myAppleID', TideWalletID: 'myTideWalletID', InstallID: 'myInstallID' };
 const api = { url: 'https://service.tidewallet.io' };
-const tidewallet = new TideWallet({ user, api });
+const tidewallet = new TideWallet();
 tidewallet.UI.on('ready', () => { /* do something */ });
 tidewallet.UI.on('update', () => { /* do something */ });
 tidewallet.UI.on('exception', () => { /* do something */ });
+
+tidewallet.UI.init({ user, api });
 let assetList = tidewallet.UI.getAssets();
 let assetDetail = tidewallet.UI.getAssetDetail({ assetID });
 let transactionDetail = tidewallet.UI.getTransactionDetail({ transactionID });
