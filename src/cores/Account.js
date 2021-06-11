@@ -2,12 +2,16 @@ const { Subject } = require("rxjs");
 const { ACCOUNT } = require("../models/account.model");
 const AccountServiceBase = require("../services/accountServiceBase");
 const EthereumService = require("../services/ethereumService");
+const { network_publish } = require("../constants/config");
+const DBOperator = require("../database/dbOperator");
+const HttpAgent = require("../helpers/httpAgent");
 
 class AccountCore {
   static instance;
   _currencies = {};
   _messenger = null;
   _settingOptions = [];
+  _DBOperator = null;
 
   get currencies() {
     return this._currencies;
@@ -36,8 +40,11 @@ class AccountCore {
 
     this._messenger = null;
     this._isInit = false;
-    this.debugMode = false;
+    this._debugMode = false;
     this._services = [];
+    this._DBOperator = new DBOperator();
+    this._HttpAgent = new HttpAgent();
+
     return AccountCore.instance;
   }
 
@@ -45,45 +52,168 @@ class AccountCore {
     this._messenger = new Subject();
   }
 
-  init(debugMode = false) {
-    this.debugMode = debugMode;
+  async init(debugMode = false) {
+    this._debugMode = debugMode;
     this._isInit = true;
 
-    this._initAccounts();
+    await this._initAccounts();
   }
 
-  _initAccounts() {
-    const a = new AccountServiceBase(this);
-    a.init("0x123", ACCOUNT.ETH);
-    a.start();
-    // Example:
-    //const svc = new EthereumService(new AccountServiceBase());
-    // svc.init("ACCOUNT_ID");
-    // console.log(svc.accountId);
-    // console.log(svc.base);
+  async _initAccounts() {
+    const chains = await this._getNetworks(network_publish);
+    const accounts = await this._getAccounts();
+    await this._getSupportedCurrencies();
+
+    for (const acc of accounts) {
+      let blockIndex = chains.findIndex(
+        (chain) => chain.networkId === acc.networkId
+      );
+
+      if (blockIndex > -1) {
+        let svc;
+        let _ACCOUNT;
+        switch (chains[blockIndex].coinType) {
+          case 60:
+          case 603:
+            svc = new EthereumService(new AccountServiceBase(this));
+            _ACCOUNT = ACCOUNT.ETH;
+            break;
+          case 8017:
+            break;
+
+          default:
+        }
+
+        if (svc && !this._currencies[acc.accountid]) {
+          this._currencies[acc.accountId] = [];
+
+          this._services.push(svc);
+
+          svc.init(acc.accountId, _ACCOUNT);
+
+          await svc.start();
+        }
+      }
+    }
+
+    this._addAccount(accounts);
   }
 
   close() {
     this._isInit = false;
+    this._services.forEach((svc) => {
+      svc.stop();
+    });
+
+    this._services = [];
+    this.accounts = [];
+    this.currencies = {};
+    this._settingOptions = [];
   }
 
-  createAccount() {}
+  getService(accountId) {
+    return this._services.find((svc) => svc.accountId === accountId);
+  }
 
-  getService() {}
+  async _getNetworks(publish = true) {
+    const networks = await this._DBOperator.networkDao.findAllNetworks();
 
-  getNetworks() {}
+    if (!networks || networks.length < 1) {
+      const res = await this._HttpAgent.get("/blockchain");
 
-  getAccounts() {}
+      if (res.success) {
+        const enties = res.data.map((n) =>
+          this._DBOperator.networkDao.entity({
+            network_id: n['blockchain_id'],
+            network: n['name'],
+            coin_type: n['coin_type'],
+            chain_id: n['network_id'],
+            publish: n['publish']
+          })
+        );
+        await this._DBOperator.networkDao.insertNetworks(enties);
+      }
+    }
 
-  _addAccount() {}
+    if (this._debugMode || !publish) {
+      return networks;
+    }
 
-  getSupportedCurrencies() {}
+    if (publish) {
+      return networks.filter((n) => n.publish);
+    }
+  }
 
-  _addSupportedCurrencies() {}
+  async _getAccounts() {
+    let result = await this._DBOperator.accountDao.findAllAccounts();
 
-  getCurrencies() {}
+    if (result.length < 1) {
+      result = await this._addAccount(result);
+      return result;
+    }
 
-  getAllCurrencies() {}
+    return result;
+  }
+
+  async _addAccount(local) {
+    const res = await this._HttpAgent.get("/wallet/accounts");
+    let list = res.data ?? [];
+
+    const user = await this._DBOperator.userDao.findUser();
+
+    for (const account of list) {
+      const id = account["account_id"];
+      const exist = local.findIndex((el) => el.accountId === id) > -1;
+
+      if (!exist) {
+        const entity = this._DBOperator.accountDao.entity({
+          ...account,
+          user_id: user.userId,
+          network_id: account["blockchain_id"],
+        });
+        await this._DBOperator.accountDao.insertAccount(entity);
+
+        local.push(entity);
+      }
+    }
+
+    return local;
+  }
+
+  async _getSupportedCurrencies() {
+    const local = await this._DBOperator.currencyDao.findAllCurrencies();
+
+    if (local.length < 1) {
+      await this._addSupportedCurrencies(local);
+    }
+  }
+
+  async _addSupportedCurrencies(local) {
+    const res = await this._HttpAgent.get("/currency");
+
+    if (res.success) {
+      let list = res.data;
+
+      list = list
+        .filter((c) =>
+          local.findIndex((l) => l.currencyId === c["currency_id"] > -1)
+        )
+        .map((c) => this._DBOperator.currencyDao.entity(c));
+
+      await this._DBOperator.currencyDao.insertCurrencies(list);
+    }
+  }
+
+  getCurrencies(accountId) {
+    return this._currencies[accountId];
+  }
+
+  getAllCurrencies() {
+    return Object.values(this._currencies).reduce(
+      (list, curr) => list.concat(curr),
+      []
+    );
+  }
 }
 
 module.exports = AccountCore;

@@ -10,6 +10,8 @@ const OBJ_NETWORK = "network";
 const OBJ_ACCOUNT_CURRENCY = "accountcurrency";
 const OBJ_EXCHANGE_RATE = "exchange_rate";
 
+const OBJ_PREF = "pref";
+
 // primary key ?
 function _uuid() {
   var d = Date.now();
@@ -37,6 +39,7 @@ class IndexedDB {
   _accountcurrencyDao = null;
   _utxoDao = null;
   _exchangeRateDao = null;
+  _prefDao = null;
 
   init() {
     return this._createDB();
@@ -50,7 +53,6 @@ class IndexedDB {
       request.onupgradeneeded = (e) => {
         this.db = e.target.result;
         this._createTable(dbVersion);
-        resolve(this.db);
       };
 
       request.onsuccess = (e) => {
@@ -67,6 +69,7 @@ class IndexedDB {
           OBJ_ACCOUNT_CURRENCY
         );
         this._exchangeRateDao = new ExchangeRateDao(this.db, OBJ_EXCHANGE_RATE);
+        this._prefDao = new PrefDao(this.db, OBJ_PREF);
 
         resolve(this.db);
       };
@@ -80,41 +83,45 @@ class IndexedDB {
   _createTable(version) {
     if (version <= 1) {
       const accounts = this.db.createObjectStore(OBJ_ACCOUNT, {
-        keyPath: "account_id",
+        keyPath: "accountId",
       });
 
       const txs = this.db.createObjectStore(OBJ_TX, {
-        keyPath: "transaction_id",
+        keyPath: "transactionId",
       });
-      let txIndex = txs.createIndex("accountcurrency_id", "accountcurrency_id");
+      let txIndex = txs.createIndex("accountcurrencyId", "accountcurrencyId");
 
       const currency = this.db.createObjectStore(OBJ_CURRENCY, {
-        keyPath: "currency_id",
+        keyPath: "currencyId",
       });
-      let currencyIndex = currency.createIndex("account_id", "account_id");
+      let currencyIndex = currency.createIndex("accountId", "accountId");
 
       const user = this.db.createObjectStore(OBJ_USER, {
-        keyPath: "user_id",
+        keyPath: "userId",
       });
 
       const network = this.db.createObjectStore(OBJ_NETWORK, {
-        keyPath: "network_id",
+        keyPath: "networkId",
       });
 
       const utxo = this.db.createObjectStore(OBJ_UTXO, {
-        keyPath: "utxo_id",
+        keyPath: "utxoId",
       });
 
       const accountcurrency = this.db.createObjectStore(OBJ_ACCOUNT_CURRENCY, {
-        keyPath: "accountcurrency_id",
+        keyPath: "accountcurrencyId",
       });
       let accountcurrencyIndex = accountcurrency.createIndex(
-        "account_id",
-        "account_id"
+        "accountId",
+        "accountId"
       );
 
       const rate = this.db.createObjectStore(OBJ_EXCHANGE_RATE, {
-        keyPath: "exchange_rate_id",
+        keyPath: "exchange_rateId",
+      });
+
+      const pref = this.db.createObjectStore(OBJ_PREF, {
+        keyPath: "prefId",
       });
     }
   }
@@ -128,7 +135,7 @@ class IndexedDB {
   }
 
   get accountDao() {
-    return _accountDao;
+    return this._accountDao;
   }
 
   get currencyDao() {
@@ -153,7 +160,11 @@ class IndexedDB {
 
   get utxo() {
     // TODO:
-    return _utxoDao;
+    return this._utxoDao;
+  }
+
+  get prefDao() {
+    return this._prefDao;
   }
 }
 
@@ -163,7 +174,7 @@ class DAO {
     this._name = name;
   }
 
-  static entity() {}
+  entity() {}
 
   /**
    *
@@ -218,11 +229,24 @@ class DAO {
       if (index) {
         store = store.index(index);
       }
-      const request = store.get(value);
 
-      request.onsuccess = (e) => {
-        resolve(e.target.result);
-      };
+      let request;
+
+      if (!value) {
+        request = store.openCursor();
+        request.onsuccess = (e) => {
+          if (e.target.result) {
+            resolve(e.target.result.value);
+          } else {
+            resolve(null);
+          }
+        };
+      } else {
+        request = store.get(value);
+        request.onsuccess = (e) => {
+          resolve(e.target.result);
+        };
+      }
 
       request.onerror = (e) => {
         console.log("Read DB Error: " + e.error);
@@ -310,9 +334,9 @@ class UserDao extends DAO {
   /**
    * @override
    */
-  static entity({ thirdPartyId, installId, timestamp, backupStatus }) {
+  entity({ userId, thirdPartyId, installId, timestamp, backupStatus }) {
     return {
-      user_id: 1,
+      userId,
       thirdPartyId,
       installId,
       timestamp,
@@ -321,7 +345,7 @@ class UserDao extends DAO {
   }
 
   findUser() {
-    return this._read(1);
+    return this._read();
   }
 
   insertUser(userEntity) {
@@ -345,12 +369,12 @@ class AccountDao extends DAO {
   /**
    * @override
    */
-  static entity({ accountId, userId, networkId, accountIndex }) {
+  entity({ account_id, user_id, network_id, account_index }) {
     return {
-      account_id: accountId,
-      user_id: userId,
-      network_id: networkId,
-      account_index: accountIndex,
+      accountId: account_id,
+      userId: user_id,
+      networkId: network_id,
+      accountIndex: account_index,
     };
   }
 
@@ -375,26 +399,31 @@ class CurrencyDao extends DAO {
   /**
    * @override
    */
-  static entity({
-    currencyId,
+  entity({
+    currency_id,
     name,
     description,
     symbol,
-    address,
-    totalSupply,
+    decimals,
+    // address,
+    total_supply,
     contract,
-    image,
+    type,
+    icon,
   }) {
+    const _type = type === 0 ? "fiat" : type === 1 ? "currency" : "token";
+
     return {
-      currency_id: currencyId,
+      currencyId: currency_id,
       name,
       description,
       symbol,
       decimals,
-      address,
-      total_supply: totalSupply,
+      address: contract,
+      totalSupply: total_supply,
       contract,
-      image,
+      type: _type,
+      image: icon,
     };
   }
   constructor(db, name) {
@@ -414,7 +443,7 @@ class CurrencyDao extends DAO {
   }
 
   findAllCurrenciesByAccountId(accountId) {
-    return this._readAll(accountId, "account_id");
+    return this._readAll(accountId, "accountId");
   }
 }
 
@@ -422,15 +451,13 @@ class NetworkDao extends DAO {
   /**
    * @override
    */
-  static entity() {
-    networkId, network, coinType, publish, chainId;
-
+  entity({ network_id, network, coin_type, publish, chain_id }) {
     return {
-      network_id: networkId,
+      networkId: network_id,
       network,
-      coin_type: coinType,
+      coinType: coin_type,
       publish,
-      chain_id: chainId,
+      chainId: chain_id,
     };
   }
   constructor(db, name) {
@@ -449,14 +476,14 @@ class TransactionDao extends DAO {
   /**
    * @override
    */
-  static entity({
+  entity({
     accountcurrencyId,
-    txId,
-    confirmation,
-    sourceAddress,
-    destinctionAddress,
-    gasPrice,
-    gasUsed,
+    txid,
+    confirmations,
+    source_addresses,
+    destination_addresses,
+    gas_price,
+    gas_limit,
     note,
     fee,
     status,
@@ -465,14 +492,14 @@ class TransactionDao extends DAO {
     amount,
   }) {
     return {
-      transaction_id: accountcurrencyId + txId,
-      accountcurrency_id: accountcurrencyId,
-      tx_id: txId,
-      confirmation,
-      source_address: sourceAddress,
-      destinction_address: destinctionAddress,
-      gas_price: gasPrice,
-      gas_used: gasUsed,
+      transactionId: accountcurrencyId + txid,
+      accountcurrencyId: accountcurrencyId,
+      txId: txid,
+      confirmation: confirmations,
+      sourceAddress: source_addresses,
+      destinctionAddress: destination_addresses,
+      gasPrice: gas_price,
+      gasUsed: gas_limit,
       note,
       fee,
       status,
@@ -483,7 +510,7 @@ class TransactionDao extends DAO {
   }
 
   findAllTransactionsById(acId) {
-    return this._readAll(acId, "accountcurrency_id");
+    return this._readAll(acId, "accountcurrencyId");
   }
 
   insertTransaction(entity) {
@@ -499,23 +526,23 @@ class TransactionDao extends DAO {
 }
 
 class AccountCurrencyDao extends DAO {
-  static entity({
-    accountcurrencyId,
-    accountId,
-    currencyId,
+  entity({
+    accountcurrency_id,
+    account_id,
+    currency_id,
     balance,
-    numberOfUsedExternalKey,
-    numberOfUsedInternalKey,
-    lastSyncTime,
+    number_of_used_external_key,
+    number_of_used_internal_key,
+    last_sync_time,
   }) {
     return {
-      accountcurrency_id: accountcurrencyId,
-      account_id: accountId,
-      currency_id: currencyId,
+      accountcurrencyId: accountcurrency_id,
+      accountId: account_id,
+      currencyId: currency_id,
       balance,
-      number_of_used_external_key: numberOfUsedExternalKey,
-      number_of_used_internal_key: numberOfUsedInternalKey,
-      last_sync_time: lastSyncTime,
+      numberOfUsedExternalKey: number_of_used_external_key,
+      numberOfUsedInternalKey: number_of_used_internal_key,
+      lastSyncTime: last_sync_time,
     };
   }
   constructor(db, name) {
@@ -531,7 +558,7 @@ class AccountCurrencyDao extends DAO {
   }
 
   findJoinedByAccountId(accountId) {
-    return this._readAll(accountId, "account_id");
+    return this._readAll(accountId, "accountId");
   }
 
   insertAccount(entity) {
@@ -544,9 +571,9 @@ class AccountCurrencyDao extends DAO {
 }
 
 class ExchangeRateDao extends DAO {
-  static entity({ exchangeRateId, name, rate, lastSyncTime, type }) {
+  entity({ exchangeRateId, name, rate, lastSyncTime, type }) {
     return {
-      exchange_rate_id: exchangeRateId,
+      exchange_rateId: exchangeRateId,
       name,
       rate,
       lastSyncTime,
@@ -569,6 +596,33 @@ class ExchangeRateDao extends DAO {
 class UtxoDao extends DAO {
   constructor(db, name) {
     super(db, name);
+  }
+}
+
+class PrefDao extends DAO {
+  entity({ token, tokenSecret }) {
+    return {
+      prefId: 1,
+      token,
+      tokenSecret,
+    };
+  }
+  constructor(db, name) {
+    super(db, name);
+  }
+
+  async getAuthItem() {
+    const result = await this._read(1);
+
+    return result;
+  }
+
+  setAuthItem(token, tokenSecret) {
+    return this._write({
+      prefId: 1,
+      token,
+      tokenSecret,
+    });
   }
 }
 
