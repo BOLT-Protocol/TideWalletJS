@@ -74,7 +74,7 @@ let assetDetail = tidewallet.UI.getAssetDetail({ assetID });
 let transactionDetail = tidewallet.UI.getTransactionDetail({ transactionID });
 let address = tidewallet.UI.getReceiveAddress({ coinType });
 let fee = tidewallet.UI.getTransactionFee({ to, amount, data });
-let transaction = tidewallet.UI.prepareTransaction({ to, amount, data, speed });
+let transaction = tidewallet.UI.prepareTransaction({ to, amount, data, speed }); 
 tidewallet.UI.sendTransaction(transaction);
 tidewallet.UI.sync(); // --
 const paperwallet = tidewallet.UI.backup(); // --
