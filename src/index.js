@@ -2,6 +2,7 @@ const PaperWallet = require("./cores/PaperWallet");
 const Account = require("./cores/Account");
 const Trader = require("./cores/Trader");
 const User = require("./cores/User");
+const UI = require("./cores/UI");
 const { isBrowser } = require("./helpers/env");
 const DBOperator = require("./database/dbOperator");
 const TideWalletCommunicator = require("./cores/TideWalletCommunicator");
@@ -15,6 +16,7 @@ const tidewallet = {
   Account,
   Trader,
   User,
+  UI,
   DBOperator,
   Communicator,
 };
