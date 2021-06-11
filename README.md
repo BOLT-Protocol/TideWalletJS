@@ -63,20 +63,20 @@ npm run build
 ```javascript
 const user = { OAuthID: 'myAppleID', TideWalletID: 'myTideWalletID', InstallID: 'myInstallID' };
 const api = { url: 'https://service.tidewallet.io' };
-const tidewallet = new TideWallet();
-tidewallet.UI.on('ready', () => { /* do something */ });
-tidewallet.UI.on('update', () => { /* do something */ });
-tidewallet.UI.on('exception', () => { /* do something */ });
+const UI = new tidewallet.UI();
+UI.on('ready', () => { /* do something */ });
+UI.on('update', () => { /* do something */ });
+UI.on('exception', () => { /* do something */ });
 
-tidewallet.UI.init({ user, api });
-let assetList = tidewallet.UI.getAssets();
-let assetDetail = tidewallet.UI.getAssetDetail({ assetID });
-let transactionDetail = tidewallet.UI.getTransactionDetail({ transactionID });
-let address = tidewallet.UI.getReceiveAddress({ accountID });
-let fee = tidewallet.UI.getTransactionFee({ to, amount, data });
-let transaction = tidewallet.UI.prepareTransaction({ to, amount, data, speed }); 
-tidewallet.UI.sendTransaction(transaction);
-tidewallet.UI.sync(); // --
-const paperwallet = tidewallet.UI.backup(); // --
-tidewallet.close();
+UI.init({ user, api });
+let assetList = UI.getAssets();
+let assetDetail = UI.getAssetDetail({ assetID });
+let transactionDetail = UI.getTransactionDetail({ transactionID });
+let address = UI.getReceiveAddress({ accountID });
+let fee = UI.getTransactionFee({ blockchainID, from, to, amount, data });
+let transaction = UI.prepareTransaction({ to, amount, data, speed }); 
+UI.sendTransaction(transaction);
+UI.sync(); // --
+const paperwallet = UI.backup(); // --
+UI.close();
 ```
