@@ -1,8 +1,16 @@
 const Signer = require('./../src/cores/Signer');
 const Cryptor = require('./../src/helpers/Cryptor');
 
-const seed = Buffer.from('35f8af7f1bdb4c53446f43c6f22ba0b525634ab556229fffd0f1813cc75b3a2c');
-const signer = new Signer(seed, 0, 0);
+// mock user
+const user = {
+  getPriKey: (password, chainIndex, keyIndex, options) => {
+    if (password === 'test') return '3f0e878c684a02c745747211db64ec0c74da71789a6dc6ea19f00d1d58b8effa';
+
+    return null;
+  }
+};
+
+const signer = new Signer(user);
 
 test('_sign', () => {
   const rawTransaction = '0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675';
@@ -25,15 +33,16 @@ test('_sign', () => {
   expect(resV).toBe(expV);
 })
 
-test('sign', () => {
+test.only('sign', async() => {
+  const password = 'test';
   const rawTransaction = '0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675';
-  const expR = 'ba18b68bc6a42f9f2fb4774b8dc7766582662566a74f75d70d1438860f03b04f';
-  const expS = '47c782a1c7f51cf78881b1189ce4bcc30a895eb6ffe7b63d66186d36db7407e8';
-  const expV = 28;
+  const expR = 'a60b57ae821d7dfeefdf8d0749152b3b6826315414c6ecddfe7128c888a05dea';
+  const expS = '7640d0d2cf73ccd4e030cbac6033ae550ac3ea23dfa89f405d60c3c7a6676875';
+  const expV = 27;
 
   const hashData = Cryptor.keccak256round(rawTransaction, 1);
 
-  const signature = signer.sign(Buffer.from(hashData, 'hex'));
+  const signature = await signer.sign(Buffer.from(hashData, 'hex'), password, 0, 0);
   const resR = signature.r.toString('hex');
   const resS = signature.s.toString('hex');
   const resV = signature.v;

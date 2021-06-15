@@ -1,7 +1,7 @@
 const EthUtils = require('ethereumjs-util');
 const { BN, ecsign } = EthUtils;
 
-const PaperWallet = require('./PaperWallet');
+const User = require('./User');
 
 const ZERO32 = Buffer.alloc(32, 0);
 const EC_GROUP_ORDER = Buffer.from('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141', 'hex');
@@ -12,12 +12,14 @@ const THROW_BAD_PRIVATE = 'Expected Private';
 class Signer {
   static instance;
 
-  constructor(seed, chainIndex, keyIndex, options = {}) {
+  /**
+   * 
+   * @param {User} user 
+   * @returns 
+   */
+  constructor(user) {
     if (!Signer.instance) {
-      this._seed = seed;
-      this._chainIndex = chainIndex;
-      this._keyIndex = keyIndex;
-      this._options = options;
+      this._user = user;
       Signer.instance = this;
     }
 
@@ -50,11 +52,14 @@ class Signer {
     return sig;
   }
 
-  sign(hashData) {
-    return this._sign(
-      hashData,
-      Buffer.from(PaperWallet.getPriKey(this._seed, this._chainIndex, this._keyIndex, this._options), 'hex')
-    );
+  async sign(hashData, password, chainIndex, keyIndex, options = {}) {
+    const privateKey = await this._user.getPriKey(password, chainIndex, keyIndex, options);
+    if (privateKey) {
+      return this._sign(
+        hashData,
+        Buffer.from(privateKey, 'hex')
+      );
+    }
   }
 }
 

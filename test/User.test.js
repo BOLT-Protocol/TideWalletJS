@@ -127,6 +127,7 @@ test("User _registerUser", async () => {
 
         const credentialData = _user1._generateCredentialData({ userIdentifier, userId, userSecret, installId, timestamp })
         const wallet = await PaperWallet.createWallet(credentialData.key, credentialData.password);
+        console.log('wallet', JSON.stringify(wallet))
         const privateKey = PaperWallet.recoverFromJson(JSON.stringify(wallet), credentialData.password)
         const seed = await PaperWallet.magicSeed(privateKey);
         const _seed = Buffer.from(seed)
@@ -193,7 +194,7 @@ describe('User checkWalletBackup', () => {
             const _user1 = new User()
 
             // mock db return true
-            _user1.DBOperator.userDao.findUser = () => ({
+            _user1._DBOperator.userDao.findUser = () => ({
                 user_id: 'test_id',
                 third_party_id: 'test_thirdPartyId',
                 install_id: 'test_installId',
@@ -225,4 +226,23 @@ test('User _initUser', async () => {
         })
         expect(_user1.id).toBe('test_id');
     }
+})
+
+test("User getPriKey", async () => {
+    const _user1 = new User();
+
+    // mock db return true
+    const _DBOperator = {
+        userDao: {
+            findUser: () => ({
+                keystore: '{"address":"6a8874bf6426b722990e9918b72ea995508676cd","crypto":{"cipher":"aes-128-ctr","ciphertext":"19fe778619c1aa7e01a1ad504425be754735ccc36f861ded69e8cb0064a07509","cipherparams":{"iv":"b07da3e7f2d1fe9d8aa9a1462a67bcd1"},"mac":"5cea42bb065c5be78a66f5f00dd1f9b535417886b1dc2a9e2e4ff33e35c81327","kdf":"pbkdf2","kdfparams":{"c":262144,"dklen":32,"prf":"hmac-sha256","salt":"062af9d6c46f62703711226469f931e8a8b85035d5486d8956480cd14f4f2f9b"}},"id":"0cbcf064-0e24-4de6-8ae7-58a445575685","version":3}'
+            })
+        }
+    }
+    _user1._DBOperator = _DBOperator;
+
+    const credentialData = _user1._generateCredentialData({ userIdentifier, userId, userSecret, installId, timestamp })
+
+    const result = await _user1.getPriKey(credentialData.password, 0, 0);
+    expect(result).toBe('3f0e878c684a02c745747211db64ec0c74da71789a6dc6ea19f00d1d58b8effa');
 })
