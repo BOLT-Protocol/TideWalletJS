@@ -35,15 +35,14 @@ class AccountCore {
 
   constructor() {
     if (!AccountCore.instance) {
+      this._messenger = null;
+      this._isInit = false;
+      this._debugMode = false;
+      this._services = [];
+      this._DBOperator = new DBOperator();
+      this._HttpAgent = new HttpAgent();
       AccountCore.instance = this;
     }
-
-    this._messenger = null;
-    this._isInit = false;
-    this._debugMode = false;
-    this._services = [];
-    this._DBOperator = new DBOperator();
-    this._HttpAgent = new HttpAgent();
 
     return AccountCore.instance;
   }

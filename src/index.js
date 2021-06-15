@@ -40,10 +40,10 @@ async function main() {
   const user = new tidewallet.User();
 
   await user.checkUser();
-  await user.createUser(
-    "test2ejknkjdniednwjq",
-    "11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249"
-  );
+  // await user.createUser(
+  //   "test2ejknkjdniednwjq",
+  //   "11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249"
+  // );
 
   const AccountCore = new tidewallet.Account();
   AccountCore.setMessenger();

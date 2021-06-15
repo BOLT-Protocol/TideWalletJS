@@ -2,14 +2,13 @@ const axios = require("axios");
 const { url } = require("../constants/config");
 
 class HTTPAgent {
-
   static instance;
-  axios = axios.create({
-    baseURL: url,
-  });
 
   constructor() {
     if (!HTTPAgent.instance) {
+      this.axios = axios.create({
+        baseURL: url,
+      });
       HTTPAgent.instance = this;
     }
     return HTTPAgent.instance;
@@ -21,6 +20,8 @@ class HTTPAgent {
 
   setToken(token) {
     this.axios.defaults.headers.common["token"] = token;
+
+    console.log(this.axios.defaults);
   }
 
   _request(request) {
