@@ -20,8 +20,6 @@ class HTTPAgent {
 
   setToken(token) {
     this.axios.defaults.headers.common["token"] = token;
-
-    console.log(this.axios.defaults);
   }
 
   _request(request) {

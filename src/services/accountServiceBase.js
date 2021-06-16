@@ -150,7 +150,10 @@ class AccountServiceBase extends AccountService {
 
     if (res.success) {
       const txs = res.data.map((t) =>
-        this._DBOperator.transactionDao.entity(t)
+        this._DBOperator.transactionDao.entity({
+          ...t,
+          accountcurrencyId: currency.accountcurrencyId
+        })
       );
 
       await this._DBOperator.transactionDao.insertTransactions(txs);
@@ -323,7 +326,6 @@ class AccountServiceBase extends AccountService {
 
     if (now - this._lastSyncTimestamp > this._syncInterval || force) {
       const currs = await this._getData();
-      console.log(currs);
       const v = currs.map((c) => this._DBOperator.accountCurrencyDao.entity({
         ...c,
         accountcurrency_id: c['account_id'] ?? c['account_token_id']

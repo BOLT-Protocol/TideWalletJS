@@ -334,13 +334,13 @@ class UserDao extends DAO {
   /**
    * @override
    */
-  entity({ userId, thirdPartyId, installId, timestamp, backupStatus }) {
+  entity({ user_id, third_party_id, install_id, timestamp, backup_status }) {
     return {
-      userId,
-      thirdPartyId,
-      installId,
+      userId: user_id,
+      thirdPartyId: third_party_id,
+      installId: install_id,
       timestamp,
-      backupStatus,
+      backupStatus: backup_status,
     };
   }
 
