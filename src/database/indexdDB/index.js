@@ -527,18 +527,20 @@ class TransactionDao extends DAO {
 
 class AccountCurrencyDao extends DAO {
   entity({
-    accountcurrency_id,
+    // accountcurrency_id,
     account_id,
     currency_id,
     balance,
     number_of_used_external_key,
     number_of_used_internal_key,
     last_sync_time,
+    token_id,
+    account_token_id
   }) {
     return {
-      accountcurrencyId: accountcurrency_id,
+      accountcurrencyId:account_token_id ?? account_id,
       accountId: account_id,
-      currencyId: currency_id,
+      currencyId: currency_id ?? token_id,
       balance,
       numberOfUsedExternalKey: number_of_used_external_key,
       numberOfUsedInternalKey: number_of_used_internal_key,

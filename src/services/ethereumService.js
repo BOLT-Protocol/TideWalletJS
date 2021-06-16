@@ -55,13 +55,13 @@ class EthereumService extends AccountServiceDecorator {
   /**
    * getReceivingAddress
    * @override
-   * @param {String} currencyId
+   * @param {String} accountcurrencyId
    * @returns {Array.<{address: String || error, code: Number}>} result
    **/
-  async getReceivingAddress(currencyId) {
+  async getReceivingAddress(accountcurrencyId) {
     if (this._address === null) {
       const response = await this._HTTPAgent.get(
-        `${config.url}/wallet/account/address/${currencyId}/receive`
+        `${config.url}/wallet/account/address/${accountcurrencyId}/receive`
       );
       if (response.success) {
         const data = response["data"];
@@ -99,7 +99,7 @@ class EthereumService extends AccountServiceDecorator {
   async getTransactionFee(blockchainId) {
     if (
       this._fee == null ||
-      Math.floor(new Date() / 1000) - this._feeTimestamp >
+      Date.now() - this._feeTimestamp >
         this.AVERAGE_FETCH_FEE_TIME
     ) {
       const response = await this._HTTPAgent.get(
@@ -113,7 +113,7 @@ class EthereumService extends AccountServiceDecorator {
           standard,
           fast,
         };
-        this._feeTimestamp = Math.floor(new Date() / 1000);
+        this._feeTimestamp = Date.now();
       } else {
         // TODO fee = null 前面會出錯
       }
@@ -133,13 +133,13 @@ class EthereumService extends AccountServiceDecorator {
       `${config.url}/blockchain/${blockchainId}/push-tx`,
       {
         hex:
-          "0x" + new Buffer(transaction.serializeTransaction).toString("hex"),
+          "0x" + Buffer.from(transaction.serializeTransaction).toString("hex"),
       }
     );
     const { success, data } = response;
     // transaction.id = response.data['txid'];
     transaction.txId = data["txid"];
-    transaction.timestamp = Math.floor(new Date() / 1000);
+    transaction.timestamp = Date.now();
     transaction.confirmations = 0;
     return [success, transaction];
   }

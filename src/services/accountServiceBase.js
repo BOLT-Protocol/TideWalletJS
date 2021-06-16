@@ -59,7 +59,7 @@ class AccountServiceBase extends AccountService {
         await Promise.all(
           newTokens.map((token) => {
             return new Promise(async (resolve, reject) => {
-              const res = await this.HTTPAgent.get(
+              const res = await this._HTTPAgent.get(
                 `/blockchain/${token["blockchain_id"]}/token/${token["token_id"]}`
               );
               if (res.data != null) {
@@ -328,7 +328,8 @@ class AccountServiceBase extends AccountService {
       const currs = await this._getData();
       const v = currs.map((c) => this._DBOperator.accountCurrencyDao.entity({
         ...c,
-        accountcurrency_id: c['account_id'] ?? c['account_token_id']
+        accountcurrency_id: c['account_id'] ?? c['account_token_id'],
+        account_id: this._accountId,
       }));
 
       await this._DBOperator.accountCurrencyDao.insertCurrencies(v);

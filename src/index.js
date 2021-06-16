@@ -55,7 +55,7 @@ async function main() {
   await AccountCore.init();
 
   const listener = AccountCore.messenger.subscribe((v) => {
-    console.log('On TideWallet Service Event', v);
+    // console.log('On TideWallet Service Event', v);
   });
 
 
