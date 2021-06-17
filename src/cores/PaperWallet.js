@@ -1,4 +1,4 @@
-const keythereum = require("keythereum");
+const keyStore = require('key-store');
 const bitcoin = require("bitcoinjs-lib");
 
 const Cryptor = require('../helpers/Cryptor')
@@ -7,27 +7,15 @@ class PaperWallet {
   static EXT_PATH = "m/84'/3324'/0'";
   static EXT_CHAININDEX = 0;
   static EXT_KEYINDEX = 0;
+  static KEYSTOREID = 'keyObject'
 
   /**
-   * keyObject{
-   *   address: "008aeeda4d805471df9b2a5b0f38a0c3bcba786b",
-   *   crypto: {
-   *     cipher: "aes-128-ctr",
-   *     ciphertext: "5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46",
-   *     cipherparams: {
-   *       iv: "6087dab2f9fdbbfaddc31a909735c1e6"
-   *     },
-   *     mac: "517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2",
-   *     kdf: "pbkdf2",
-   *     kdfparams: {
-   *       c: 262144,
-   *       dklen: 32,
-   *       prf: "hmac-sha256",
-   *       salt: "ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd"
-   *     }
-   *   },
-   *   id: "e13b209c-3b2f-4327-bab0-3bef2e51630d",
-   *   version: 3
+   * keyObject: {
+   *  metadata:
+   *    { nonce: 'rFTRLcQhKxN4XoAql3u0NXxZ7P0Xy1h7', iterations: 10000 },
+   *  public: {},
+   *  private: 
+   *    'wz+zDOrp7ZOUZVuG/7AfJM9GhgHXlsiXwg478GmTm9r3uFGOcFRzY2ldVN1cmSURI6YKJS2EjIMBSVh5caZcBg26sLA124+k2PPV+VrYFoYidTMvZG1XzdUQvkybP/cwQN9OedCO8fOyIwoYeqA1RGMVhjHyoqM7bdGdjknmDibrKj5pG+uu1CU+fbPVQ/TUMig='
    * }
    */
 
@@ -37,26 +25,16 @@ class PaperWallet {
    * @param {string} password
    * @returns {object} keyObject
    */
-  static createWallet(privateKey, password) {
-    // Note: if options is unspecified, the values in keythereum.constants are used.
-    const options = {
-      kdf: "pbkdf2",
-      cipher: "aes-128-ctr",
-      kdfparams: {
-        c: 262144,
-        dklen: 32,
-        prf: "hmac-sha256"
-      }
-    };
+  static async createWallet(privateKey, password) {
+    try {
+      let storage = {}
+      const keystore = keyStore.createStore((data) => {storage = data});
+      await keystore.saveKey(PaperWallet.KEYSTOREID, password, privateKey);
 
-    let pk = privateKey;
-    if (privateKey.startsWith('0x')) pk = privateKey.substr(2);
-    const bufPk = Buffer.from(pk, 'hex');
-
-    const salt = Cryptor.randomBytes(32);
-    const iv = Cryptor.randomBytes(16);
-    const keyObject = keythereum.dump(password, bufPk, salt, iv, options);
-    return keyObject;
+      return storage;
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   /**
@@ -68,8 +46,11 @@ class PaperWallet {
   static recoverFromJson(keyObjectJson, password) {
     try {
       const keyObject = PaperWallet.jsonToWallet(keyObjectJson);
-      const pk = keythereum.recover(password, keyObject);
-      return pk.toString('hex');
+      let storage = {}
+      const keystore = keyStore.createStore((data) => {storage = data}, keyObject);
+
+      const pk = keystore.getPrivateKeyData(PaperWallet.KEYSTOREID, password);
+      return pk;
     } catch (error) {
       console.log(error);
       return null;
@@ -84,7 +65,7 @@ class PaperWallet {
    * @return {object} keyObject
    */
   static updatePassword(oriKeyObject, oriPassword, newPassword) {
-    const pk = keythereum.recover(oriPassword, oriKeyObject);
+    const pk = PaperWallet.recoverFromJson(PaperWallet.walletToJson(oriKeyObject), oriPassword);
     return PaperWallet.createWallet(pk.toString('hex'), newPassword);
   }
 
@@ -169,6 +150,29 @@ class PaperWallet {
   static jsonToWallet(walletStr) {
     return JSON.parse(walletStr);
   }
+
+  static instance;
+  /**
+   * 
+   * @param {User} user 
+   * @returns 
+   */
+  constructor(user) {
+    if (!PaperWallet.instance) {
+      this._user = user;
+      PaperWallet.instance = this;
+    }
+
+    return PaperWallet.instance;
+  }
+
+  // async getPriKey(password, chainIndex, keyIndex, options = {}) {
+  //   const keyStore = await this._user.getKeystore();
+  //   const pk = PaperWallet.recoverFromJson(keyStore, password);
+  //   const seed = PaperWallet.magicSeed(pk);
+  //   const privateKey = PaperWallet.getPriKey(Buffer.from(seed, 'hex'), chainIndex, keyIndex, options);
+  //   return privateKey;
+  // }
 }
 
 module.exports = PaperWallet;

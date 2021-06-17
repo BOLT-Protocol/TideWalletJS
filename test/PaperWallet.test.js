@@ -5,10 +5,12 @@ describe('keystore', () => {
     const pw1 = '123';
     const pw2 = 'asd';
     let keyStore;
-    test('createWallet', () => {
-        keyStore = PaperWallet.createWallet(pk, pw1);
+    test('createWallet', async () => {
+        expect.assertions(1);
+        keyStore = await PaperWallet.createWallet(pk, pw1);
 
-        expect(keyStore.crypto.ciphertext).toEqual(expect.any(String));
+        console.log(keyStore)
+        expect(keyStore.keyObject.private).toEqual(expect.any(String));
     });
 
     test('recoverFromJson', () => {
@@ -25,8 +27,9 @@ describe('keystore', () => {
         expect(result).toBe(null);
     });
 
-    test('updatePassword', () => {
-        const newKeyStore = PaperWallet.updatePassword(keyStore, pw1, pw2);
+    test('updatePassword', async () => {
+        expect.assertions(2);
+        const newKeyStore = await PaperWallet.updatePassword(keyStore, pw1, pw2);
         const jsonKeystore = PaperWallet.walletToJson(newKeyStore);
         const worngPasswordResult = PaperWallet.recoverFromJson(jsonKeystore, pw1);
         const result = PaperWallet.recoverFromJson(jsonKeystore, pw2);
