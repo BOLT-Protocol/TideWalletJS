@@ -1,7 +1,8 @@
 const keyStore = require('key-store');
 const bitcoin = require("bitcoinjs-lib");
 
-const Cryptor = require('../helpers/Cryptor')
+const Cryptor = require('../helpers/Cryptor');
+const rlp = require("./../helpers/rlp");
 
 class PaperWallet {
   static EXT_PATH = "m/84'/3324'/0'";
@@ -160,19 +161,211 @@ class PaperWallet {
   constructor(user) {
     if (!PaperWallet.instance) {
       this._user = user;
+      this._keystoreObject = null;
       PaperWallet.instance = this;
     }
 
     return PaperWallet.instance;
   }
 
-  // async getPriKey(password, chainIndex, keyIndex, options = {}) {
-  //   const keyStore = await this._user.getKeystore();
-  //   const pk = PaperWallet.recoverFromJson(keyStore, password);
-  //   const seed = PaperWallet.magicSeed(pk);
-  //   const privateKey = PaperWallet.getPriKey(Buffer.from(seed, 'hex'), chainIndex, keyIndex, options);
-  //   return privateKey;
-  // }
+  /**
+   * get nonce
+   * @param {String} userIdentifier
+   * @returns {String}
+   */
+   _getNonce(userIdentifier) {
+    const cafeca = 0xcafeca;
+    let nonce = cafeca;
+
+    const getString = (nonce) =>
+      Cryptor.keccak256round(
+        Buffer.concat([
+          Buffer.from(userIdentifier, "utf8"),
+          rlp.toBuffer(nonce),
+        ]).toString("hex"),
+        1
+      )
+        .slice(0, 3)
+        .toLowerCase();
+
+    while (getString(nonce) != "cfc") {
+      nonce = Number(nonce) + 1;
+    }
+
+    return nonce;
+  }
+
+  /**
+   * get password
+   * @param {Object} userInfo
+   * @param {String} userInfo.userIdentifier
+   * @param {String} userInfo.userId
+   * @param {String} userInfo.installId
+   * @param {Number} userInfo.timestamp
+   * @returns {String} password
+   */
+   getPassword({ userIdentifier, userId, installId, timestamp }) {
+    const userIdentifierBuff = Buffer.from(userIdentifier, "utf8").toString(
+      "hex"
+    );
+    const installIdBuff = Buffer.from(installId).toString("hex");
+    const pwseed = Cryptor.keccak256round(
+      Buffer.concat([
+        Buffer.from(
+          Cryptor.keccak256round(
+            Buffer.concat([
+              Buffer.from(
+                Cryptor.keccak256round(
+                  userIdentifierBuff || this.thirdPartyId,
+                  1
+                )
+              ),
+              Buffer.from(Cryptor.keccak256round(userId || this.id, 1)),
+            ]).toString()
+          )
+        ),
+        Buffer.from(
+          Cryptor.keccak256round(
+            Buffer.concat([
+              Buffer.from(
+                Cryptor.keccak256round(
+                  rlp
+                    .toBuffer(
+                      rlp.toBuffer(timestamp).toString("hex").slice(3, 6)
+                    )
+                    .toString("hex"),
+                  1
+                )
+              ),
+              Buffer.from(
+                Cryptor.keccak256round(installIdBuff || this.installId, 1)
+              ),
+            ]).toString()
+          )
+        ),
+      ]).toString()
+    );
+    const password = Cryptor.keccak256round(pwseed);
+    return password;
+  }
+
+  /**
+   * generate Credential Data
+   * @param {Object} userInfo
+   * @param {String} userInfo.userIdentifier
+   * @param {String} userInfo.userId
+   * @param {String} userInfo.userSecret
+   * @param {String} userInfo.installId
+   * @param {Number} userInfo.timestamp
+   * @returns {Object} result
+   * @returns {String} result.key
+   * @returns {String} result.password
+   * @returns {String} result.extend
+   */
+   _generateCredentialData({
+    userIdentifier,
+    userId,
+    userSecret,
+    installId,
+    timestamp,
+  }) {
+    const nonce = this._getNonce(userIdentifier);
+
+    const userIdentifierBuff = Buffer.from(userIdentifier, "utf8").toString(
+      "hex"
+    );
+    const _main = Buffer.concat([
+      Buffer.from(userIdentifierBuff, "utf8"),
+      rlp.toBuffer(nonce),
+    ])
+      .toString()
+      .slice(0, 16);
+
+    const _extend = Cryptor.keccak256round(
+      rlp.toBuffer(nonce).toString("hex"),
+      1
+    ).slice(0, 8);
+
+    const seed = Cryptor.keccak256round(
+      Buffer.concat([
+        Buffer.from(
+          Cryptor.keccak256round(
+            Buffer.concat([
+              Buffer.from(Cryptor.keccak256round(_main, 1)),
+              Buffer.from(Cryptor.keccak256round(_extend, 1)),
+            ]).toString()
+          )
+        ),
+        Buffer.from(
+          Cryptor.keccak256round(
+            Buffer.concat([
+              Buffer.from(Cryptor.keccak256round(userId, 1)),
+              Buffer.from(Cryptor.keccak256round(userSecret, 1)),
+            ]).toString()
+          )
+        ),
+      ]).toString()
+    );
+
+    const key = Cryptor.keccak256round(seed);
+    const password = this.getPassword({
+      userIdentifier,
+      userId,
+      installId,
+      timestamp,
+    });
+
+    return { key, password, extend: _extend };
+  }
+
+  async createWallet({
+    userIdentifier,
+    userId,
+    userSecret,
+    installId,
+    timestamp,
+  }) {
+    const credentialData = this._generateCredentialData({
+      userIdentifier,
+      userId,
+      userSecret,
+      installId,
+      timestamp,
+    });
+    const wallet = await PaperWallet.createWallet(
+      credentialData.key,
+      credentialData.password
+    );
+    const privateKey = PaperWallet.recoverFromJson(
+      PaperWallet.walletToJson(wallet),
+      credentialData.password
+    );
+    const seed = await PaperWallet.magicSeed(privateKey);
+    const _seed = Buffer.from(seed);
+    const extendPublicKey = PaperWallet.getExtendedPublicKey(_seed);
+    return { wallet, extendPublicKey }
+  }
+
+  async getSeed() {
+    const keyStore = await this._user.getKeystore();
+    const pk = PaperWallet.recoverFromJson(keyStore, password);
+    const seed = PaperWallet.magicSeed(pk);
+    return seed;
+  }
+  
+  async getExtendedPublicKey() {
+    const seed = await this.getSeed();
+    const extPK = PaperWallet.getExtendedPublicKey(seed);
+    return extPK;
+  }
+
+  async getPriKey(password, chainIndex, keyIndex, options = {}) {
+    const keyStore = await this._user.getKeystore();
+    const pk = PaperWallet.recoverFromJson(keyStore, password);
+    const seed = PaperWallet.magicSeed(pk);
+    const privateKey = PaperWallet.getPriKey(Buffer.from(seed, 'hex'), chainIndex, keyIndex, options);
+    return privateKey;
+  }
 }
 
 module.exports = PaperWallet;
