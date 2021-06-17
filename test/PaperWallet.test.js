@@ -9,7 +9,6 @@ describe('keystore', () => {
         expect.assertions(1);
         keyStore = await PaperWallet.createWallet(pk, pw1);
 
-        console.log(keyStore)
         expect(keyStore.keyObject.private).toEqual(expect.any(String));
     });
 

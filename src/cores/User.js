@@ -210,6 +210,7 @@ class User {
       credentialData.key,
       credentialData.password
     );
+    console.log('createWallet!!!:', JSON.stringify(wallet))
     const privateKey = PaperWallet.recoverFromJson(
       JSON.stringify(wallet),
       credentialData.password
@@ -322,8 +323,7 @@ class User {
     });
 
     const _seed = Buffer.from(seed);
-    const privateKey = PaperWallet.getPriKey(_seed, 0, 0);
-    const wallet = await PaperWallet.createWallet(privateKey, password);
+    const wallet = await PaperWallet.createWallet(_seed, password);
     const extPK = PaperWallet.getExtendedPublicKey(_seed);
 
     const success = await this._registerUser({
@@ -368,9 +368,9 @@ class User {
     try {
       let v = wallet;
 
-      if (typeof wallet === "string") v = JSON.parse(wallet);
+      if (typeof wallet === "string") v = PaperWallet.jsonToWallet(wallet);
 
-      return v["crypto"] != null;
+      return v.keyObject.private != null;
     } catch (e) {
       console.warn(e);
     }
@@ -443,6 +443,7 @@ class User {
     if (item != null) {
       this._HTTPAgent.setToken(item.token);
     }
+    this._PaperWallet = new PaperWallet(this);
   }
 
   /**
@@ -484,7 +485,7 @@ class User {
 
   async getPriKey(password, chainIndex, keyIndex, options = {}) {
     const keystore = await this.getKeystore();
-    const pk = PaperWallet.recoverFromJson(keystore, password);
+    const pk = await PaperWallet.recoverFromJson(keystore, password);
     const seed = PaperWallet.magicSeed(pk);
     const privateKey = PaperWallet.getPriKey(Buffer.from(seed, 'hex'), chainIndex, keyIndex, options);
     return privateKey;

@@ -15,14 +15,24 @@ describe('User checkUser', () => {
         {
             const _user1 = new User()
 
-            // mock db return true
-            _user1.DBOperator.userDao.findUser = () => ({
-                user_id: 'test_id',
-                third_party_id: 'test_thirdPartyId',
-                install_id: 'test_installId',
-                timestamp: 'test_timestamp',
-                backup_status: 'test_isBackup',
-            })
+            // mock db return
+            const _DBOperator = {
+                userDao: {
+                    findUser: () => ({
+                        user_id: 'test_id',
+                        third_party_id: 'test_thirdPartyId',
+                        install_id: 'test_installId',
+                        timestamp: 'test_timestamp',
+                        backup_status: 'test_isBackup',
+                    })
+                },
+                prefDao: {
+                    getAuthItem: () => ({
+                        token: 'test_Token'
+                    })
+                }
+            }
+            _user1._DBOperator = _DBOperator;
 
             const checkUser = await _user1.checkUser()
             expect(checkUser).toBe(true);
@@ -33,6 +43,15 @@ describe('User checkUser', () => {
     test("not found user", async () => {
         {
             const _user2 = new User()
+
+            // mock db return
+            const _DBOperator = {
+                userDao: {
+                    findUser: () => null
+                }
+            }
+            _user2._DBOperator = _DBOperator;
+
             const checkUser = await _user2.checkUser()
             expect(checkUser).toBe(false);
         }
@@ -96,15 +115,43 @@ test("User createUser ", async () => {
         const _user1 = new User()
 
         // mock api response
-        _user1._HTTPAgent = {
-            post: () => ({
-                success: true,
-                data: {
-                    user_id: userId,
-                    user_secret: userSecret
-                }
-            })
+        _user1._HTTPAgent.post = () => ({
+            success: true,
+            data: {
+                user_id: userId,
+                user_secret: userSecret
+            }
+        })
+        // mock db return
+        const _DBOperator = {
+            userDao: {
+                findUser: () => ({
+                    user_id: 'test_id',
+                    third_party_id: 'test_thirdPartyId',
+                    install_id: 'test_installId',
+                    timestamp: 'test_timestamp',
+                    backup_status: 'test_isBackup',
+                }),
+                entity: () => ({
+                    user_id: 'test_id',
+                    third_party_id: 'test_thirdPartyId',
+                    install_id: 'test_installId',
+                    timestamp: 'test_timestamp',
+                    backup_status: 'test_isBackup',
+                }),
+                insertUser: () => (true)
+            },
+            prefDao: {
+                setAuthItem: () => ({
+                    token: 'test_Token'
+                }),
+                getAuthItem: () => ({
+                    token: 'test_Token'
+                })
+            }
         }
+        _user1._DBOperator = _DBOperator;
+
         const success = await _user1.createUser(userIdentifier, installId)
         expect(success).toBeTruthy();
     }
@@ -115,19 +162,46 @@ test("User _registerUser", async () => {
         const _user1 = new User()
 
         // mock api response
-        _user1._HTTPAgent = {
-            post: () => ({
-                success: true,
-                data: {
-                    user_id: userId,
-                    user_secret: userSecret
-                }
-            })
+        _user1._HTTPAgent.post = () => ({
+            success: true,
+            data: {
+                user_id: userId,
+                user_secret: userSecret
+            }
+        })
+        // mock db return
+        const _DBOperator = {
+            userDao: {
+                findUser: () => ({
+                    user_id: 'test_id',
+                    third_party_id: 'test_thirdPartyId',
+                    install_id: 'test_installId',
+                    timestamp: 'test_timestamp',
+                    backup_status: 'test_isBackup',
+                }),
+                entity: () => ({
+                    user_id: 'test_id',
+                    third_party_id: 'test_thirdPartyId',
+                    install_id: 'test_installId',
+                    timestamp: 'test_timestamp',
+                    backup_status: 'test_isBackup',
+                }),
+                insertUser: () => (true)
+            },
+            prefDao: {
+                setAuthItem: () => ({
+                    token: 'test_Token'
+                }),
+                getAuthItem: () => ({
+                    token: 'test_Token'
+                })
+            }
         }
+        _user1._DBOperator = _DBOperator;
 
         const credentialData = _user1._generateCredentialData({ userIdentifier, userId, userSecret, installId, timestamp })
         const wallet = await PaperWallet.createWallet(credentialData.key, credentialData.password);
-        console.log('wallet', JSON.stringify(wallet))
+
         const privateKey = PaperWallet.recoverFromJson(JSON.stringify(wallet), credentialData.password)
         const seed = await PaperWallet.magicSeed(privateKey);
         const _seed = Buffer.from(seed)
@@ -144,25 +218,44 @@ test("User createUserWithSeed ", async () => {
 
         const _user1 = new User()
 
-        // mock db return true
-        _user1.DBOperator.userDao.insertUser = () => ({
-            user_id: 'test_id',
-            third_party_id: 'test_thirdPartyId',
-            install_id: 'test_installId',
-            timestamp: 'test_timestamp',
-            backup_status: 'test_isBackup',
-        })
-
         // mock api response
-        _user1._HTTPAgent = {
-            post: () => ({
-                success: true,
-                data: {
-                    user_id: userId,
-                    user_secret: userSecret
-                }
-            })
+        _user1._HTTPAgent.post = () => ({
+            success: true,
+            data: {
+                user_id: userId,
+                user_secret: userSecret
+            }
+        })
+        // mock db return
+        const _DBOperator = {
+            userDao: {
+                findUser: () => ({
+                    user_id: 'test_id',
+                    third_party_id: 'test_thirdPartyId',
+                    install_id: 'test_installId',
+                    timestamp: 'test_timestamp',
+                    backup_status: 'test_isBackup',
+                }),
+                entity: () => ({
+                    user_id: 'test_id',
+                    third_party_id: 'test_thirdPartyId',
+                    install_id: 'test_installId',
+                    timestamp: 'test_timestamp',
+                    backup_status: 'test_isBackup',
+                }),
+                insertUser: () => (true)
+            },
+            prefDao: {
+                setAuthItem: () => ({
+                    token: 'test_Token'
+                }),
+                getAuthItem: () => ({
+                    token: 'test_Token'
+                })
+            }
         }
+        _user1._DBOperator = _DBOperator;
+
         const success = await _user1.createUserWithSeed(userIdentifier, _seed, installId);
         expect(success).toBeTruthy();
     }
@@ -184,7 +277,7 @@ test('User restorePaperWallet', async () => {
     const wallet = await PaperWallet.createWallet(credential.key, credential.password);
     const keystore = await PaperWallet.walletToJson(wallet);
     const restoreWallet = await _user.restorePaperWallet(keystore, credential.password)
-    expect(typeof restoreWallet.address).toBe('string');
+    expect(restoreWallet.keyObject).toBeDefined();
 })
 
 
@@ -193,14 +286,26 @@ describe('User checkWalletBackup', () => {
         {
             const _user1 = new User()
 
-            // mock db return true
-            _user1._DBOperator.userDao.findUser = () => ({
-                user_id: 'test_id',
-                third_party_id: 'test_thirdPartyId',
-                install_id: 'test_installId',
-                timestamp: 'test_timestamp',
-                backup_status: 'test_isBackup',
-            })
+            // mock db return
+            const _DBOperator = {
+                userDao: {
+                    findUser: () => ({
+                        user_id: 'test_id',
+                        third_party_id: 'test_thirdPartyId',
+                        install_id: 'test_installId',
+                        timestamp: 'test_timestamp',
+                        backup_status: 'test_isBackup',
+                    }),
+                    updateUser: () => ({
+                        user_id: 'test_id',
+                        third_party_id: 'test_thirdPartyId',
+                        install_id: 'test_installId',
+                        timestamp: 'test_timestamp',
+                        backup_status: 'test_isBackup',
+                    })
+                }
+            }
+            _user1._DBOperator = _DBOperator;
             
             const result = _user1.backupWallet();
             expect(result).toBeTruthy();
@@ -235,14 +340,12 @@ test("User getPriKey", async () => {
     const _DBOperator = {
         userDao: {
             findUser: () => ({
-                keystore: '{"address":"6a8874bf6426b722990e9918b72ea995508676cd","crypto":{"cipher":"aes-128-ctr","ciphertext":"19fe778619c1aa7e01a1ad504425be754735ccc36f861ded69e8cb0064a07509","cipherparams":{"iv":"b07da3e7f2d1fe9d8aa9a1462a67bcd1"},"mac":"5cea42bb065c5be78a66f5f00dd1f9b535417886b1dc2a9e2e4ff33e35c81327","kdf":"pbkdf2","kdfparams":{"c":262144,"dklen":32,"prf":"hmac-sha256","salt":"062af9d6c46f62703711226469f931e8a8b85035d5486d8956480cd14f4f2f9b"}},"id":"0cbcf064-0e24-4de6-8ae7-58a445575685","version":3}'
+                keystore: '{"keyObject":{"metadata":{"nonce":"SNRY7MboqA+/VGbi9H4l14uBgbA88/ap","iterations":10000},"public":{},"private":"rpy8r9vAueKKyWODulilj9TJaO9NS1W0FB+sxKeW0UjXp4YGpU0nXEfgDACeyjf+T47gB2YIGY53f8cjLZNtrC+WR3XmLxvali/QHPC1i/OAZA=="}}'
             })
         }
     }
     _user1._DBOperator = _DBOperator;
 
-    const credentialData = _user1._generateCredentialData({ userIdentifier, userId, userSecret, installId, timestamp })
-
-    const result = await _user1.getPriKey(credentialData.password, 0, 0);
-    expect(result).toBe('3f0e878c684a02c745747211db64ec0c74da71789a6dc6ea19f00d1d58b8effa');
+    const result = await _user1.getPriKey('123', 0, 0);
+    expect(result).toBe('24800a8f675f2b9b911e9551bf5bab69b238c531e61c566937cca4c83257730a');
 })
