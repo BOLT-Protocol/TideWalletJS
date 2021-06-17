@@ -1,13 +1,13 @@
 const { ACCOUNT_EVT } = require("../models/account.model");
 const AccountService = require("./accountService");
 const DBOperator = require("../database/dbOperator");
-const HttpAgent = require("../helpers/httpAgent");
+const HTTPAgent = require("../helpers/httpAgent");
 class AccountServiceBase extends AccountService {
   constructor(AccountCore) {
     super();
     this._AccountCore = AccountCore;
     this._DBOperator = new DBOperator();
-    this._HttpAgent = new HttpAgent();
+    this._HTTPAgent = new HTTPAgent();
   }
 
   /**
@@ -16,7 +16,7 @@ class AccountServiceBase extends AccountService {
    * @returns {void}
    */
   async _pushResult() {
-    const cs = await DBOperator.accountCurrencyDao.findJoinedByAccountId(
+    const cs = await this._DBOperator.accountCurrencyDao.findJoinedByAccountId(
       this._accountId
     );
 
@@ -59,7 +59,7 @@ class AccountServiceBase extends AccountService {
         await Promise.all(
           newTokens.map((token) => {
             return new Promise(async (resolve, reject) => {
-              const res = await this.HTTPAgent.get(
+              const res = await this._HTTPAgent.get(
                 `/blockchain/${token["blockchain_id"]}/token/${token["token_id"]}`
               );
               if (res.data != null) {
@@ -93,7 +93,7 @@ class AccountServiceBase extends AccountService {
       const acc = await this._DBOperator.accountDao.findAccount(
         this._accountId
       );
-      const res = await this._HttpAgent.get(
+      const res = await this._HTTPAgent.get(
         `/blockchain/${acc.networkId}/token?type=TideWallet`
       );
       if (res.data) {
@@ -133,7 +133,7 @@ class AccountServiceBase extends AccountService {
     qureries.reduce(
       (promise, func) =>
         promise.then((result) =>
-          func().then(Array.prototype.concat.bind(result))
+          func.then(Array.prototype.concat.bind(result))
         ),
       Promise.resolve([])
     );
@@ -146,11 +146,14 @@ class AccountServiceBase extends AccountService {
    * @returns {Array} The sorted transactions
    */
   async _getTransaction(currency) {
-    const res = await this._HTTPAgen.get(`/wallet/account/txs/${currency.id}`);
+    const res = await this._HTTPAgent.get(`/wallet/account/txs/${currency.accountcurrencyId}`);
 
     if (res.success) {
       const txs = res.data.map((t) =>
-        this._DBOperator.transactionDao.entity(t)
+        this._DBOperator.transactionDao.entity({
+          ...t,
+          accountcurrencyId: currency.accountcurrencyId
+        })
       );
 
       await this._DBOperator.transactionDao.insertTransactions(txs);
@@ -188,6 +191,11 @@ class AccountServiceBase extends AccountService {
     );
 
     if (res.success) {
+      const ds = res.data.map((tk) => ({
+        ...tk,
+        accountId: this._accountId,
+        blockchainId: acc.networkId,
+      }));
       this._AccountCore.settingOptions += ds;
     }
   }
@@ -318,7 +326,11 @@ class AccountServiceBase extends AccountService {
 
     if (now - this._lastSyncTimestamp > this._syncInterval || force) {
       const currs = await this._getData();
-      const v = currs.map((c) => this._DBOperator.accountCurrencyDao.entity(c));
+      const v = currs.map((c) => this._DBOperator.accountCurrencyDao.entity({
+        ...c,
+        accountcurrency_id: c['account_id'] ?? c['account_token_id'],
+        account_id: this._accountId,
+      }));
 
       await this._DBOperator.accountCurrencyDao.insertCurrencies(v);
     }

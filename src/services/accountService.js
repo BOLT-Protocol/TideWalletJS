@@ -2,7 +2,7 @@
  @abstract
 **/
 class AccountService {
-  _syncInterval = 10 * 10 * 1000;
+  _syncInterval = 60 * 10 * 1000;
 
   _lastSyncTimestamp = 0;
 

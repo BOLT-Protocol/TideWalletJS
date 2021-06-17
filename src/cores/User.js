@@ -4,6 +4,8 @@ const PaperWallet = require("./PaperWallet");
 const HTTPAgent = require("./../helpers/httpAgent");
 const config = require("./../constants/config");
 const DBOperator = require("../database/dbOperator");
+const Mnemonic = require("../helpers/Mnemonic");
+
 class User {
   constructor() {
     this.id = null;
@@ -275,27 +277,25 @@ class User {
       install_id: installId,
       app_uuid: installId,
     };
+    console.log('_registerUser With: ', payload)
 
     const res = await this._HTTPAgent.post(`${config.url}/user`, payload);
 
     if (res.success) {
-
       await this._DBOperator.prefDao.setAuthItem(
         res.data.token,
         res.data.tokenSecret
       );
 
       const keystore = await PaperWallet.walletToJson(wallet);
-      const user = {
-        // res.data['user_id'], // ++ inform backend to update userId become radom hex[Emily 04/01/2021]
-        userId,
+      const user = this._DBOperator.userDao.entity({
+        user_id: userId,
         keystore,
-        thirdPartyId: userIdentifier,
-        installId,
+        third_party_id: userIdentifier,
+        install_id: installId,
         timestamp,
-        backupStatus: false,
-      };
-
+        backup_status: false,
+      });
       await this._DBOperator.userDao.insertUser(user);
       await this._initUser(user);
     }
@@ -488,6 +488,11 @@ class User {
     const seed = PaperWallet.magicSeed(pk);
     const privateKey = PaperWallet.getPriKey(Buffer.from(seed, 'hex'), chainIndex, keyIndex, options);
     return privateKey;
+  }
+
+  mnemonicToSeed(mnemonic, password) {
+    const m = new Mnemonic();
+    return m.mnemonicToSeed(mnemonic, password);
   }
 }
 

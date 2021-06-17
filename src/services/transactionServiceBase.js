@@ -2,17 +2,23 @@ const TransactionService = require("./transactionService");
 
 class TransactionServiceBase extends TransactionService {
   /**
-   @override
-  **/
-  verifyAddress() {}
+   * @override
+   */
+  verifyAddress() {
+    // Override by decorator
+  }
   /**
-   @override
-  **/
-  extractAddressData() {}
+   * @override
+   */
+  extractAddressData() {
+    // Override by decorator
+  }
   /**
-   @override
-  **/
-  prepareTransaction() {}
+   * @override
+   */
+  prepareTransaction() {
+    // Override by decorator
+  }
 }
 
 module.exports = TransactionServiceBase;

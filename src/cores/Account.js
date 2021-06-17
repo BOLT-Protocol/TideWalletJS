@@ -35,15 +35,14 @@ class AccountCore {
 
   constructor() {
     if (!AccountCore.instance) {
+      this._messenger = null;
+      this._isInit = false;
+      this._debugMode = false;
+      this._services = [];
+      this._DBOperator = new DBOperator();
+      this._HttpAgent = new HttpAgent();
       AccountCore.instance = this;
     }
-
-    this._messenger = null;
-    this._isInit = false;
-    this._debugMode = false;
-    this._services = [];
-    this._DBOperator = new DBOperator();
-    this._HttpAgent = new HttpAgent();
 
     return AccountCore.instance;
   }
@@ -79,6 +78,9 @@ class AccountCore {
             _ACCOUNT = ACCOUNT.ETH;
             break;
           case 8017:
+            svc = new EthereumService(new AccountServiceBase(this));
+            _ACCOUNT = ACCOUNT.CFC;
+
             break;
 
           default:
@@ -111,12 +113,18 @@ class AccountCore {
     this._settingOptions = [];
   }
 
+  /**
+   * Get service by accountId
+   * @method getService
+   * @param {string} accountId The accountId
+   * @returns {Object} The service
+   */
   getService(accountId) {
     return this._services.find((svc) => svc.accountId === accountId);
   }
 
   async _getNetworks(publish = true) {
-    const networks = await this._DBOperator.networkDao.findAllNetworks();
+    let networks = await this._DBOperator.networkDao.findAllNetworks();
 
     if (!networks || networks.length < 1) {
       const res = await this._HttpAgent.get("/blockchain");
@@ -124,13 +132,14 @@ class AccountCore {
       if (res.success) {
         const enties = res.data.map((n) =>
           this._DBOperator.networkDao.entity({
-            network_id: n['blockchain_id'],
-            network: n['name'],
-            coin_type: n['coin_type'],
-            chain_id: n['network_id'],
-            publish: n['publish']
+            network_id: n["blockchain_id"],
+            network: n["name"],
+            coin_type: n["coin_type"],
+            chain_id: n["network_id"],
+            publish: n["publish"],
           })
         );
+        networks = enties;
         await this._DBOperator.networkDao.insertNetworks(enties);
       }
     }
@@ -204,15 +213,39 @@ class AccountCore {
     }
   }
 
+  /**
+   * Get currency list by accountId
+   * @method getCurrencies
+   * @param {string} accountId The accountId
+   * @returns {Array} The currency list
+   */
   getCurrencies(accountId) {
     return this._currencies[accountId];
   }
 
+  /**
+   * Get all currency list
+   * @method getAllCurrencies
+   * @returns {Array} The currency list
+   */
   getAllCurrencies() {
     return Object.values(this._currencies).reduce(
       (list, curr) => list.concat(curr),
       []
     );
+  }
+
+  /**
+   * Get transaction list by accountcurrencyId
+   * @method getTransactions
+   * @param {string} accountcurrencyId The accountcurrencyId
+   * @returns {Array} The transaction list
+   */
+  async getTransactions(accountcurrencyId) {
+    const txs = await this._DBOperator.transactionDao.findAllTransactionsById(
+      accountcurrencyId
+    );
+    return txs;
   }
 }
 
