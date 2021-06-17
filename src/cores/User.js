@@ -354,7 +354,7 @@ class User {
    * @returns {}
    */
   async updatePassword(oldPassword, newpassword) {
-    const user = await this.DBOperator.userDao.findUser();
+    const user = await this._DBOperator.userDao.findUser();
 
     const wallet = await this.restorePaperWallet(user.keystore, oldPassword);
   }
@@ -403,7 +403,7 @@ class User {
    * @returns isBackup
    */
   async checkWalletBackup() {
-    const _user = await this.DBOperator.userDao.findUser();
+    const _user = await this._DBOperator.userDao.findUser();
     if (_user != null) {
       return _user.backupStatus;
     }
@@ -416,10 +416,10 @@ class User {
    */
   async backupWallet() {
     try {
-      const _user = await this.DBOperator.userDao.findUser();
+      const _user = await this._DBOperator.userDao.findUser();
 
       // TODO: updateUser condition
-      await this.DBOperator.userDao.updateUser({ backupStatus: true });
+      await this._DBOperator.userDao.updateUser({ backupStatus: true });
       this.isBackup = true;
     } catch (e) {
       console.warn(e);
@@ -463,7 +463,7 @@ class User {
    * @returns {String} keystore
    */
   async getKeystore() {
-    const user = await this.DBOperator.userDao.findUser();
+    const user = await this._DBOperator.userDao.findUser();
 
     return user.keystore;
   }
@@ -473,8 +473,8 @@ class User {
    * @returns {Boolean}
    */
   async deleteUser() {
-    const user = await this.DBOperator.userDao.findUser();
-    const item = await this.DBOperator.userDao.deleteUser(user);
+    const user = await this._DBOperator.userDao.findUser();
+    const item = await this._DBOperator.userDao.deleteUser(user);
 
     if (item < 0) return false;
 
@@ -482,9 +482,16 @@ class User {
     return true;
   }
 
+  async getPriKey(password, chainIndex, keyIndex, options = {}) {
+    const keystore = await this.getKeystore();
+    const pk = PaperWallet.recoverFromJson(keystore, password);
+    const seed = PaperWallet.magicSeed(pk);
+    const privateKey = PaperWallet.getPriKey(Buffer.from(seed, 'hex'), chainIndex, keyIndex, options);
+    return privateKey;
+  }
+
   mnemonicToSeed(mnemonic, password) {
     const m = new Mnemonic();
-
     return m.mnemonicToSeed(mnemonic, password);
   }
 }
