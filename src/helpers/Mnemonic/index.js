@@ -13,10 +13,11 @@ class Mnemonic {
   /**
    * @method mnemonicToSeed
    * @param {string} mnemonic
+   * @param {string} password
    * @returns {Buffer} seed
    */
-  mnemonicToSeed(mnemonic) {
-    const seed = bip39.mnemonicToSeedSync(mnemonic);
+  mnemonicToSeed(mnemonic, password) {
+    const seed = bip39.mnemonicToSeedSync(mnemonic, password);
     return seed;
   }
 }
