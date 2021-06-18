@@ -5,6 +5,8 @@ const EthereumService = require("../services/ethereumService");
 const { network_publish } = require("../constants/config");
 const DBOperator = require("../database/dbOperator");
 const HttpAgent = require("../helpers/httpAgent");
+const TransactionBase = require("../services/transactionService");
+const ETHTransaction = require("../services/transactionServiceETH");
 
 class AccountCore {
   static instance;
@@ -12,6 +14,7 @@ class AccountCore {
   _messenger = null;
   _settingOptions = [];
   _DBOperator = null;
+  _accounts = [];
 
   get currencies() {
     return this._currencies;
@@ -157,7 +160,7 @@ class AccountCore {
     let result = await this._DBOperator.accountDao.findAllAccounts();
 
     if (result.length < 1) {
-      result = await this._addAccount(result);
+      result = await this._addAccount6(result);
       return result;
     }
 
@@ -246,6 +249,39 @@ class AccountCore {
       accountcurrencyId
     );
     return txs;
+  }
+
+  async sendTransaction(
+    accountCurrency,
+    { amount, from, to, gasPrice, gasUsed, message, keyIndex }
+  ) {
+    switch (accountCurrency.accountType) {
+      case ACCOUNT.ETH:
+      case ACCOUNT.CFC:
+        const svc = this.getService(accountCurrency.accountId);
+        const address = svc.getReceivingAddress(
+          accountCurrency.accountcurrencyId
+        );
+        const account = this._accounts.find(
+          (acc) => acc.accountId === svc.accountId
+        );
+
+        const nonce = await svc.getNonce(account.networkId, address);
+
+        const txSvc = new ETHTransaction(new TransactionBase());
+        txSvc.prepareTransaction({
+          amount,
+          from,
+          to,
+          gasPrice,
+          gasUsed,
+          message,
+          nonce,
+        });
+
+      default:
+        return null;
+    }
   }
 }
 

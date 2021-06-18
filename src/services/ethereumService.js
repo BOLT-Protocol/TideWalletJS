@@ -35,7 +35,12 @@ class EthereumService extends AccountServiceDecorator {
     @override
   **/
   async start() {
-    console.log(this._base, " Service Start ", this._accountId, this._syncInterval);
+    console.log(
+      this.base,
+      " Service Start ",
+      this.accountId,
+      this.service._syncInterval
+    );
     await this.service.start();
 
     this.synchro();
@@ -57,7 +62,7 @@ class EthereumService extends AccountServiceDecorator {
    * @override
    * @param {String} accountcurrencyId
    * @returns {Array.<{address: String || error, code: Number}>} result
-   **/
+   */
   async getReceivingAddress(accountcurrencyId) {
     if (this._address === null) {
       const response = await this._HTTPAgent.get(
@@ -82,7 +87,7 @@ class EthereumService extends AccountServiceDecorator {
    * @override
    * @param {String} currencyId
    * @returns {{address: String || error, code: Number}[]} result
-   **/
+   */
   async getChangingAddress(currencyId) {
     return await this.getReceivingAddress(currencyId);
   }
@@ -95,12 +100,11 @@ class EthereumService extends AccountServiceDecorator {
    * @returns {string} result.slow
    * @returns {string} result.standard
    * @returns {string} result.fast
-   **/
+   */
   async getTransactionFee(blockchainId) {
     if (
       this._fee == null ||
-      Date.now() - this._feeTimestamp >
-        this.AVERAGE_FETCH_FEE_TIME
+      Date.now() - this._feeTimestamp > this.AVERAGE_FETCH_FEE_TIME
     ) {
       const response = await this._HTTPAgent.get(
         `${config.url}/blockchain/${blockchainId}/fee`
@@ -127,7 +131,7 @@ class EthereumService extends AccountServiceDecorator {
    * @param {String} blockchainId
    * @param {Transaction} transaction
    * @returns {Array.<{success: Boolean, transaction: String}>} result
-   **/
+   */
   async publishTransaction(blockchainId, transaction) {
     const response = await this._HTTPAgent.post(
       `${config.url}/blockchain/${blockchainId}/push-tx`,
@@ -150,7 +154,7 @@ class EthereumService extends AccountServiceDecorator {
    * @param {String} currencyId
    * @param {Object} payload
    * @returns {Object} transaction table object
-   **/
+   */
   async updateTransaction(currencyId, payload) {
     return await this.service.updateTransaction(currencyId, payload);
   }
@@ -161,7 +165,7 @@ class EthereumService extends AccountServiceDecorator {
    * @param {String} currencyId
    * @param {Object} payload
    * @returns {Object} currency table object
-   **/
+   */
   async updateCurrency(currencyId, payload) {
     return await this.service.updateCurrency(currencyId, payload);
   }
@@ -179,7 +183,7 @@ class EthereumService extends AccountServiceDecorator {
    * @param {String} blockchainId
    * @param {Object} token
    * @returns {Boolean} result
-   **/
+   */
   async addToken(blockchainId, token) {
     const res = await this._HTTPAgent.post(
       `${config.url}/wallet/blockchain/${blockchainId}/contract/${token.contract}`,
@@ -264,7 +268,7 @@ class EthereumService extends AccountServiceDecorator {
    * @param {String} amount
    * @param {String} message
    * @returns {Boolean} result
-   **/
+   */
   async estimateGasLimit(blockchainId, from, to, amount, message) {
     if (message == "0x" && this._gasLimit != null) {
       return this._gasLimit;
@@ -297,7 +301,7 @@ class EthereumService extends AccountServiceDecorator {
    * @param {String} blockchainId
    * @param {String} address
    * @returns {Number} nonce
-   **/
+   */
   async getNonce(blockchainId, address) {
     const response = await this._HTTPAgent.get(
       `${config.url}/blockchain/${blockchainId}/address/${address}/nonce`

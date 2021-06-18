@@ -16,9 +16,14 @@ class AccountServiceBase extends AccountService {
    * @returns {void}
    */
   async _pushResult() {
-    const cs = await this._DBOperator.accountCurrencyDao.findJoinedByAccountId(
+    let cs = await this._DBOperator.accountCurrencyDao.findJoinedByAccountId(
       this._accountId
     );
+
+    cs = cs.map((c) => ({
+      ...c,
+      accountType: this._base,
+    }));
 
     this._AccountCore.currencies[this._accountId] = cs;
 
@@ -146,13 +151,15 @@ class AccountServiceBase extends AccountService {
    * @returns {Array} The sorted transactions
    */
   async _getTransaction(currency) {
-    const res = await this._HTTPAgent.get(`/wallet/account/txs/${currency.accountcurrencyId}`);
+    const res = await this._HTTPAgent.get(
+      `/wallet/account/txs/${currency.accountcurrencyId}`
+    );
 
     if (res.success) {
       const txs = res.data.map((t) =>
         this._DBOperator.transactionDao.entity({
           ...t,
-          accountcurrencyId: currency.accountcurrencyId
+          accountcurrencyId: currency.accountcurrencyId,
         })
       );
 
@@ -326,11 +333,14 @@ class AccountServiceBase extends AccountService {
 
     if (now - this._lastSyncTimestamp > this._syncInterval || force) {
       const currs = await this._getData();
-      const v = currs.map((c) => this._DBOperator.accountCurrencyDao.entity({
-        ...c,
-        accountcurrency_id: c['account_id'] ?? c['account_token_id'],
-        account_id: this._accountId,
-      }));
+      const v = currs.map((c) =>
+        this._DBOperator.accountCurrencyDao.entity({
+          ...c,
+          accountcurrency_id: c["account_id"] ?? c["account_token_id"],
+          account_id: this._accountId,
+          last_sync_time: now,
+        })
+      );
 
       await this._DBOperator.accountCurrencyDao.insertCurrencies(v);
     }

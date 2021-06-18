@@ -334,13 +334,21 @@ class UserDao extends DAO {
   /**
    * @override
    */
-  entity({ user_id, third_party_id, install_id, timestamp, backup_status }) {
+  entity({
+    user_id,
+    third_party_id,
+    install_id,
+    timestamp,
+    backup_status,
+    keystore,
+  }) {
     return {
       userId: user_id,
       thirdPartyId: third_party_id,
       installId: install_id,
       timestamp,
       backupStatus: backup_status,
+      keystore,
     };
   }
 
@@ -535,10 +543,10 @@ class AccountCurrencyDao extends DAO {
     number_of_used_internal_key,
     last_sync_time,
     token_id,
-    account_token_id
+    account_token_id,
   }) {
     return {
-      accountcurrencyId:account_token_id ?? account_id,
+      accountcurrencyId: account_token_id ?? account_id,
       accountId: account_id,
       currencyId: currency_id ?? token_id,
       balance,
