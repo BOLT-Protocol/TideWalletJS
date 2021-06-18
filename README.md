@@ -80,3 +80,7 @@ ui.sync(); // --
 const paperwallet = ui.backup(); // --
 ui.close(); // --
 ```
+
+- Use TideWallet Core in browser
+```javascript
+```
