@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "build": "browserify -r buffer src/index.js -o dist/bundle.js "
+    "build": "browserify -r buffer src/index.js -o dist/TideWallet.js "
   },
   "author": "",
   "license": "ISC",
