@@ -1,7 +1,7 @@
 const EthUtils = require('ethereumjs-util');
 const { BN, ecsign } = EthUtils;
 
-const User = require('./User');
+const PaperWallet = require('./PaperWallet');
 
 const ZERO32 = Buffer.alloc(32, 0);
 const EC_GROUP_ORDER = Buffer.from('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141', 'hex');
@@ -14,12 +14,12 @@ class Signer {
 
   /**
    * 
-   * @param {User} user 
+   * @param {PaperWallet} paperWallet 
    * @returns 
    */
-  constructor(user) {
+  constructor(paperWallet) {
     if (!Signer.instance) {
-      this._user = user;
+      this._paperWallet = paperWallet;
       Signer.instance = this;
     }
 
@@ -53,7 +53,7 @@ class Signer {
   }
 
   async sign(hashData, password, chainIndex, keyIndex, options = {}) {
-    const privateKey = await this._user.getPriKey(password, chainIndex, keyIndex, options);
+    const privateKey = await this._paperWallet.getPriKey(password, chainIndex, keyIndex, options);
     if (privateKey) {
       return this._sign(
         hashData,

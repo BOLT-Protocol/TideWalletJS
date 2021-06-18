@@ -262,6 +262,17 @@ describe('User checkWalletBackup', () => {
 test('User _initUser', async () => {
     {
         const _user1 = new User()
+
+        // mock db return
+        const _DBOperator = {
+            prefDao: {
+                getAuthItem: () => ({
+                    token: 'test_Token'
+                })
+            }
+        }
+
+        _user1._DBOperator = _DBOperator;
         _user1._initUser({
             user_id: 'test_id',
             third_party_id: 'test_thirdPartyId',
