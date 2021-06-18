@@ -1,16 +1,20 @@
 const Signer = require('./../src/cores/Signer');
 const Cryptor = require('./../src/helpers/Cryptor');
 
-// mock user
-const user = {
+// mock paperWallet
+const paperWallet = {
   getPriKey: (password, chainIndex, keyIndex, options) => {
-    if (password === 'test') return '3f0e878c684a02c745747211db64ec0c74da71789a6dc6ea19f00d1d58b8effa';
+    if (password === 'test' && 
+    chainIndex === 0 && 
+    keyIndex === 0 &&
+    !options.path
+    ) return '3f0e878c684a02c745747211db64ec0c74da71789a6dc6ea19f00d1d58b8effa';
 
     return null;
   }
 };
 
-const signer = new Signer(user);
+const signer = new Signer(paperWallet);
 
 test('_sign', () => {
   const rawTransaction = '0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675';
@@ -33,7 +37,7 @@ test('_sign', () => {
   expect(resV).toBe(expV);
 })
 
-test.only('sign', async() => {
+test('sign', async() => {
   const password = 'test';
   const rawTransaction = '0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675';
   const expR = 'a60b57ae821d7dfeefdf8d0749152b3b6826315414c6ecddfe7128c888a05dea';
