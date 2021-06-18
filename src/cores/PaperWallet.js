@@ -109,7 +109,7 @@ class PaperWallet {
    * @param {number} chainIndex - integer for hdwallet chainIndex
    * @param {number} keyIndex - integer for hdwallet keyIndex
    * @param {object} options
-   * @param {string} [path] - default EXT_PATH
+   * @param {string} [options.path] - default EXT_PATH
    * @returns {string}
    */
   static getPriKey(seed, chainIndex, keyIndex, options = {}) {
@@ -249,25 +249,10 @@ class PaperWallet {
     return password;
   }
 
-  /**
-   * generate Credential Data
-   * @param {Object} userInfo
-   * @param {String} userInfo.userIdentifier
-   * @param {String} userInfo.userId
-   * @param {String} userInfo.userSecret
-   * @param {String} userInfo.installId
-   * @param {Number} userInfo.timestamp
-   * @returns {Object} result
-   * @returns {String} result.key
-   * @returns {String} result.password
-   * @returns {String} result.extend
-   */
-   _generateCredentialData({
+  _generateUserSeed({
     userIdentifier,
     userId,
     userSecret,
-    installId,
-    timestamp,
   }) {
     const nonce = this._getNonce(userIdentifier);
 
@@ -306,6 +291,30 @@ class PaperWallet {
         ),
       ]).toString()
     );
+    return {seed, _extend};
+  }
+
+  /**
+   * generate Credential Data
+   * @param {Object} userInfo
+   * @param {String} userInfo.userIdentifier
+   * @param {String} userInfo.userId
+   * @param {String} userInfo.userSecret
+   * @param {String} userInfo.installId
+   * @param {Number} userInfo.timestamp
+   * @returns {Object} result
+   * @returns {String} result.key
+   * @returns {String} result.password
+   * @returns {String} result.extend
+   */
+   _generateCredentialData({
+    userIdentifier,
+    userId,
+    userSecret,
+    installId,
+    timestamp,
+  }) {
+    const {seed, _extend} = this._generateUserSeed({ userIdentifier, userId, userSecret });
 
     const key = Cryptor.keccak256round(seed);
     const password = this.getPassword({
@@ -318,6 +327,18 @@ class PaperWallet {
     return { key, password, extend: _extend };
   }
 
+  /**
+   * createWallet
+   * @param {Object} userInfo
+   * @param {String} userInfo.userIdentifier
+   * @param {String} userInfo.userId
+   * @param {String} userInfo.userSecret
+   * @param {String} userInfo.installId
+   * @param {Number} userInfo.timestamp
+   * @returns {Object} result
+   * @returns {object} result.wallet - keyObject
+   * @returns {String} result.extendPublicKey
+   */
   async createWallet({
     userIdentifier,
     userId,
@@ -346,19 +367,70 @@ class PaperWallet {
     return { wallet, extendPublicKey }
   }
 
-  async getSeed() {
+  /**
+   * createWalletWithSeed
+   * @param {Object} userInfo
+   * @param {String} userInfo.seed
+   * @param {String} userInfo.userIdentifier
+   * @param {String} userInfo.userId
+   * @param {String} userInfo.installId
+   * @param {Number} userInfo.timestamp
+   * @returns {Object} result
+   * @returns {object} result.wallet - keyObject
+   * @returns {String} result.extendPublicKey
+   */
+  async createWalletWithSeed({
+    seed,
+    userIdentifier,
+    userId,
+    installId,
+    timestamp,
+  }) {
+    const password = this.getPassword({
+      userIdentifier,
+      userId,
+      installId,
+      timestamp,
+    });
+    const wallet = await PaperWallet.createWallet(
+      seed,
+      password
+    );
+    const _seed = Buffer.from(seed);
+    const extendPublicKey = PaperWallet.getExtendedPublicKey(_seed);
+    return { wallet, extendPublicKey }
+  }
+
+  /**
+   * _getSeed
+   * @returns {string} seed
+   */
+  async _getSeedByKeyStore() {
     const keyStore = await this._user.getKeystore();
     const pk = PaperWallet.recoverFromJson(keyStore, password);
     const seed = PaperWallet.magicSeed(pk);
     return seed;
   }
   
+  /**
+   * getExtendedPublicKey
+   * @returns {string} extPK
+   */
   async getExtendedPublicKey() {
-    const seed = await this.getSeed();
+    const seed = await this._getSeedByKeyStore();
     const extPK = PaperWallet.getExtendedPublicKey(seed);
     return extPK;
   }
 
+  /**
+   * getPriKey
+   * @param {string} password 
+   * @param {number} chainIndex 
+   * @param {number} keyIndex 
+   * @param {object} [options]
+   * @param {string} [options.path] - default EXT_PATH
+   * @returns 
+   */
   async getPriKey(password, chainIndex, keyIndex, options = {}) {
     const keyStore = await this._user.getKeystore();
     const pk = PaperWallet.recoverFromJson(keyStore, password);

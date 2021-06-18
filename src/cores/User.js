@@ -48,31 +48,13 @@ class User {
     const userId = user[0];
     const userSecret = user[1];
     const timestamp = Math.floor(new Date() / 1000);
-    // const credentialData = this._generateCredentialData({
-    //   userIdentifier,
-    //   userId,
-    //   userSecret,
-    //   installId,
-    //   timestamp,
-    // });
-    // const wallet = await PaperWallet.createWallet(
-    //   credentialData.key,
-    //   credentialData.password
-    // );
-    // const privateKey = PaperWallet.recoverFromJson(
-    //   JSON.stringify(wallet),
-    //   credentialData.password
-    // );
-    // const seed = await PaperWallet.magicSeed(privateKey);
-    // const _seed = Buffer.from(seed);
-    // const extPK = PaperWallet.getExtendedPublicKey(_seed);
     const { wallet, extendPublicKey: extPK } = await this._PaperWallet.createWallet({
       userIdentifier,
       userId,
       userSecret,
       installId,
       timestamp,
-    })
+    });
 
     const success = await this._registerUser({
       extendPublicKey: extPK,
@@ -170,16 +152,14 @@ class User {
     const user = await this._getUser(userIdentifier);
     const userId = user[0];
     const timestamp = Math.floor(new Date() / 1000);
-    const password = this.getPassword({
+    
+    const { wallet, extendPublicKey: extPK } = await this._PaperWallet.createWalletWithSeed({
+      seed,
       userIdentifier,
       userId,
       installId,
       timestamp,
     });
-
-    const _seed = Buffer.from(seed);
-    const wallet = await PaperWallet.createWallet(_seed, password);
-    const extPK = PaperWallet.getExtendedPublicKey(_seed);
 
     const success = await this._registerUser({
       extendPublicKey: extPK,
