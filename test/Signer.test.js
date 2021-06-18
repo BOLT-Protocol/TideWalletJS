@@ -14,7 +14,8 @@ const paperWallet = {
   }
 };
 
-const signer = new Signer(paperWallet);
+const signer = new Signer();
+signer.init(paperWallet);
 
 test('_sign', () => {
   const rawTransaction = '0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675';

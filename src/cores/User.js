@@ -26,7 +26,8 @@ class User {
 
     // TODO: Remove this log
     console.log("checkUser: ", user);
-    this._PaperWallet = new PaperWallet(this);
+    this._PaperWallet = new PaperWallet();
+    this._PaperWallet.init(this);
 
     if (user) {
       await this._initUser(user);

@@ -83,7 +83,8 @@ test("getExtendedPublicKey", () => {
 
 describe('construct by user', () => {
     const _user = new User();
-    const _paperWallet = new PaperWallet(_user);
+    const _paperWallet = new PaperWallet();
+    _paperWallet.init(_user);
     const userIdentifier = 'test2ejknkjdniednwjq'
     const userId = '3fa33d09a46d4e31087a3b24dfe8dfb46750ce534641bd07fed54d2f23e97a0f'
     const userSecret = '971db42d2342f5e74a764e57e2d341103565f413a64f242d64b1f7024346a2e1'

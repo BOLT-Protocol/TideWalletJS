@@ -12,18 +12,22 @@ const THROW_BAD_PRIVATE = 'Expected Private';
 class Signer {
   static instance;
 
-  /**
-   * 
-   * @param {PaperWallet} paperWallet 
-   * @returns 
-   */
-  constructor(paperWallet) {
+  constructor() {
     if (!Signer.instance) {
-      this._paperWallet = paperWallet;
+      this._paperWallet = null;
       Signer.instance = this;
     }
 
     return Signer.instance;
+  }
+
+  /**
+   * init
+   * @param {PaperWallet} paperWallet 
+   * @returns 
+   */
+  init(paperWallet) {
+    this._paperWallet = paperWallet;
   }
 
   _isScalar(x) {

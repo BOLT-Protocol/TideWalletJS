@@ -153,19 +153,23 @@ class PaperWallet {
   }
 
   static instance;
-  /**
-   * 
-   * @param {User} user 
-   * @returns 
-   */
-  constructor(user) {
+  constructor() {
     if (!PaperWallet.instance) {
-      this._user = user;
+      this._user = null;
       this._keystoreObject = null;
       PaperWallet.instance = this;
     }
 
     return PaperWallet.instance;
+  }
+
+  /**
+   * init
+   * @param {User} user 
+   * @returns 
+   */
+  init(user) {
+    this._user = user;
   }
 
   /**
