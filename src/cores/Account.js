@@ -7,6 +7,7 @@ const DBOperator = require("../database/dbOperator");
 const HttpAgent = require("../helpers/httpAgent");
 const TransactionBase = require("../services/transactionService");
 const ETHTransaction = require("../services/transactionServiceETH");
+const BigNumber = require("bignumber.js");
 
 class AccountCore {
   static instance;
@@ -160,7 +161,7 @@ class AccountCore {
     let result = await this._DBOperator.accountDao.findAllAccounts();
 
     if (result.length < 1) {
-      result = await this._addAccount6(result);
+      result = await this._addAccount(result);
       return result;
     }
 
@@ -251,6 +252,20 @@ class AccountCore {
     return txs;
   }
 
+  /**
+   * Send transaction
+   * @method sendTransaction
+   * @param {string} accountcurrencyId The accountcurrencyId
+   * @param {object} param The transaction content
+   * @param {number} param.amount
+   * @param {string} param.from
+   * @param {string} param.to
+   * @param {number} param.gasPrice
+   * @param {number} param.gasUsed
+   * @param {string} param.gasPrice
+   * @param {number} param.keyIndex
+   * @returns {boolean}} success
+   */
   async sendTransaction(
     accountCurrency,
     { amount, from, to, gasPrice, gasUsed, message, keyIndex }
@@ -269,16 +284,23 @@ class AccountCore {
         const nonce = await svc.getNonce(account.networkId, address);
 
         const txSvc = new ETHTransaction(new TransactionBase());
-        txSvc.prepareTransaction({
-          amount,
+        const signedTx = txSvc.prepareTransaction({
+          amount: BigNumber(amount),
           from,
           to,
-          gasPrice,
-          gasUsed,
+          gasPrice: BigNumber(gasPrice),
+          gasUsed: BigNumber(gasUsed),
           message,
           nonce,
         });
 
+        const [success, tx] = await svc.publishTransaction(
+          account.networkId,
+          signedTx
+        );
+
+        // TODO: 不確定要不要回 tx
+        return success;
       default:
         return null;
     }

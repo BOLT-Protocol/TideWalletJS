@@ -18,6 +18,7 @@ class TransactionServiceETH extends TransactionDecorator {
     this.service = service;
   }
 
+  // TODO: Signer
   _signTransaction(transaction, privKey) {
     console.log("ETH from privKey: ", privKey);
     const payload = encodeToRlp(transaction);
@@ -59,9 +60,18 @@ class TransactionServiceETH extends TransactionDecorator {
 
   /**
    * @override
+   * @method prepareTransaction
+   * @param {object} param
+   * @param {string} param.to
+   * @param {BigNumber} param.amount
+   * @param {BigNumber} param.gasPrice
+   * @param {BigNumber} param.gasUsed
+   * @param {stringm} param.message
+   * @param {number} param.chainId
+   * @param {number} param.nonce
+   * @returns {ETHTransaction} transaction 
    */
   prepareTransaction({
-    from,
     to,
     amount,
     gasPrice,
@@ -71,7 +81,6 @@ class TransactionServiceETH extends TransactionDecorator {
     nonce,
   }) {
     const transaction = EthereumTransaction.createTransaction({
-      from,
       to,
       amount,
       gasPrice,
@@ -81,8 +90,6 @@ class TransactionServiceETH extends TransactionDecorator {
       fee: gasLimit * gasPrice,
       nonce,
     });
-
-    console.log(transaction);
 
     return this._signTransaction(transaction, privKey);
   }

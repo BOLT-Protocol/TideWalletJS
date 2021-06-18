@@ -39,7 +39,7 @@ class EthereumService extends AccountServiceDecorator {
       this.base,
       " Service Start ",
       this.accountId,
-      this.service._syncInterval
+      this._syncInterval
     );
     await this.service.start();
 
