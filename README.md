@@ -66,7 +66,11 @@ ui.on('ready', () => { /* do something */ });
 ui.on('update', () => { /* do something */ });
 ui.on('exception', () => { /* do something */ });
 
-const api = { url: 'https://service.tidewallet.io' };
+const api = {
+  url: 'https://service.tidewallet.io',
+  apiKey: 'f2a76e8431b02f263a0e1a0c34a70466',
+  apiSecret: '9e37d67450dc906042fde75113ecb78c',
+};
 
 // Login with OAuth
 const user = { OAuthID: 'myAppleID', TideWalletID: 'myTideWalletID', InstallID: 'myInstallID' };
