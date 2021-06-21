@@ -409,6 +409,12 @@ class PaperWallet {
    * @returns {string} seed
    */
   async _getSeedByKeyStore() {
+    const password = this.getPassword({
+      userIdentifier: this._user.thirdPartyId,
+      userId: this._user.id,
+      installId: this._user.installId,
+      timestamp: this._user.timestamp
+    })
     const keyStore = await this._user.getKeystore();
     const pk = PaperWallet.recoverFromJson(keyStore, password);
     const seed = PaperWallet.magicSeed(pk);
@@ -427,14 +433,19 @@ class PaperWallet {
 
   /**
    * getPriKey
-   * @param {string} password 
    * @param {number} chainIndex 
    * @param {number} keyIndex 
    * @param {object} [options]
    * @param {string} [options.path] - default EXT_PATH
    * @returns 
    */
-  async getPriKey(password, chainIndex, keyIndex, options = {}) {
+  async getPriKey(chainIndex, keyIndex, options = {}) {
+    const password = this.getPassword({
+      userIdentifier: this._user.thirdPartyId,
+      userId: this._user.id,
+      installId: this._user.installId,
+      timestamp: this._user.timestamp
+    })
     const keyStore = await this._user.getKeystore();
     const pk = PaperWallet.recoverFromJson(keyStore, password);
     const seed = PaperWallet.magicSeed(pk);

@@ -56,8 +56,8 @@ class Signer {
     return sig;
   }
 
-  async sign(hashData, password, chainIndex, keyIndex, options = {}) {
-    const privateKey = await this._paperWallet.getPriKey(password, chainIndex, keyIndex, options);
+  async sign(hashData, chainIndex, keyIndex, options = {}) {
+    const privateKey = await this._paperWallet.getPriKey(chainIndex, keyIndex, options);
     if (privateKey) {
       return this._sign(
         hashData,
