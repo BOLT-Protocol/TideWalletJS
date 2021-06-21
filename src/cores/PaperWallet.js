@@ -156,7 +156,6 @@ class PaperWallet {
   constructor() {
     if (!PaperWallet.instance) {
       this._user = null;
-      this._keystoreObject = null;
       PaperWallet.instance = this;
     }
 
@@ -220,11 +219,11 @@ class PaperWallet {
             Buffer.concat([
               Buffer.from(
                 Cryptor.keccak256round(
-                  userIdentifierBuff || this.thirdPartyId,
+                  userIdentifierBuff || this._user.thirdPartyId,
                   1
                 )
               ),
-              Buffer.from(Cryptor.keccak256round(userId || this.id, 1)),
+              Buffer.from(Cryptor.keccak256round(userId || this._user.id, 1)),
             ]).toString()
           )
         ),
@@ -242,7 +241,7 @@ class PaperWallet {
                 )
               ),
               Buffer.from(
-                Cryptor.keccak256round(installIdBuff || this.installId, 1)
+                Cryptor.keccak256round(installIdBuff || this._user.installId, 1)
               ),
             ]).toString()
           )
@@ -406,7 +405,7 @@ class PaperWallet {
   }
 
   /**
-   * _getSeed
+   * _getSeedByKeyStore
    * @returns {string} seed
    */
   async _getSeedByKeyStore() {

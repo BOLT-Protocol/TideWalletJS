@@ -269,11 +269,11 @@ class User {
    * @param {object} user - db user table
    */
   async _initUser(user) {
-    this.id = user.user_id;
-    this.thirdPartyId = user.third_party_id;
-    this.installId = user.install_id;
+    this.id = user.userId;
+    this.thirdPartyId = user.thirdPartyId;
+    this.installId = user.installId;
     this.timestamp = user.timestamp;
-    this.isBackup = user.backup_status;
+    this.isBackup = user.backupStatus;
 
     const item = await this._DBOperator.prefDao.getAuthItem();
     if (item != null) {
@@ -316,14 +316,6 @@ class User {
 
     // await this._prefManager.clearAll();
     return true;
-  }
-
-  async getPriKey(password, chainIndex, keyIndex, options = {}) {
-    const keystore = await this.getKeystore();
-    const pk = PaperWallet.recoverFromJson(keystore, password);
-    const seed = PaperWallet.magicSeed(pk);
-    const privateKey = PaperWallet.getPriKey(Buffer.from(seed, 'hex'), chainIndex, keyIndex, options);
-    return privateKey;
   }
 
   mnemonicToSeed(mnemonic, password) {
