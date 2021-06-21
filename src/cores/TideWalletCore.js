@@ -28,7 +28,9 @@ class TideWalletCore {
     return this._user.getKeystore();
   }
 
-  // async recovery({ thirdPartyIdentity, TideBitIdentity, paperWallet }) {}
+  async recovery({ thirdPartyIdentity, TideBitIdentity, paperWallet }) {
+    return true;
+  }
 
   async getExtendedPublicKey() {
     return this._paperWallet.getExtendedPublicKey();
@@ -47,11 +49,13 @@ class TideWalletCore {
     return this._signer.sign(buffer, keyPath.chainIndex, keyPath.keyIndex);
   }
 
-  // async signData({ keyPath, jsonData }) {
-  // }
+  async signData({ keyPath, jsonData }) {
+    return true;
+  }
 
-  // signTransaction({ keyPath, coinType, value, data }) {
-  // }
+  signTransaction({ keyPath, coinType, value, data }) {
+    return true;
+  }
 }
 
 module.exports = TideWalletCore;
