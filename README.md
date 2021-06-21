@@ -61,14 +61,24 @@ npm run build
 
 - Use
 ```javascript
-const user = { OAuthID: 'myAppleID', TideWalletID: 'myTideWalletID', InstallID: 'myInstallID' };
-const api = { url: 'https://service.tidewallet.io' };
 const ui = new tidewallet.UI();
 ui.on('ready', () => { /* do something */ });
 ui.on('update', () => { /* do something */ });
 ui.on('exception', () => { /* do something */ });
 
+const api = { url: 'https://service.tidewallet.io' };
+
+// Login with OAuth
+const user = { OAuthID: 'myAppleID', TideWalletID: 'myTideWalletID', InstallID: 'myInstallID' };
 ui.init({ user, api });
+
+// Login with Mnemonic
+const mnemonic = {
+  words: 'pudding cupboard inherit dry rate wet rough venture kitten parrot belt slush',
+  passphase: 'asdf1234'
+};
+ui.init({ mnemonic, api });
+
 let assetList = ui.getAssets();
 let assetDetail = ui.getAssetDetail({ assetID });
 let transactionDetail = ui.getTransactionDetail({ transactionID });
