@@ -53,7 +53,7 @@ class TideWalletCore {
     return true;
   }
 
-  signTransaction({ keyPath, coinType, value, data }) {
+  async signTransaction({ keyPath, coinType, value, data }) {
     return true;
   }
 }
