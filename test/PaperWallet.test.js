@@ -1,14 +1,16 @@
 const PaperWallet = require("../src/cores/PaperWallet");
+const User = require('../src/cores/User');
 
 describe('keystore', () => {
     const pk = '929cb0a76cccbb93283832c5833d53ce7048c085648eb367a9e63c44c146b35d';
     const pw1 = '123';
     const pw2 = 'asd';
     let keyStore;
-    test('createWallet', () => {
-        keyStore = PaperWallet.createWallet(pk, pw1);
+    test('createWallet', async () => {
+        expect.assertions(1);
+        keyStore = await PaperWallet.createWallet(pk, pw1);
 
-        expect(keyStore.crypto.ciphertext).toEqual(expect.any(String));
+        expect(keyStore.keyObject.private).toEqual(expect.any(String));
     });
 
     test('recoverFromJson', () => {
@@ -25,8 +27,9 @@ describe('keystore', () => {
         expect(result).toBe(null);
     });
 
-    test('updatePassword', () => {
-        const newKeyStore = PaperWallet.updatePassword(keyStore, pw1, pw2);
+    test('updatePassword', async () => {
+        expect.assertions(2);
+        const newKeyStore = await PaperWallet.updatePassword(keyStore, pw1, pw2);
         const jsonKeystore = PaperWallet.walletToJson(newKeyStore);
         const worngPasswordResult = PaperWallet.recoverFromJson(jsonKeystore, pw1);
         const result = PaperWallet.recoverFromJson(jsonKeystore, pw2);
@@ -77,3 +80,44 @@ test("getExtendedPublicKey", () => {
     expect(exPub).toBe('xpub6CFP3LWKoXn9p3YrJ5RygQHKba9p2QJ8dk7uqe3XxhjZrRH9EUnsExXy4EMTPkDrZ77npmeo12negCaXKiWiVro5JUcPYLxHCYBkTQJxiKV');
 
 });
+
+describe('construct by user', () => {
+    const _user = new User();
+    const _paperWallet = new PaperWallet();
+    _paperWallet.init(_user);
+    const userIdentifier = 'test2ejknkjdniednwjq'
+    const userId = '3fa33d09a46d4e31087a3b24dfe8dfb46750ce534641bd07fed54d2f23e97a0f'
+    const userSecret = '971db42d2342f5e74a764e57e2d341103565f413a64f242d64b1f7024346a2e1'
+    const installId = '11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249'
+    const timestamp = 1623129204183
+
+    test("paperWallet _getNonce ", () => {
+        const nonce = _paperWallet._getNonce(userIdentifier)
+        expect(nonce).toBe(13305180);
+    });
+    
+    test("paperWallet getPassword ", () => {
+        const passwd = _paperWallet.getPassword({
+            userIdentifier, userId, installId, timestamp
+        })
+        expect(passwd).toBe('72012f0e20235377c36eaee6c1daf6e49e172b63c21091a480c0f44bdfebbe1b');
+    });
+
+    test("paperWallet _generateUserSeed", () => {
+        const {seed, _extend} = _paperWallet._generateUserSeed({ userIdentifier, userId, userSecret });
+        
+        expect(seed).toBe('e48f77df468d4890f92392568451e7f73e1757c4287c02b04b8b7d9dba063a13');
+    })
+
+    test("paperWallet _generateCredentialData ", () => {
+        const credential = _paperWallet._generateCredentialData({
+            userIdentifier, userId, userSecret, installId, timestamp
+        })
+        expect(credential.key).toBe('b174d55db852ead122fab60519242e9da34106a46c1d36bffd5a741e52cf8f31');
+        expect(credential.password).toBe('72012f0e20235377c36eaee6c1daf6e49e172b63c21091a480c0f44bdfebbe1b');
+        expect(credential.extend).toBe('8b37c50f');
+    });
+
+    
+})
+
