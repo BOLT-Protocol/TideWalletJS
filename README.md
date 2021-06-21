@@ -59,7 +59,7 @@ npm run build
 <script src="./lib/TideWallet.js" type="text/javascript"></script>
 ```
 
-- Use
+- Use in UI
 ```javascript
 const ui = new tidewallet.UI();
 ui.on('ready', () => { /* do something */ });
