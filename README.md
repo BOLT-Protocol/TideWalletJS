@@ -73,7 +73,11 @@ const api = {
 };
 
 // Login with OAuth
-const user = { OAuthID: 'myAppleID', TideWalletID: 'myTideWalletID', InstallID: 'myInstallID' };
+const user = {
+  OAuthID: 'myAppleID',
+  TideWalletID: 'myTideWalletID',
+  InstallID: 'myInstallID'
+};
 ui.init({ user, api });
 
 // Login with Mnemonic
