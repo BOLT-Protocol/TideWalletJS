@@ -93,4 +93,20 @@ ui.close(); // --
 
 - Use TideWallet Core in browser
 ```javascript
+const user = { OAuthID: 'myAppleID', TideWalletID: 'myTideWalletID', InstallID: 'myInstallID' };
+const core = new tidewallet.TidewalletCore();
+
+await core.initial(user);
+
+await core.recovery({ thirdPartyIdentity, TideBitIdentity, paperWallet }) // -- not work now
+
+let extpubkey = await core.getExtendedPublicKey();
+
+const keyPath = { chainIndex:0, keyIndex:0 };
+const buffer = Buffer.from('8219f1cbbde29ac7e118bdba9a0b48a6e5f37a85ecd06701a1d8bc3f29c8de52', 'hex');
+
+let signBuf = await core.sign({ keyPath, buffer });
+
+let signData = await signData({ keyPath, jsonData }); // -- not work now
+let signTx = awaitsignTransaction({ keyPath, coinType, value, data }); // -- not work now
 ```
