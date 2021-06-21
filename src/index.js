@@ -6,6 +6,7 @@ const UI = require("./cores/UI");
 const { isBrowser } = require("./helpers/env");
 const DBOperator = require("./database/dbOperator");
 const TideWalletCommunicator = require("./cores/TideWalletCommunicator");
+const TideWalletCore = require("./cores/TideWalletCore");
 
 // ++ need update to use config
 // const Communicator = new TideWalletCommunicator({ apiURL: config.url, apiKey:config.apiKey, apiSecret: config.apiSecret});
@@ -23,6 +24,7 @@ const tidewallet = {
   UI,
   DBOperator,
   Communicator,
+  TideWalletCore,
 };
 
 if (isBrowser()) {

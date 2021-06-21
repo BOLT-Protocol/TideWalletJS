@@ -3,9 +3,8 @@ const Cryptor = require('./../src/helpers/Cryptor');
 
 // mock paperWallet
 const paperWallet = {
-  getPriKey: (password, chainIndex, keyIndex, options) => {
-    if (password === 'test' && 
-    chainIndex === 0 && 
+  getPriKey: (chainIndex, keyIndex, options) => {
+    if (chainIndex === 0 && 
     keyIndex === 0 &&
     !options.path
     ) return '3f0e878c684a02c745747211db64ec0c74da71789a6dc6ea19f00d1d58b8effa';
@@ -39,7 +38,6 @@ test('_sign', () => {
 })
 
 test('sign', async() => {
-  const password = 'test';
   const rawTransaction = '0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675';
   const expR = 'a60b57ae821d7dfeefdf8d0749152b3b6826315414c6ecddfe7128c888a05dea';
   const expS = '7640d0d2cf73ccd4e030cbac6033ae550ac3ea23dfa89f405d60c3c7a6676875';
