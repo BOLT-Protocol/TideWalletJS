@@ -22,11 +22,12 @@ describe('User checkUser', () => {
             const _DBOperator = {
                 userDao: {
                     findUser: () => ({
-                        user_id: 'test_id',
-                        third_party_id: 'test_thirdPartyId',
-                        install_id: 'test_installId',
+                        userId: 'test_id',
+                        keystore: 'test_keystore',
+                        thirdPartyId: 'test_thirdPartyId',
+                        installId: 'test_installId',
                         timestamp: 'test_timestamp',
-                        backup_status: 'test_isBackup',
+                        backupStatus: 'test_isBackup',
                     })
                 },
                 prefDao: {
@@ -274,29 +275,13 @@ test('User _initUser', async () => {
 
         _user1._DBOperator = _DBOperator;
         _user1._initUser({
-            user_id: 'test_id',
-            third_party_id: 'test_thirdPartyId',
-            install_id: 'test_installId',
+            userId: 'test_id',
+            keystore: 'test_keystore',
+            thirdPartyId: 'test_thirdPartyId',
+            installId: 'test_installId',
             timestamp: 'test_timestamp',
-            backup_status: 'test_isBackup',
+            backupStatus: 'test_isBackup',
         })
         expect(_user1.id).toBe('test_id');
     }
-})
-
-test("User getPriKey", async () => {
-    const _user1 = new User();
-
-    // mock db return true
-    const _DBOperator = {
-        userDao: {
-            findUser: () => ({
-                keystore: '{"keyObject":{"metadata":{"nonce":"SNRY7MboqA+/VGbi9H4l14uBgbA88/ap","iterations":10000},"public":{},"private":"rpy8r9vAueKKyWODulilj9TJaO9NS1W0FB+sxKeW0UjXp4YGpU0nXEfgDACeyjf+T47gB2YIGY53f8cjLZNtrC+WR3XmLxvali/QHPC1i/OAZA=="}}'
-            })
-        }
-    }
-    _user1._DBOperator = _DBOperator;
-
-    const result = await _user1.getPriKey('123', 0, 0);
-    expect(result).toBe('24800a8f675f2b9b911e9551bf5bab69b238c531e61c566937cca4c83257730a');
 })

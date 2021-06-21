@@ -45,7 +45,7 @@ test('sign', async() => {
 
   const hashData = Cryptor.keccak256round(rawTransaction, 1);
 
-  const signature = await signer.sign(Buffer.from(hashData, 'hex'), password, 0, 0);
+  const signature = await signer.sign(Buffer.from(hashData, 'hex'), 0, 0);
   const resR = signature.r.toString('hex');
   const resS = signature.s.toString('hex');
   const resV = signature.v;
