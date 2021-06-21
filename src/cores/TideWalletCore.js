@@ -17,8 +17,8 @@ class TideWalletCore {
     this._paperWallet = new PaperWallet();
     this._signer = new Signer();
 
-    // if (!await this._user.checkUser()) {
-    if (await this._user.checkUser()) {
+    const check = await this._user.checkUser();
+    if (!check) {
       // TODO get install id
       const installId = '11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249'; // from unittest
       await this._user.createUser(OAuthID, installId);

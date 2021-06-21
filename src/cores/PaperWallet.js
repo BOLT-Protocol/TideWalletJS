@@ -427,7 +427,7 @@ class PaperWallet {
    */
   async getExtendedPublicKey() {
     const seed = await this._getSeedByKeyStore();
-    const extPK = PaperWallet.getExtendedPublicKey(seed);
+    const extPK = PaperWallet.getExtendedPublicKey(Buffer.from(seed, 'hex'));
     return extPK;
   }
 
@@ -440,15 +440,7 @@ class PaperWallet {
    * @returns 
    */
   async getPriKey(chainIndex, keyIndex, options = {}) {
-    const password = this.getPassword({
-      userIdentifier: this._user.thirdPartyId,
-      userId: this._user.id,
-      installId: this._user.installId,
-      timestamp: this._user.timestamp
-    })
-    const keyStore = await this._user.getKeystore();
-    const pk = PaperWallet.recoverFromJson(keyStore, password);
-    const seed = PaperWallet.magicSeed(pk);
+    const seed = await this._getSeedByKeyStore();
     const privateKey = PaperWallet.getPriKey(Buffer.from(seed, 'hex'), chainIndex, keyIndex, options);
     return privateKey;
   }
