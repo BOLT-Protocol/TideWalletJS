@@ -1,19 +1,17 @@
 const PaperWallet = require("./PaperWallet");
-const HTTPAgent = require("./../helpers/httpAgent");
 const config = require("./../constants/config");
-const DBOperator = require("../database/dbOperator");
 const Mnemonic = require("../helpers/Mnemonic");
 
 class User {
-  constructor() {
+  constructor({TideWalletCommunicator, DBOperator}) {
     this.id = null;
     this.thirdPartyId = null;
     this.installId = null;
     this.timestamp = null;
     this.isBackup = false;
 
-    this._HTTPAgent = new HTTPAgent();
-    this._DBOperator = new DBOperator();
+    this._communicator = TideWalletCommunicator;
+    this._DBOperator = DBOperator;
   }
 
   /**
@@ -78,17 +76,13 @@ class User {
     let userId = "";
     let userSecret = "";
 
-    const _res = await this._HTTPAgent.post(config.url + "/user/id", {
-      id: userIdentifier,
-    });
-    if (_res.success) {
-      userId = _res.data["user_id"];
-      userSecret = _res.data["user_secret"];
-
-      return [userId, userSecret];
-    } else {
-      return [];
+    try {
+      const _res = await this._communicator.oathRegister(userIdentifier);
+      userId = _res.userId;
+      userSecret = _res.userSecret;
+    } catch (error) {
     }
+    return [userId, userSecret];
   }
 
   /**
@@ -118,12 +112,12 @@ class User {
     };
     console.log('_registerUser With: ', payload)
 
-    const res = await this._HTTPAgent.post(`${config.url}/user`, payload);
+    try {
+      const res = await this._communicator.register(installId, installId, extendPublicKey);
 
-    if (res.success) {
       await this._DBOperator.prefDao.setAuthItem(
-        res.data.token,
-        res.data.tokenSecret
+        res.token,
+        res.tokenSecret
       );
 
       const keystore = await PaperWallet.walletToJson(wallet);
@@ -137,9 +131,10 @@ class User {
       });
       await this._DBOperator.userDao.insertUser(user);
       await this._initUser(user);
+      return true;
+    } catch (error) {
+      return false;
     }
-
-    return res.success;
   }
 
   /**
@@ -277,7 +272,7 @@ class User {
 
     const item = await this._DBOperator.prefDao.getAuthItem();
     if (item != null) {
-      this._HTTPAgent.setToken(item.token);
+      this._communicator.login(item.token, item.tokenSecret);
     }
   }
 
