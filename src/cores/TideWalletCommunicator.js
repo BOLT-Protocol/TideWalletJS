@@ -38,8 +38,8 @@ class TideWalletCommunicator {
       }
       const res = await this.httpAgent.post(this.apiURL + '/user/id', body);
       if (res.success) {
-        userId = _res.data['user_id'];
-        userSecret = _res.data['user_secret'];
+        userId = res.data['user_id'];
+        userSecret = res.data['user_secret'];
       }
       return { userId, userSecret };
     } catch (error) {

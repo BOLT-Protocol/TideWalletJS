@@ -2,6 +2,8 @@ const User = require('./User');
 const PaperWallet = require('./PaperWallet');
 const Signer = require('./Signer');
 const DBOperator = require('../database/dbOperator');
+const TideWalletCommunicator = require('./TideWalletCommunicator');
+const config = require('../constants/config');
 
 class TideWalletCore {
   constructor() {
@@ -13,7 +15,8 @@ class TideWalletCore {
   async initial({ OAuthID, TideWalletID }) {
     const db = new DBOperator();
     await db.init();
-    this._user = new User();
+    const communicator = new TideWalletCommunicator({ apiURL: config.url, apiKey: config.apiKey, apiSecret: config.apiSecret });
+    this._user = new User({ TideWalletCommunicator: communicator, DBOperator: db });
     this._paperWallet = new PaperWallet();
     this._signer = new Signer();
 
