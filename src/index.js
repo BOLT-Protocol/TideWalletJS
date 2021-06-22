@@ -1,14 +1,51 @@
+const emitter=require('events').EventEmitter;
+const BigNumber = require('bignumber.js');
 const config = require("./constants/config");
 const PaperWallet = require("./cores/PaperWallet");
 const Account = require("./cores/Account");
 const Trader = require("./cores/Trader");
 const User = require("./cores/User");
-const UI = require("./cores/UI");
 const { isBrowser } = require("./helpers/env");
 const DBOperator = require("./database/dbOperator");
 const TideWalletCommunicator = require("./cores/TideWalletCommunicator");
 const TideWalletCore = require("./cores/TideWalletCore");
 
+class TideWallet {
+  constructor() {
+    this.em = new emitter();
+    this.eventList = {
+      ready: 'ready',
+      update: 'update',
+      exception: 'exception'
+    }
+
+    return this;
+  }
+
+  async init({ user, api }) {
+    const communicator = new TideWalletCommunicator(api);
+    const db = new DBOperator();
+    await db.init();
+
+    this.user = new User();
+    const userExist = await this.user.checkUser();
+    if(!userExist) {
+      this.user.createUser(user.OAuthID, user.InstallID)
+    }
+
+    this.account = new Account();
+    await this.account.init();
+    return true;
+  }
+
+  on(eventName, callback) {
+    this.em.on(eventName, (data) => {
+      callback(data);
+    });
+  }
+}
+
+/*
 const tidewallet = {
   PaperWallet,
   Account,
@@ -22,7 +59,7 @@ const tidewallet = {
 
 if (isBrowser()) {
   window.Buffer = require("buffer").Buffer;
-  window.tidewallet = tidewallet;
+  window.TideWallet = TideWallet;
 }
 
 console.log(isBrowser());
@@ -61,5 +98,29 @@ if (isBrowser()) {
 }
 
 ///
+*/
 
-module.exports = tidewallet;
+/**
+ * Test in Browser
+
+const tw = new TideWallet();
+const api = {
+  apiURL: 'https://service.tidewallet.io',
+  apiKey: 'f2a76e8431b02f263a0e1a0c34a70466',
+  apiSecret: '9e37d67450dc906042fde75113ecb78c',
+};
+const user = {
+  OAuthID: 'myAppleID',
+  InstallID: 'myInstallID'
+};
+tw.init({ user, api })
+
+ */
+
+
+if (isBrowser()) {
+  window.Buffer = require("buffer").Buffer;
+  window.TideWallet = TideWallet;
+}
+
+module.exports = TideWallet;
