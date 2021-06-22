@@ -96,7 +96,7 @@ class TideWalletCommunicator {
    */
   async login(token, tokenSecret) {
     try {
-      const res = await this.httpAgent.get(this.apiURL + '/token/verify?token=' + this.token);
+      const res = await this.httpAgent.get(this.apiURL + '/token/verify?token=' + token);
       if (res.success) {
         this.token = token;
         this.tokenSecret = tokenSecret;
