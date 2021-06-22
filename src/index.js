@@ -26,15 +26,23 @@ class TideWallet {
     const communicator = new TideWalletCommunicator(api);
     const db = new DBOperator();
     await db.init();
+    const initObj = { TideWalletCommunicator: communicator, DBOperator: db };
 
-    this.user = new User();
-    const userExist = await this.user.checkUser();
-    if(!userExist) {
-      this.user.createUser(user.OAuthID, user.InstallID)
+    this.user = new User(initObj);
+
+    const exist = await this.user.checkUser();
+    if (!exist) {
+      const seed = this.user.mnemonicToSeed(user.mnemonic, user.password);
+      await this.user.createUserWithSeed(user.OAuthID, seed, user.InstallID);
     }
-
-    this.account = new Account();
+  
+    this.account = new Account(initObj);
+    this.account.setMessenger();
     await this.account.init();
+  
+    const listener = this.account.messenger.subscribe((v) => {
+      console.log('On TideWallet Service Event', v);
+    });
     return true;
   }
 
@@ -44,63 +52,6 @@ class TideWallet {
     });
   }
 }
-
-/*
-const tidewallet = {
-  PaperWallet,
-  Account,
-  Trader,
-  User,
-  UI,
-  DBOperator,
-  TideWalletCommunicator,
-  TideWalletCore,
-};
-
-if (isBrowser()) {
-  window.Buffer = require("buffer").Buffer;
-  window.TideWallet = TideWallet;
-}
-
-console.log(isBrowser());
-
-/// TEST AccountCore 
-async function main() {
-  const db = new tidewallet.DBOperator();
-  await db.init();
-  const communicator = new TideWalletCommunicator({ apiURL: config.url, apiKey: config.apiKey, apiSecret: config.apiSecret });
-  const initObj = { TideWalletCommunicator: communicator, DBOperator: db };
-  const user = new tidewallet.User(initObj);
-
-  const userIdentifier = "test2ejknkjdniednwjq";
-  const installId =
-    "11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249";
-  const mnemonic =
-    "cry hub inmate cliff sun program public else atom absurd release inherit funny edge assault";
-  const password = "12345";
-  const exist = await user.checkUser();
-  if (!exist) {
-    const seed = user.mnemonicToSeed(mnemonic, password);
-    await user.createUserWithSeed(userIdentifier, seed, installId);
-  }
-
-  const AccountCore = new tidewallet.Account(initObj);
-  AccountCore.setMessenger();
-  await AccountCore.init();
-
-  const listener = AccountCore.messenger.subscribe((v) => {
-    // console.log('On TideWallet Service Event', v);
-  });
-
-
-}
-
-if (isBrowser()) {
-  window.test = main;
-}
-
-///
-*/
 
 /**
  * Test in Browser
@@ -112,10 +63,14 @@ const api = {
   apiSecret: '9e37d67450dc906042fde75113ecb78c',
 };
 const user = {
-  OAuthID: 'myAppleID',
-  InstallID: 'myInstallID'
+  OAuthID: 'test2ejknkjdniednwjq',
+  InstallID: '11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249',
+  mnemonic: 'cry hub inmate cliff sun program public else atom absurd release inherit funny edge assault',
+  password: '12345'
 };
-tw.init({ user, api })
+tw.init({ user, api }).then(() => {
+  console.log('TideWallet Ready');
+})
 
  */
 
