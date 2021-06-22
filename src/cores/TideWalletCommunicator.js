@@ -15,7 +15,35 @@ class TideWalletCommunicator {
 
     return this;
   }
-  
+
+  // 0. Get User ID and Secret
+  /**
+   * oathRegister
+   * @param {string} installID 
+   * @param {*} appUUID 
+   * @param {*} extendPublicKey 
+   * @param {*} fcmToken 
+   * @returns 
+   */
+   async oathRegister(userIdentifier) {
+    let userId = '';
+    let userSecret = '';
+    try {
+      const body = {
+        id: userIdentifier
+      }
+      const res = await this.httpAgent.post(this.apiURL + '/user/id', body);
+      if (res.success) {
+        userId = _res.data['user_id'];
+        userSecret = _res.data['user_secret'];
+      }
+      return { userId, userSecret };
+    } catch (error) {
+      return { userId, userSecret };
+    }
+  }
+
+
   // 7. User Regist
   /**
    * register
@@ -689,6 +717,8 @@ class TideWalletCommunicator {
       return { message: error };
     }
   }
+
+  
 }
 
 module.exports = TideWalletCommunicator;

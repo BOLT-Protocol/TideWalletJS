@@ -1,3 +1,4 @@
+const config = require("./constants/config");
 const PaperWallet = require("./cores/PaperWallet");
 const Account = require("./cores/Account");
 const Trader = require("./cores/Trader");
@@ -8,14 +9,6 @@ const DBOperator = require("./database/dbOperator");
 const TideWalletCommunicator = require("./cores/TideWalletCommunicator");
 const TideWalletCore = require("./cores/TideWalletCore");
 
-// ++ need update to use config
-// const Communicator = new TideWalletCommunicator({ apiURL: config.url, apiKey:config.apiKey, apiSecret: config.apiSecret});
-const Communicator = new TideWalletCommunicator({
-  apiURL: "https://staging.tidewallet.io/api/v1",
-  apiKey: "123",
-  apiSecret: "123",
-});
-
 const tidewallet = {
   PaperWallet,
   Account,
@@ -23,7 +16,7 @@ const tidewallet = {
   User,
   UI,
   DBOperator,
-  Communicator,
+  TideWalletCommunicator,
   TideWalletCore,
 };
 

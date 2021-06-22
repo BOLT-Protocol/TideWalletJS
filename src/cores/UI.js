@@ -36,16 +36,15 @@ class UI {
     // user = { OAuthID: 'myAppleID', TideWalletID: 'myTideWalletID', InstallID: 'myInstallID' };
     // api = { url: 'https://service.tidewallet.io' };
     if (!user || !api) throw new Error('invalid input');
-    this._communicator = new TideWalletCommunicator({ apiURL: api.url, apiKey: '123', apiSecret:'123' });
+    this._communicator = new TideWalletCommunicator({ apiURL: api.url, apiKey: api.apiKey, apiSecret: api.apiSecret });
 
-    this.url = api.url; // -- temp
-    console.log('this.url', this.url);  // -- temp
+    this.url = api.url;
     
     this._user = new User();
-    // const userCheck = await this._user.checkUser()
-    // if (!userCheck) {
+    const userCheck = await this._user.checkUser()
+    if (!userCheck) {
       const res = await this._createUser(user.OAuthID, user.InstallID);
-    // }
+    }
     return true;
   }
 
@@ -103,9 +102,7 @@ class UI {
   async _createUser(userIdentifier, _installId = '') {
     const installId = config.installId || _installId
 
-    const user = await this._getUser(userIdentifier);
-    const userId = user[0];
-    const userSecret = user[1];
+    const { userId, userSecret } = await await this._communicator.oathRegister(userIdentifier);
     const timestamp = Math.floor(new Date() / 1000)
     const credentialData = this._user._generateCredentialData({ userIdentifier, userId, userSecret, installId, timestamp })
     const wallet = await PaperWallet.createWallet(credentialData.key, credentialData.password);
