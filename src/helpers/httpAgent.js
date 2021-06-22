@@ -22,6 +22,15 @@ class HTTPAgent {
     this.axios.defaults.headers.common["token"] = token;
   }
 
+  getToken() {
+    try {
+      const { token } = this.axios.defaults.headers.common
+      return token || null
+    } catch (e) {
+      return null
+    }
+  }
+
   _request(request) {
     return request().then((res) => {
       if (!res.data) {

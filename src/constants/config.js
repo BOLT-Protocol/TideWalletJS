@@ -1,8 +1,8 @@
 // const env = 'production';
 const env = 'development';
 const apiVersion = '/api/v1';
-const apiKey = '';
-const apiSecret = '';
+const apiKey = 'yourKey';
+const apiSecret = 'yourSecret';
 
 const url = env === 'production' ? 'https://service.tidewallet.io' : 'https://staging.tidewallet.io';
 

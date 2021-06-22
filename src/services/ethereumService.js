@@ -35,7 +35,7 @@ class EthereumService extends AccountServiceDecorator {
     @override
   **/
   async start() {
-    console.log(this._base, " Service Start ", this._accountId, this._syncInterval);
+    console.log(this._base, " Service Start ", this.accountId, this._syncInterval);
     await this.service.start();
 
     this.synchro();

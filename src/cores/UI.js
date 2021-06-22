@@ -6,6 +6,7 @@ const HTTPAgent = require('./../helpers/httpAgent')   // -- temp
 const User = require('./User')
 const config = require('./../constants/config');
 const PaperWallet = require('./PaperWallet');
+const DBOperator = require('./../database/dbOperator');
 
 
 class UI {
@@ -40,10 +41,13 @@ class UI {
 
     this.url = api.url;
     
+    const db = new DBOperator();
+    await db.init();
     this._user = new User();
-    const userCheck = await this._user.checkUser()
-    if (!userCheck) {
+    const check = await this._user.checkUser();
+    if (!check) {
       const res = await this._createUser(user.OAuthID, user.InstallID);
+      return res
     }
     return true;
   }
@@ -102,32 +106,11 @@ class UI {
   async _createUser(userIdentifier, _installId = '') {
     const installId = config.installId || _installId
 
-    const { userId, userSecret } = await await this._communicator.oathRegister(userIdentifier);
-    const timestamp = Math.floor(new Date() / 1000)
-    const credentialData = this._user._generateCredentialData({ userIdentifier, userId, userSecret, installId, timestamp })
-    const wallet = await PaperWallet.createWallet(credentialData.key, credentialData.password);
-    const privateKey = PaperWallet.recoverFromJson(JSON.stringify(wallet), credentialData.password)
-    const seed = await PaperWallet.magicSeed(privateKey);
-    const _seed = Buffer.from(seed)
-    const extPK = PaperWallet.getExtendedPublicKey(_seed);
-
-    const res = await this._communicator.register(installId, installId, extPK);
-
-    return res;
-  }
-
-  async _getUser(userIdentifier) {
-    let userId = ''
-    let userSecret = ''
-
-    const _res = await this._HTTPAgent.post(this.url + '/user/id', {"id": userIdentifier});
-    if (_res.success) {
-      userId = _res.data['user_id'];
-      userSecret = _res.data['user_secret'];
-
-      return [userId, userSecret];
-    } else {
-      return [];
+    try {
+      const success = await this._user.createUser(userIdentifier, installId);
+      return success
+    } catch (e) {
+      return false
     }
   }
 }
