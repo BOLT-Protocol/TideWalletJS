@@ -298,7 +298,7 @@ class TideWalletCommunicator {
    */
   async AccessTokenRenew() {
     try {
-      if (!this.token || !this.tokenSecret) return { message: 'need login' };
+      if (!this.httpAgent.getToken()) return { message: 'need login' };
       const body = {
         token: this.token,
         tokenSecret: this.tokenSecret
@@ -327,7 +327,7 @@ class TideWalletCommunicator {
   async TokenRegist(blockchainID, contractAddress) {
     try {
       if (!blockchainID || !contractAddress) return { message: 'invalid input' };
-      if (!this.token || !this.tokenSecret) return { message: 'need login' };
+      if (!this.httpAgent.getToken()) return { message: 'need login' };
 
       const res = await this.httpAgent.post(this.apiURL + '/blockchain/' + blockchainID + '/contract/' + contractAddress);
       if (res.success) {
@@ -356,8 +356,9 @@ class TideWalletCommunicator {
    */
   async AccountList() {
     try {
-      if (!this.token || !this.tokenSecret) return { message: 'need login' };
+      if (!this.httpAgent.getToken()) return { message: 'need login' };
 
+      console.log(this.apiURL + '/wallet/accounts');
       const res = await this.httpAgent.get(this.apiURL + '/wallet/accounts');
       if (res.success) {
         return res.data;
@@ -387,7 +388,7 @@ class TideWalletCommunicator {
   async AccountDetail(accountID) {
     try {
       if (!accountID) return { message: 'invalid input' };
-      if (!this.token || !this.tokenSecret) return { message: 'need login' };
+      if (!this.httpAgent.getToken()) return { message: 'need login' };
 
       const res = await this.httpAgent.get(this.apiURL + '/wallet/account/' + accountID);
       if (res.success) {
@@ -411,7 +412,7 @@ class TideWalletCommunicator {
   async AccountReceive(accountID) {
     try {
       if (!accountID) return { message: 'invalid input' };
-      if (!this.token || !this.tokenSecret) return { message: 'need login' };
+      if (!this.httpAgent.getToken()) return { message: 'need login' };
 
       const res = await this.httpAgent.get(this.apiURL + '/wallet/account/address/' + accountID + '/receive');
       if (res.success) {
@@ -435,7 +436,7 @@ class TideWalletCommunicator {
   async AccountChange(accountID) {
     try {
       if (!accountID) return { message: 'invalid input' };
-      if (!this.token || !this.tokenSecret) return { message: 'need login' };
+      if (!this.httpAgent.getToken()) return { message: 'need login' };
 
       const res = await this.httpAgent.get(this.apiURL + '/wallet/account/address/' + accountID + '/change');
       if (res.success) {
@@ -470,7 +471,7 @@ class TideWalletCommunicator {
   async ListTransactions(accountID) {
     try {
       if (!accountID) return { message: 'invalid input' };
-      if (!this.token || !this.tokenSecret) return { message: 'need login' };
+      if (!this.httpAgent.getToken()) return { message: 'need login' };
 
       const res = await this.httpAgent.get(this.apiURL + '/wallet/account/txs/' + accountID);
       if (res.success) {
@@ -505,7 +506,7 @@ class TideWalletCommunicator {
   async TransactionDetail(txid) {
     try {
       if (!txid) return { message: 'invalid input' };
-      if (!this.token || !this.tokenSecret) return { message: 'need login' };
+      if (!this.httpAgent.getToken()) return { message: 'need login' };
 
       const res = await this.httpAgent.get(this.apiURL + '/wallet/account/tx/' + txid);
       if (res.success) {
@@ -533,7 +534,7 @@ class TideWalletCommunicator {
   async GetUTXO(accountID) {
     try {
       if (!accountID) return { message: 'invalid input' };
-      if (!this.token || !this.tokenSecret) return { message: 'need login' };
+      if (!this.httpAgent.getToken()) return { message: 'need login' };
 
       const res = await this.httpAgent.get(this.apiURL + '/wallet/account/txs/uxto/' + accountID);
       if (res.success) {
@@ -614,7 +615,7 @@ class TideWalletCommunicator {
   async GetNonce(blockchainID, address) {
     try {
       if (!blockchainID || !address) return { message: 'invalid input' };
-      if (!this.token || !this.tokenSecret) return { message: 'need login' };
+      if (!this.httpAgent.getToken()) return { message: 'need login' };
 
       const res = await this.httpAgent.get(this.apiURL + '/blockchain/'+ blockchainID + '/address/' + address + '/nonce');
       if (res.success) {
@@ -639,7 +640,7 @@ class TideWalletCommunicator {
       const { hex } = body;
 
       if (!hex) return { message: 'invalid input' };
-      if (!this.token || !this.tokenSecret) return { message: 'need login' };
+      if (!this.httpAgent.getToken()) return { message: 'need login' };
 
       const res = await this.httpAgent.post(this.apiURL + '/blockchain/' + blockchainID + '/push-tx/' + accountID, body);
       if (res.success) {
