@@ -108,7 +108,7 @@ tidewallet.close();
 - Use TideWallet Core in browser
 ```javascript
 const user = { OAuthID: 'myAppleID', TideWalletID: 'myTideWalletID', InstallID: 'myInstallID' };
-const core = new tidewallet.TidewalletCore();
+const core = new TideWallet.core();
 
 await core.initial(user);
 
