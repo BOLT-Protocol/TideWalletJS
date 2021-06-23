@@ -250,6 +250,17 @@ class AccountCore {
     );
     return txs;
   }
+
+  /**
+   * Get receive address by accountcurrencyId
+   * @method getReceiveAddress
+   * @param {string} accountId The accountId
+   * @returns {string} The address
+   */
+   async getReceiveAddress(accountcurrencyId) {
+    const address = await this.getCurrencies(accountcurrencyId).getReceivingAddress();
+    return address;
+  }
 }
 
 module.exports = AccountCore;

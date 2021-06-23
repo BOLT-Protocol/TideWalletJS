@@ -1,4 +1,3 @@
-const emitter=require('events').EventEmitter;
 const BigNumber = require('bignumber.js');
 const config = require("./constants/config");
 const PaperWallet = require("./cores/PaperWallet");
@@ -11,14 +10,13 @@ const TideWalletCommunicator = require("./cores/TideWalletCommunicator");
 const TideWalletCore = require("./cores/TideWalletCore");
 
 class TideWallet {
-  constructor() {
-    this.em = new emitter();
-    this.eventList = {
-      ready: 'ready',
-      update: 'update',
-      exception: 'exception'
-    }
+  // eventType: ready, update, notice
+  // notifier: { eventName: string, callback: function }
+  notifiers = [];
 
+  static Core = TideWalletCore;
+
+  constructor() {
     return this;
   }
 
@@ -44,14 +42,88 @@ class TideWallet {
     await this.account.init();
   
     const listener = this.account.messenger.subscribe((v) => {
-      console.log('On TideWallet Service Event', v);
+      this._callback(v, 'update');
     });
     return true;
   }
 
-  on(eventName, callback) {
-    this.em.on(eventName, (data) => {
-      callback(data);
+  on(eventName = '', callback) {
+    if(typeof callback !== 'function') return;
+    const en = eventName.toLocaleLowerCase();
+    let notifier = { callback };
+    switch(en) {
+      case 'ready':
+      case 'update':
+      case 'notice':
+        notifier.eventName = en;
+        break;
+    }
+    return this.notifiers.push(notifier);
+  }
+
+  removeNotifier(notifierId) {
+    delete this.notifiers[notifierId];
+    return true;
+  }
+
+  async overview() {
+    const currencies = await this.account.getAllCurrencies();
+    const fiat = [];
+    const balance = currencies.reduce((rs, curr) => {
+      return rs;
+    }, 0);
+
+    const dashboard = {
+      balance,
+      currencies
+    };
+    return dashboard;
+  }
+
+  async getCurrencyDetail({ accountcurrencyId }) {
+
+  }
+
+  async getTransactionDetail() {
+
+  }
+
+  async getReceivingAddress() {
+
+  }
+
+  async getTransactionFee() {
+
+  }
+
+  async prepareTransaction() {
+
+  }
+
+  async sendTransaction() {
+
+  }
+
+  async sync() {
+
+  }
+
+  async backup() {
+
+  }
+
+  async close() {
+    // release all resources
+    return true;
+  }
+
+  _callback(data, eventName = '') {
+    const ev = eventName.toLocaleLowerCase();
+    this.notifiers.forEach((notifier) => {
+      if(!notifier) return;
+      if(notifier.eventName !== ev) return;
+      if(typeof notifier.callback !== 'function') return;
+      notifier.callback(data);
     });
   }
 }
@@ -61,7 +133,7 @@ if (isBrowser()) {
   window.TideWallet = TideWallet;
 
   /** test case */
-  window.test = () => {
+  window.test = async() => {
     const tw = new TideWallet();
     const api = {
       apiURL: 'https://service.tidewallet.io/api/v1',
@@ -78,9 +150,7 @@ if (isBrowser()) {
       OAuthID: 'test2ejknkjdniednwjq',
       InstallID: '11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249'
     };
-    tw.init({ user2, api }).then(() => {
-      console.log('TideWallet Ready');
-    });
+    await tw.init({ user2, api });
   }
 }
 
