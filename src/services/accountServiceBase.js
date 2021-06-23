@@ -1,13 +1,11 @@
 const { ACCOUNT_EVT } = require("../models/account.model");
 const AccountService = require("./accountService");
-const DBOperator = require("../database/dbOperator");
-const HTTPAgent = require("../helpers/httpAgent");
 class AccountServiceBase extends AccountService {
   constructor(AccountCore) {
     super();
     this._AccountCore = AccountCore;
-    this._DBOperator = new DBOperator();
-    this._HTTPAgent = new HTTPAgent();
+    this._DBOperator = AccountCore._DBOperator;
+    this._TideWalletCommunicator = AccountCore._TideWalletCommunicator;
   }
 
   /**
@@ -37,10 +35,9 @@ class AccountServiceBase extends AccountService {
    * @returns {Array} Concat of account and tokens array
    */
   async _getData() {
-    const res = await this._HTTPAgent.get(`/wallet/account/${this._accountId}`);
-    const acc = res.data;
-
-    if (acc) {
+    try {
+      const res = await this._TideWalletCommunicator.AccountDetail(this._accountId)
+      const acc = res;
       const tokens = acc["tokens"];
       const currs = await this._DBOperator.currencyDao.findAllCurrencies();
       const newTokens = [];
@@ -59,11 +56,9 @@ class AccountServiceBase extends AccountService {
         await Promise.all(
           newTokens.map((token) => {
             return new Promise(async (resolve, reject) => {
-              const res = await this._HTTPAgent.get(
-                `/blockchain/${token["blockchain_id"]}/token/${token["token_id"]}`
-              );
-              if (res.data != null) {
-                const token = this._DBOperator.currencyDao.entity(res.data);
+              const res = await this._TideWalletCommunicator.TokenDetail(token["blockchain_id"], token["token_id"]);
+              if (res != null) {
+                const token = this._DBOperator.currencyDao.entity(res);
 
                 await this._DBOperator.currencyDao.insertCurrency(token);
               }
@@ -73,9 +68,10 @@ class AccountServiceBase extends AccountService {
       }
 
       return [acc, ...tokens];
+    } catch (error) {
+      console.log(error);
+      return [];
     }
-
-    return [];
   }
 
   /**
@@ -93,14 +89,16 @@ class AccountServiceBase extends AccountService {
       const acc = await this._DBOperator.accountDao.findAccount(
         this._accountId
       );
-      const res = await this._HTTPAgent.get(
-        `/blockchain/${acc.networkId}/token?type=TideWallet`
-      );
-      if (res.data) {
-        const tokens = res.data.map((t) =>
-          this._DBOperator.currencyDao.entity(t)
-        );
-        await this._DBOperator.currencyDao.insertCurrencies(tokens);
+      try {
+        const res = await this._TideWalletCommunicator.TokenList(acc.networkId);
+        if (res) {
+          const tokens = res.map((t) =>
+            this._DBOperator.currencyDao.entity(t)
+          );
+          await this._DBOperator.currencyDao.insertCurrencies(tokens);
+        }
+      } catch (error) {
+        console.log(error);
       }
     }
   }
@@ -146,10 +144,10 @@ class AccountServiceBase extends AccountService {
    * @returns {Array} The sorted transactions
    */
   async _getTransaction(currency) {
-    const res = await this._HTTPAgent.get(`/wallet/account/txs/${currency.accountcurrencyId}`);
+    try {
+      const res = await this._TideWalletCommunicator.ListTransactions(currency.accountcurrencyId);
 
-    if (res.success) {
-      const txs = res.data.map((t) =>
+      const txs = res.map((t) =>
         this._DBOperator.transactionDao.entity({
           ...t,
           accountcurrencyId: currency.accountcurrencyId
@@ -157,6 +155,8 @@ class AccountServiceBase extends AccountService {
       );
 
       await this._DBOperator.transactionDao.insertTransactions(txs);
+    } catch (error) {
+      console.log(error);
     }
 
     return this._loadTransactions(currency.id);
@@ -185,18 +185,16 @@ class AccountServiceBase extends AccountService {
    */
   async _getSettingTokens() {
     const acc = await this._DBOperator.accountDao.findAccount(this._accountId);
-
-    const res = await this._HTTPAgent.get(
-      `/blockchain/${acc.networkId}/token?type=TideWallet`
-    );
-
-    if (res.success) {
-      const ds = res.data.map((tk) => ({
+    try {
+      const res = await this._TideWalletCommunicator.TokenList(acc.networkId);
+      const ds = res.map((tk) => ({
         ...tk,
         accountId: this._accountId,
         blockchainId: acc.networkId,
       }));
       this._AccountCore.settingOptions += ds;
+    } catch (error) {
+      console.log(error);
     }
   }
 
