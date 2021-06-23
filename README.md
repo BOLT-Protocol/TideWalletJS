@@ -85,8 +85,17 @@ tidewallet.init({ user, api });
 
 - Initial with Mnemonic
 ```javascript
-const mnemonic = {
-  words: 'pudding cupboard inherit dry rate wet rough venture kitten parrot belt slush',
+const api = {
+  url: 'https://service.tidewallet.io/api/v1',
+  apiKey: 'f2a76e8431b02f263a0e1a0c34a70466',
+  apiSecret: '9e37d67450dc906042fde75113ecb78c',
+};
+
+const user = {
+  OAuthID: 'myAppleID',
+  TideWalletID: 'myTideWalletID',
+  InstallID: 'myInstallID',
+  mnemonic: 'pudding cupboard inherit dry rate wet rough venture kitten parrot belt slush',
   passphase: 'asdf1234'
 };
 tidewallet.init({ mnemonic, api });
