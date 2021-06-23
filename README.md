@@ -64,7 +64,7 @@ npm run build
 const ui = new tidewallet.UI();
 ui.on('ready', () => { /* do something */ });
 ui.on('update', () => { /* do something */ });
-ui.on('exception', () => { /* do something */ });
+ui.on('notice', () => { /* do something */ });
 
 const api = {
   url: 'https://service.tidewallet.io',
