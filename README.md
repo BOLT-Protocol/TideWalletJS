@@ -59,44 +59,50 @@ npm run build
 <script src="./lib/TideWallet.js" type="text/javascript"></script>
 ```
 
-- Use in UI
+- Regist TideWallet
 ```javascript
-const ui = new tidewallet.UI();
-ui.on('ready', () => { /* do something */ });
-ui.on('update', () => { /* do something */ });
-ui.on('notice', () => { /* do something */ });
+const tidewallet = new TideWallet();
+tidewallet.on('ready', () => { console.log('TideWallet is Ready'); });
+tidewallet.on('update', () => { console.log('TideWallet Data Updated'); });
+tidewallet.on('notice', () => { console.log('TideWallet Say Hello'); });
+```
 
+- Initial with OAuth
+```javascript
 const api = {
   url: 'https://service.tidewallet.io',
   apiKey: 'f2a76e8431b02f263a0e1a0c34a70466',
   apiSecret: '9e37d67450dc906042fde75113ecb78c',
 };
 
-// Login with OAuth
 const user = {
   OAuthID: 'myAppleID',
   TideWalletID: 'myTideWalletID',
   InstallID: 'myInstallID'
 };
-ui.init({ user, api });
+tidewallet.init({ user, api });
+```
 
-// Login with Mnemonic
+- Initial with Mnemonic
+```javascript
 const mnemonic = {
   words: 'pudding cupboard inherit dry rate wet rough venture kitten parrot belt slush',
   passphase: 'asdf1234'
 };
-ui.init({ mnemonic, api });
+tidewallet.init({ mnemonic, api });
+```
 
-let assetList = ui.getAssets();
-let assetDetail = ui.getAssetDetail({ assetID });
-let transactionDetail = ui.getTransactionDetail({ transactionID });
-let address = ui.getReceiveAddress({ accountID });
-let fee = ui.getTransactionFee({ blockchainID, from, to, amount, data });
-let transaction = ui.prepareTransaction({ to, amount, data, speed }); // --
-ui.sendTransaction(transaction); // --
-ui.sync(); // --
-const paperwallet = ui.backup(); // --
-ui.close(); // --
+```javascript
+let assetList = tidewallet.getAssets();
+let assetDetail = tidewallet.getAssetDetail({ assetID });
+let transactionDetail = tidewallet.getTransactionDetail({ transactionID });
+let address = tidewallet.getReceiveAddress({ accountID });
+let fee = tidewallet.getTransactionFee({ blockchainID, from, to, amount, data });
+let transaction = tidewallet.prepareTransaction({ to, amount, data, speed }); // --
+tidewallet.sendTransaction(transaction);
+tidewallet.sync();
+const paperwallet = tidewallet.backup();
+tidewallet.close();
 ```
 
 - Use TideWallet Core in browser
