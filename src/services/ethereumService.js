@@ -1,5 +1,5 @@
 const AccountServiceDecorator = require("./accountServiceDecorator");
-const { ACCOUNT } = require("../models/account.model");
+const { ACCOUNT, ACCOUNT_EVT } = require("../models/account.model");
 
 class EthereumService extends AccountServiceDecorator {
   constructor(service, TideWalletCommunicator, DBOperator) {
@@ -196,18 +196,13 @@ class EthereumService extends AccountServiceDecorator {
 
       const now = Date.now();
       const v = this._DBOperator.accountCurrencyDao.entity({
-        ...tks[index],
+        ...tokens[index],
         account_id: this.service.accountId,
         currency_id: id,
-      });
-
-      AccountCurrencyEntity.fromJson(tks[index], this.service.accountId, now);
-
-      await this._DBOperator.accountCurrencyDao.insertAccount({
-        token: tokens[index],
-        accountId: this.service.accountId,
         last_sync_time: now,
       });
+
+      await this._DBOperator.accountCurrencyDao.insertAccount(v);
 
       const findAccountCurrencies =
         await this._DBOperator.accountCurrencyDao.findJoinedByAccountId(
