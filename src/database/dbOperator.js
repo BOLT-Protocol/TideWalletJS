@@ -1,4 +1,4 @@
-const IndexedDB = require("./indexdDB");
+const IndexedDB = require("./indexedDB");
 const { isBrowser } = require("../helpers/env");
 
 class DBOperator {
