@@ -321,7 +321,7 @@ class TideWalletCommunicator {
    * @param {string} blockchainID 
    * @param {string} contractAddress 
    * @returns {
-   *  token_account_id: string
+   *  token_id: string
    * }
    */
   async TokenRegist(blockchainID, contractAddress) {
@@ -329,7 +329,7 @@ class TideWalletCommunicator {
       if (!blockchainID || !contractAddress) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
-      const res = await this.httpAgent.post(this.apiURL + '/blockchain/' + blockchainID + '/contract/' + contractAddress);
+      const res = await this.httpAgent.post(this.apiURL + '/wallet/blockchain/' + blockchainID + '/contract/' + contractAddress, {});
       if (res.success) {
         return res.data;
       }
@@ -635,14 +635,14 @@ class TideWalletCommunicator {
    * @param {string} hex - transaction hex string
    * @returns {}
    */
-  async PublishTransaction(blockchainID, accountID, body) {
+  async PublishTransaction(blockchainID, body) {
     try {
       const { hex } = body;
 
       if (!hex) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
-      const res = await this.httpAgent.post(this.apiURL + '/blockchain/' + blockchainID + '/push-tx/' + accountID, body);
+      const res = await this.httpAgent.post(this.apiURL + '/blockchain/' + blockchainID + '/push-tx/', body);
       if (res.success) {
         return res.data;
       }
