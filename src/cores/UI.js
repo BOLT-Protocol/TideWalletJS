@@ -6,6 +6,7 @@ const HTTPAgent = require('./../helpers/httpAgent')   // -- temp
 const User = require('./User')
 const config = require('./../constants/config');
 const PaperWallet = require('./PaperWallet');
+const DBOperator = require('./../database/dbOperator');
 
 
 class UI {
@@ -32,14 +33,15 @@ class UI {
     });
   }
 
-  async init({ user, api }) {
+  async init({ user }) {
     // user = { OAuthID: 'myAppleID', TideWalletID: 'myTideWalletID', InstallID: 'myInstallID' };
     // api = { url: 'https://service.tidewallet.io' };
     if (!user || !api) throw new Error('invalid input');
     this._communicator = new TideWalletCommunicator({ apiURL: api.url, apiKey: api.apiKey, apiSecret: api.apiSecret });
-
     this.url = api.url;
     
+    const db = new DBOperator();
+    await db.init();
     this._user = new User();
     const userCheck = await this._user.checkUser()
     if (!userCheck) {
@@ -101,7 +103,6 @@ class UI {
 
   async _createUser(userIdentifier, _installId = '') {
     const installId = config.installId || _installId
-
     const { userId, userSecret } = await await this._communicator.oathRegister(userIdentifier);
     const timestamp = Math.floor(new Date() / 1000)
     const credentialData = this._user._generateCredentialData({ userIdentifier, userId, userSecret, installId, timestamp })

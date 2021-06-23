@@ -310,7 +310,7 @@ class PaperWallet {
    * @returns {String} result.password
    * @returns {String} result.extend
    */
-   _generateCredentialData({
+  _generateCredentialData({
     userIdentifier,
     userId,
     userSecret,
