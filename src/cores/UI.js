@@ -36,7 +36,7 @@ class UI {
     
     const db = new DBOperator();
     await db.init();
-    this._user = new User();
+    this._user = new User({ TideWalletCommunicator: this._communicator, DBOperator: db });
     const check = await this._user.checkUser();
     if (!check) {
       const res = await this._createUser(user.OAuthID, user.InstallID);
