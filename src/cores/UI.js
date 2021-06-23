@@ -2,10 +2,8 @@ const emitter=require('events').EventEmitter;
 const BigNumber = require('bignumber.js');
 
 const TideWalletCommunicator = require('./TideWalletCommunicator');
-const HTTPAgent = require('./../helpers/httpAgent')   // -- temp
 const User = require('./User')
 const config = require('./../constants/config');
-const PaperWallet = require('./PaperWallet');
 const DBOperator = require('./../database/dbOperator');
 
 
@@ -17,9 +15,6 @@ class UI {
       update: 'update',
       exception: 'exception'
     }
-
-    this.url = null;                    // -- temp
-    this._HTTPAgent = new HTTPAgent()   // -- temp
 
     this._user = null;
     this._communicator = null;
@@ -38,12 +33,10 @@ class UI {
     // api = { url: 'https://service.tidewallet.io' };
     if (!user || !api) throw new Error('invalid input');
     this._communicator = new TideWalletCommunicator({ apiURL: api.url, apiKey: api.apiKey, apiSecret: api.apiSecret });
-
-    this.url = api.url;
     
     const db = new DBOperator();
     await db.init();
-    this._user = new User();
+    this._user = new User({ TideWalletCommunicator: this._communicator, DBOperator: db });
     const check = await this._user.checkUser();
     if (!check) {
       const res = await this._createUser(user.OAuthID, user.InstallID);
