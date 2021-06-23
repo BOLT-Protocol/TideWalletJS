@@ -44,7 +44,7 @@
 [bip39](https://github.com/bitcoinjs/bip39)
 
 
-### How To Use (DRAFT 2021.06.07)
+### Use TideWallet in Browser
 - Build JS Library
 ```shell
 git clone https://github.com/BOLT-Protocol/TideWalletJS
@@ -101,20 +101,45 @@ const user = {
 tidewallet.init({ mnemonic, api });
 ```
 
+- Get Asset List
 ```javascript
-let assetList = tidewallet.getAssets();
-let assetDetail = tidewallet.getAssetDetail({ assetID });
-let transactionDetail = tidewallet.getTransactionDetail({ transactionID });
-let address = tidewallet.getReceiveAddress({ accountID });
-let fee = tidewallet.getTransactionFee({ blockchainID, from, to, amount, data });
-let transaction = tidewallet.prepareTransaction({ to, amount, data, speed }); // --
-tidewallet.sendTransaction(transaction);
+let assetList = await tidewallet.getAssets();
+```
+- Get Asset Detail and Transaction List
+```javascript
+let assetDetail = await tidewallet.getAssetDetail({ assetID });
+```
+- Get Transaction Detail
+```javascript
+let transactionDetail = await tidewallet.getTransactionDetail({ transactionID });
+```
+- Get Receiving Address
+```javascript
+let address = await tidewallet.getReceivingAddress({ accountID });
+```
+- Get Transaction Fee
+```javascript
+let fee = await tidewallet.getTransactionFee({ blockchainID, from, to, amount, data });
+```
+- Send a transaction
+```javascript
+let rawTransaction = await tidewallet.prepareTransaction({ to, amount, data, fee });
+let transaction = await tidewallet.sendTransaction(rawTransaction);
+```
+- Perform a Manual Synchronization
+```javascript
 tidewallet.sync();
-const paperwallet = tidewallet.backup();
+```
+- Backup TideWallet
+```javascript
+let paperWallet = tidewallet.backup();
+```
+- Close TideWallet
+```javascript
 tidewallet.close();
 ```
 
-- Use TideWallet Core in browser
+### Use TideWallet Core in browser
 ```javascript
 const user = { OAuthID: 'myAppleID', TideWalletID: 'myTideWalletID', InstallID: 'myInstallID' };
 const core = new TideWallet.core();
