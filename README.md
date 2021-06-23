@@ -101,9 +101,9 @@ const user = {
 tidewallet.init({ mnemonic, api });
 ```
 
-- Get Asset List
+- Get Overview
 ```javascript
-let assetList = await tidewallet.getAssets();
+let overview = await tidewallet.overview();
 ```
 - Get Asset Detail and Transaction List
 ```javascript
