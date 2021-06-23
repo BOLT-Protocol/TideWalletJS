@@ -72,11 +72,11 @@ class AccountCore {
         switch (chains[blockIndex].coinType) {
           case 60:
           case 603:
-            svc = new EthereumService(new AccountServiceBase(this));
+            svc = new EthereumService(new AccountServiceBase(this), this._TideWalletCommunicator, this._DBOperator);
             _ACCOUNT = ACCOUNT.ETH;
             break;
           case 8017:
-            svc = new EthereumService(new AccountServiceBase(this));
+            svc = new EthereumService(new AccountServiceBase(this), this._TideWalletCommunicator, this._DBOperator);
             _ACCOUNT = ACCOUNT.CFC;
 
             break;
