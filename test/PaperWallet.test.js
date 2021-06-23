@@ -1,5 +1,4 @@
 const PaperWallet = require("../src/cores/PaperWallet");
-const User = require('../src/cores/User');
 
 describe('keystore', () => {
     const pk = '929cb0a76cccbb93283832c5833d53ce7048c085648eb367a9e63c44c146b35d';
@@ -15,6 +14,7 @@ describe('keystore', () => {
 
     test('recoverFromJson', () => {
         const jsonKeystore = PaperWallet.walletToJson(keyStore);
+        console.log(jsonKeystore)
         const result = PaperWallet.recoverFromJson(jsonKeystore, pw1);
 
         expect(result).toBe(pk);
@@ -82,14 +82,21 @@ test("getExtendedPublicKey", () => {
 });
 
 describe('construct by user', () => {
-    const _user = new User();
     const _paperWallet = new PaperWallet();
-    _paperWallet.init(_user);
     const userIdentifier = 'test2ejknkjdniednwjq'
     const userId = '3fa33d09a46d4e31087a3b24dfe8dfb46750ce534641bd07fed54d2f23e97a0f'
     const userSecret = '971db42d2342f5e74a764e57e2d341103565f413a64f242d64b1f7024346a2e1'
     const installId = '11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249'
     const timestamp = 1623129204183
+    // const keystore = "";
+    // const userInfo = {
+    //     id: userId,
+    //     thirdPartyId: userIdentifier,
+    //     installId,
+    //     timestamp,
+    //     keystore
+    //   }
+    // _paperWallet.init(userInfo);
 
     test("paperWallet _getNonce ", () => {
         const nonce = _paperWallet._getNonce(userIdentifier)
@@ -117,7 +124,5 @@ describe('construct by user', () => {
         expect(credential.password).toBe('72012f0e20235377c36eaee6c1daf6e49e172b63c21091a480c0f44bdfebbe1b');
         expect(credential.extend).toBe('8b37c50f');
     });
-
-    
 })
 

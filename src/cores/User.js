@@ -12,6 +12,7 @@ class User {
 
     this._communicator = TideWalletCommunicator;
     this._DBOperator = DBOperator;
+    this._PaperWallet = new PaperWallet();
   }
 
   /**
@@ -24,8 +25,6 @@ class User {
 
     // TODO: Remove this log
     console.log("checkUser: ", user);
-    this._PaperWallet = new PaperWallet();
-    this._PaperWallet.init(this);
 
     if (user) {
       await this._initUser(user);
@@ -134,6 +133,7 @@ class User {
       await this._initUser(user);
       return true;
     } catch (error) {
+      console.log('_registerUser:', error);
       return false;
     }
   }
@@ -270,6 +270,15 @@ class User {
     this.installId = user.installId;
     this.timestamp = user.timestamp;
     this.isBackup = user.backupStatus;
+
+    const userInfo = {
+      id: user.userId,
+      thirdPartyId: user.thirdPartyId,
+      installId: user.installId,
+      timestamp: user.timestamp,
+      keystore: user.keystore
+    }
+    this._PaperWallet.init(userInfo);
 
     const item = await this._DBOperator.prefDao.getAuthItem();
     if (item != null) {
