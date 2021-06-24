@@ -4,7 +4,7 @@ const { url } = require("../constants/config");
 class HTTPAgent {
   static instance;
 
-  constructor({ apiURL }) {
+  constructor({ apiURL = '' }) {
     this.url = apiURL || url
     if (!HTTPAgent.instance) {
       this.axios = axios.create({
