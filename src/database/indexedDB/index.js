@@ -574,12 +574,12 @@ class AccountCurrencyDao extends DAO {
 }
 
 class ExchangeRateDao extends DAO {
-  entity({ exchange_rate_id, name, rate, last_sync_time, type }) {
+  entity({ currency_id, name, rate, timestamp, type }) {
     return {
-      exchangeRateId: exchange_rate_id,
+      exchangeRateId: currency_id,
       name,
       rate,
-      lastSyncTime: last_sync_time,
+      lastSyncTime: timestamp,
       type,
     };
   }

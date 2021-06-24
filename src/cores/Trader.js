@@ -21,24 +21,23 @@ class Trader {
     const local = await this._DBOperator.exchangeRateDao.findAllExchageRates();
     const now = Date.now();
 
-    // if (local.isEmpty || now - local[0].lastSyncTime > syncInterval) {
-    if (!local || now - local[0].lastSyncTime > Trader.syncInterval) {
+    if (!Array.isArray(local) || !local[0] || now - local[0].lastSyncTime > Trader.syncInterval) {
       try {
         const fiats = await this._TideWalletCommunicator.FiatsRate();
         const cryptos = await this._TideWalletCommunicator.CryptoRate();
-        
-        await this._DBOperator.exchangeRateDao.insertExchangeRates([
+        const rates = [
           ...fiats.map(
             (e) => this._DBOperator.exchangeRateDao.entity({
               ...e, timestamp: now, type: 'fiat',
             })
           ),
           ...cryptos.map(
-            (e) => this.exchangeRateDao.entity({
+            (e) => this._DBOperator.exchangeRateDao.entity({
               ...e, timestamp: now, type: 'currency',
             })
           )
-        ]);
+        ];
+        await this._DBOperator.exchangeRateDao.insertExchangeRates(rates);
 
         this._fiats = fiats;
         this._cryptos = cryptos;

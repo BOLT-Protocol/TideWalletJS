@@ -212,7 +212,7 @@ class AccountCore {
 
       await this._DBOperator.currencyDao.insertCurrencies(list);
     } catch (error) {
-      
+      console.log(error);
     }
   }
 
