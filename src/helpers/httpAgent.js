@@ -4,10 +4,11 @@ const { url } = require("../constants/config");
 class HTTPAgent {
   static instance;
 
-  constructor() {
+  constructor({ apiURL }) {
+    this.url = apiURL || url
     if (!HTTPAgent.instance) {
       this.axios = axios.create({
-        baseURL: url,
+        baseURL: this.url,
       });
       HTTPAgent.instance = this;
     }

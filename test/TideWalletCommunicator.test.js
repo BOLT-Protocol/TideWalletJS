@@ -41,7 +41,10 @@ test('login', async () => {
 })
 
 test('AccessTokenRenew', async () => {
-  const res = await twc.AccessTokenRenew();
+  const res = await twc.AccessTokenRenew({
+    token: testData.token,
+    tokenSecret: testData.tokenSecret
+  });
 
   expect(res.message).not.toBeDefined();
   expect(res.token).toBeDefined();
