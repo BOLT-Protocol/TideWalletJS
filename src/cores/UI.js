@@ -2,10 +2,8 @@ const emitter=require('events').EventEmitter;
 const BigNumber = require('bignumber.js');
 
 const TideWalletCommunicator = require('./TideWalletCommunicator');
-const HTTPAgent = require('./../helpers/httpAgent')   // -- temp
 const User = require('./User')
 const config = require('./../constants/config');
-const PaperWallet = require('./PaperWallet');
 const DBOperator = require('./../database/dbOperator');
 
 
@@ -17,9 +15,6 @@ class UI {
       update: 'update',
       exception: 'exception'
     }
-
-    this.url = null;                    // -- temp
-    this._HTTPAgent = new HTTPAgent()   // -- temp
 
     this._user = null;
     this._communicator = null;
@@ -33,16 +28,15 @@ class UI {
     });
   }
 
-  async init({ user }) {
+  async init({ user, api }) {
     // user = { OAuthID: 'myAppleID', TideWalletID: 'myTideWalletID', InstallID: 'myInstallID' };
     // api = { url: 'https://service.tidewallet.io' };
     if (!user || !api) throw new Error('invalid input');
     this._communicator = new TideWalletCommunicator({ apiURL: api.url, apiKey: api.apiKey, apiSecret: api.apiSecret });
-    this.url = api.url;
     
     const db = new DBOperator();
     await db.init();
-    this._user = new User();
+    this._user = new User({ TideWalletCommunicator: this._communicator, DBOperator: db });
     const userCheck = await this._user.checkUser()
     if (!userCheck) {
       const res = await this._createUser(user.OAuthID, user.InstallID);
@@ -115,21 +109,6 @@ class UI {
     const res = await this._communicator.register(installId, installId, extPK);
 
     return res;
-  }
-
-  async _getUser(userIdentifier) {
-    let userId = ''
-    let userSecret = ''
-
-    const _res = await this._HTTPAgent.post(this.url + '/user/id', {"id": userIdentifier});
-    if (_res.success) {
-      userId = _res.data['user_id'];
-      userSecret = _res.data['user_secret'];
-
-      return [userId, userSecret];
-    } else {
-      return [];
-    }
   }
 }
 

@@ -1,10 +1,7 @@
-const rlp = require("../src/helpers/rlp");
-const Cryptor = require('../src/helpers/Cryptor');
 const User = require("../src/cores/User");
 const PaperWallet = require('../src/cores/PaperWallet');
-const { jsonToWallet } = require("../src/cores/PaperWallet");
 
-const _user = new User()
+const _user = new User({ TideWalletCommunicator: {}, DBOperator: {} })
 const userIdentifier = 'test2ejknkjdniednwjq'
 const userId = '3fa33d09a46d4e31087a3b24dfe8dfb46750ce534641bd07fed54d2f23e97a0f'
 const userSecret = '971db42d2342f5e74a764e57e2d341103565f413a64f242d64b1f7024346a2e1'
@@ -16,8 +13,10 @@ const resPassword = '637a54e862c9260697f29c631288ea5c73f3f6ce8a38259d0d27abba15c
 describe('User checkUser', () => {
     test("is find user", async () => {
         {
-            const _user1 = new User()
-
+            // mock http response
+            const communicator = {
+                login: () => true,
+            }
             // mock db return
             const _DBOperator = {
                 userDao: {
@@ -36,7 +35,8 @@ describe('User checkUser', () => {
                     })
                 }
             }
-            _user1._DBOperator = _DBOperator;
+            const initObj = { TideWalletCommunicator: communicator, DBOperator: _DBOperator };
+            const _user1 = new User(initObj);
 
             const checkUser = await _user1.checkUser()
             expect(checkUser).toBe(true);
@@ -46,15 +46,16 @@ describe('User checkUser', () => {
 
     test("not found user", async () => {
         {
-            const _user2 = new User()
-
+            // mock http response
+            const communicator = {}
             // mock db return
             const _DBOperator = {
                 userDao: {
                     findUser: () => null
                 }
             }
-            _user2._DBOperator = _DBOperator;
+            const initObj = { TideWalletCommunicator: communicator, DBOperator: _DBOperator };
+            const _user2 = new User(initObj);
 
             const checkUser = await _user2.checkUser()
             expect(checkUser).toBe(false);
@@ -64,16 +65,18 @@ describe('User checkUser', () => {
 
 test("User createUser ", async () => {
     {
-        const _user1 = new User()
-
         // mock api response
-        _user1._HTTPAgent.post = () => ({
-            success: true,
-            data: {
-                user_id: userId,
-                user_secret: userSecret
-            }
-        })
+        const communicator = {
+            oathRegister: () => ({
+                userId,
+                userSecret
+            }),
+            register:() => ({
+                token: '',
+                tokenSecret: ''
+            }),
+            login: () => true,
+        }
         // mock db return
         const _DBOperator = {
             userDao: {
@@ -96,7 +99,8 @@ test("User createUser ", async () => {
                 })
             }
         }
-        _user1._DBOperator = _DBOperator;
+        const initObj = { TideWalletCommunicator: communicator, DBOperator: _DBOperator };
+        const _user1 = new User(initObj);
 
         expect.assertions(1);
         let success = false;
@@ -109,16 +113,18 @@ test("User createUser ", async () => {
 
 test("User _registerUser", async () => {
     {
-        const _user1 = new User()
-
         // mock api response
-        _user1._HTTPAgent.post = () => ({
-            success: true,
-            data: {
-                user_id: userId,
-                user_secret: userSecret
-            }
-        })
+        const communicator = {
+            oathRegister: () => ({
+                userId,
+                userSecret
+            }),
+            register:() => ({
+                token: '',
+                tokenSecret: ''
+            }),
+            login: () => true,
+        }
         // mock db return
         const _DBOperator = {
             userDao: {
@@ -141,7 +147,8 @@ test("User _registerUser", async () => {
                 })
             }
         }
-        _user1._DBOperator = _DBOperator;
+        const initObj = { TideWalletCommunicator: communicator, DBOperator: _DBOperator };
+        const _user1 = new User(initObj);
         
         expect.assertions(1);
         let result = false;
@@ -163,16 +170,18 @@ test("User createUserWithSeed ", async () => {
     {
         const _seed = 'e48f77df468d4890f92392568451e7f73e1757c4287c02b04b8b7d9dba063a13';
 
-        const _user1 = new User()
-
         // mock api response
-        _user1._HTTPAgent.post = () => ({
-            success: true,
-            data: {
-                user_id: userId,
-                user_secret: userSecret
-            }
-        })
+        const communicator = {
+            oathRegister: () => ({
+                userId,
+                userSecret
+            }),
+            register:() => ({
+                token: '',
+                tokenSecret: ''
+            }),
+            login: () => true,
+        }
         // mock db return
         const _DBOperator = {
             userDao: {
@@ -195,7 +204,8 @@ test("User createUserWithSeed ", async () => {
                 })
             }
         }
-        _user1._DBOperator = _DBOperator;
+        const initObj = { TideWalletCommunicator: communicator, DBOperator: _DBOperator };
+        const _user1 = new User(initObj);
 
         expect.assertions(1);
         let success = false;
@@ -208,7 +218,7 @@ test("User createUserWithSeed ", async () => {
 
 test('User validPaperWallet', async () => {
     const walletJson = resWallet;
-    const wallet = jsonToWallet(walletJson);
+    const wallet = PaperWallet.jsonToWallet(walletJson);
     const result1 = _user.validPaperWallet(walletJson);
     const result2 = _user.validPaperWallet(wallet);
     expect(result1).toBeTruthy();
@@ -225,8 +235,7 @@ test('User restorePaperWallet', async () => {
 describe('User checkWalletBackup', () => {
     test("is find user", () => {
         {
-            const _user1 = new User()
-
+            const communicator = {}
             // mock db return
             const _DBOperator = {
                 userDao: {
@@ -246,7 +255,8 @@ describe('User checkWalletBackup', () => {
                     })
                 }
             }
-            _user1._DBOperator = _DBOperator;
+            const initObj = { TideWalletCommunicator: communicator, DBOperator: _DBOperator };
+            const _user1 = new User(initObj);
             
             const result = _user1.backupWallet();
             expect(result).toBeTruthy();
@@ -262,8 +272,10 @@ describe('User checkWalletBackup', () => {
 
 test('User _initUser', async () => {
     {
-        const _user1 = new User()
-
+        // mock http response
+        const communicator = {
+            login: () => true
+        }
         // mock db return
         const _DBOperator = {
             prefDao: {
@@ -273,7 +285,9 @@ test('User _initUser', async () => {
             }
         }
 
-        _user1._DBOperator = _DBOperator;
+        const initObj = { TideWalletCommunicator: communicator, DBOperator: _DBOperator };
+        const _user1 = new User(initObj);
+
         _user1._initUser({
             userId: 'test_id',
             keystore: 'test_keystore',

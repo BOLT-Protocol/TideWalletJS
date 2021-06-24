@@ -31,7 +31,9 @@ console.log(isBrowser());
 async function main() {
   const db = new tidewallet.DBOperator();
   await db.init();
-  const user = new tidewallet.User();
+  const communicator = new TideWalletCommunicator({ apiURL: config.url, apiKey: config.apiKey, apiSecret: config.apiSecret });
+  const initObj = { TideWalletCommunicator: communicator, DBOperator: db };
+  const user = new tidewallet.User(initObj);
 
   const userIdentifier = "test2ejknkjdniednwjq";
   const installId =
@@ -45,7 +47,7 @@ async function main() {
     await user.createUserWithSeed(userIdentifier, seed, installId);
   }
 
-  const AccountCore = new tidewallet.Account();
+  const AccountCore = new tidewallet.Account(initObj);
   AccountCore.setMessenger();
   await AccountCore.init();
 

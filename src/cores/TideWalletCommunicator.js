@@ -1,19 +1,23 @@
 const HTTPAgent = require('./../helpers/httpAgent');
 
 class TideWalletCommunicator {
+  static instance;
+
   constructor ({ apiURL, apiKey, apiSecret }) {
-    if (!apiURL) throw new Error('Invalid apiURL');
-    if (!apiKey) throw new Error('Invalid apiKey');
-    if (!apiSecret) throw new Error('Invalid apiSecret');
-    this.apiURL = apiURL;
-    this.apiKey = apiKey;
-    this.apiSecret = apiSecret;
-    this.httpAgent = new HTTPAgent();
-
-    this.token;
-    this.tokenSecret;
-
-    return this;
+    if (!TideWalletCommunicator.instance) {
+      if (!apiURL) throw new Error('Invalid apiURL');
+      if (!apiKey) throw new Error('Invalid apiKey');
+      if (!apiSecret) throw new Error('Invalid apiSecret');
+      this.apiURL = apiURL;
+      this.apiKey = apiKey;
+      this.apiSecret = apiSecret;
+      this.httpAgent = new HTTPAgent();
+  
+      this.token;
+      this.tokenSecret;
+      TideWalletCommunicator.instance = this;
+    }
+    return TideWalletCommunicator.instance;
   }
 
   // 0. Get User ID and Secret
@@ -34,12 +38,12 @@ class TideWalletCommunicator {
       }
       const res = await this.httpAgent.post(this.apiURL + '/user/id', body);
       if (res.success) {
-        userId = _res.data['user_id'];
-        userSecret = _res.data['user_secret'];
+        userId = res.data['user_id'];
+        userSecret = res.data['user_secret'];
       }
       return { userId, userSecret };
     } catch (error) {
-      return { userId, userSecret };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -71,13 +75,13 @@ class TideWalletCommunicator {
         this.token = res.data.token;
         this.tokenSecret = res.data.tokenSecret;
         this.httpAgent.setToken(res.data.token);
-        return { token: res.data.token, tokenSecret: res.data.tokenSecret, userID: res.data.user_id };
+        return { success: true, token: res.data.token, tokenSecret: res.data.tokenSecret, userID: res.data.user_id };
       }
       this.token = null;
       this.tokenSecret = null;
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -92,7 +96,7 @@ class TideWalletCommunicator {
    */
   async login(token, tokenSecret) {
     try {
-      const res = await this.httpAgent.get(this.apiURL + '/token/verify?token=' + this.token);
+      const res = await this.httpAgent.get(this.apiURL + '/token/verify?token=' + token);
       if (res.success) {
         this.token = token;
         this.tokenSecret = tokenSecret;
@@ -101,9 +105,9 @@ class TideWalletCommunicator {
       }
       this.token = null;
       this.tokenSecret = null;
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -124,9 +128,9 @@ class TideWalletCommunicator {
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -149,9 +153,9 @@ class TideWalletCommunicator {
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -180,9 +184,9 @@ class TideWalletCommunicator {
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -213,9 +217,9 @@ class TideWalletCommunicator {
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -245,9 +249,9 @@ class TideWalletCommunicator {
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -278,9 +282,9 @@ class TideWalletCommunicator {
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -305,9 +309,9 @@ class TideWalletCommunicator {
         this.tokenSecret = res.data.tokenSecret;
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -317,21 +321,21 @@ class TideWalletCommunicator {
    * @param {string} blockchainID 
    * @param {string} contractAddress 
    * @returns {
-   *  token_account_id: string
+   *  token_id: string
    * }
    */
   async TokenRegist(blockchainID, contractAddress) {
     try {
-      if (!blockchainID && !contractAddress) return { message: 'invalid input' };
+      if (!blockchainID || !contractAddress) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
-      const res = await this.httpAgent.post(this.apiURL + '/blockchain/' + blockchainID + '/contract/' + contractAddress);
+      const res = await this.httpAgent.post(this.apiURL + '/wallet/blockchain/' + blockchainID + '/contract/' + contractAddress, {});
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -359,9 +363,9 @@ class TideWalletCommunicator {
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -390,9 +394,9 @@ class TideWalletCommunicator {
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -414,9 +418,9 @@ class TideWalletCommunicator {
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -438,9 +442,9 @@ class TideWalletCommunicator {
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -473,9 +477,9 @@ class TideWalletCommunicator {
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -508,9 +512,9 @@ class TideWalletCommunicator {
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -536,9 +540,9 @@ class TideWalletCommunicator {
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -560,9 +564,9 @@ class TideWalletCommunicator {
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -583,19 +587,19 @@ class TideWalletCommunicator {
       const { fromAddress, toAddress, value, data } = body;
 
       if (!blockchainID
-        && !fromAddress
-        && !toAddress
-        && !value
-        && !data
+        || !fromAddress
+        || !toAddress
+        || !value
+        || !data
         ) return { message: 'invalid input' };
 
       const res = await this.httpAgent.post(this.apiURL + '/blockchain/' + blockchainID + '/gas-limit', body);
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -610,16 +614,16 @@ class TideWalletCommunicator {
    */
   async GetNonce(blockchainID, address) {
     try {
-      if (!blockchainID && !address) return { message: 'invalid input' };
+      if (!blockchainID || !address) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
       const res = await this.httpAgent.get(this.apiURL + '/blockchain/'+ blockchainID + '/address/' + address + '/nonce');
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -631,20 +635,20 @@ class TideWalletCommunicator {
    * @param {string} hex - transaction hex string
    * @returns {}
    */
-  async PublishTransaction(blockchainID, accountID, body) {
+  async PublishTransaction(blockchainID, body) {
     try {
       const { hex } = body;
 
       if (!hex) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
-      const res = await this.httpAgent.post(this.apiURL + '/blockchain/' + blockchainID + '/push-tx/' + accountID, body);
+      const res = await this.httpAgent.post(this.apiURL + '/blockchain/' + blockchainID + '/push-tx/', body);
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -663,9 +667,9 @@ class TideWalletCommunicator {
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -684,9 +688,9 @@ class TideWalletCommunicator {
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 
@@ -707,15 +711,15 @@ class TideWalletCommunicator {
    */
   async TokenInfo(blockchainID, contractAddress) {
     try {
-      if (!blockchainID && !contractAddress) return { message: 'invalid input' };
+      if (!blockchainID || !contractAddress) return { message: 'invalid input' };
 
       const res = await this.httpAgent.get(this.apiURL + '/blockchain/' + blockchainID + '/contract/' + contractAddress);
       if (res.success) {
         return res.data;
       }
-      return { message: res.message, code: res.code };
+      return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      return { message: error };
+      return Promise.reject({ message: error });
     }
   }
 

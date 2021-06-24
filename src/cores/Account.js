@@ -3,8 +3,6 @@ const { ACCOUNT } = require("../models/account.model");
 const AccountServiceBase = require("../services/accountServiceBase");
 const EthereumService = require("../services/ethereumService");
 const { network_publish } = require("../constants/config");
-const DBOperator = require("../database/dbOperator");
-const HttpAgent = require("../helpers/httpAgent");
 
 class AccountCore {
   static instance;
@@ -33,14 +31,14 @@ class AccountCore {
     this._settingOptions = options;
   }
 
-  constructor() {
+  constructor({TideWalletCommunicator, DBOperator}) {
     if (!AccountCore.instance) {
       this._messenger = null;
       this._isInit = false;
       this._debugMode = false;
       this._services = [];
-      this._DBOperator = new DBOperator();
-      this._HttpAgent = new HttpAgent();
+      this._DBOperator = DBOperator;
+      this._TideWalletCommunicator = TideWalletCommunicator;
       AccountCore.instance = this;
     }
 
@@ -74,11 +72,11 @@ class AccountCore {
         switch (chains[blockIndex].coinType) {
           case 60:
           case 603:
-            svc = new EthereumService(new AccountServiceBase(this));
+            svc = new EthereumService(new AccountServiceBase(this), this._TideWalletCommunicator, this._DBOperator);
             _ACCOUNT = ACCOUNT.ETH;
             break;
           case 8017:
-            svc = new EthereumService(new AccountServiceBase(this));
+            svc = new EthereumService(new AccountServiceBase(this), this._TideWalletCommunicator, this._DBOperator);
             _ACCOUNT = ACCOUNT.CFC;
 
             break;
@@ -127,10 +125,9 @@ class AccountCore {
     let networks = await this._DBOperator.networkDao.findAllNetworks();
 
     if (!networks || networks.length < 1) {
-      const res = await this._HttpAgent.get("/blockchain");
-
-      if (res.success) {
-        const enties = res.data.map((n) =>
+      try {
+        const res = await this._TideWalletCommunicator.BlockchainList();
+        const enties = res.map((n) =>
           this._DBOperator.networkDao.entity({
             network_id: n["blockchain_id"],
             network: n["name"],
@@ -141,6 +138,8 @@ class AccountCore {
         );
         networks = enties;
         await this._DBOperator.networkDao.insertNetworks(enties);
+      } catch (error) {
+        
       }
     }
 
@@ -165,27 +164,29 @@ class AccountCore {
   }
 
   async _addAccount(local) {
-    const res = await this._HttpAgent.get("/wallet/accounts");
-    let list = res.data ?? [];
-
-    const user = await this._DBOperator.userDao.findUser();
-
-    for (const account of list) {
-      const id = account["account_id"];
-      const exist = local.findIndex((el) => el.accountId === id) > -1;
-
-      if (!exist) {
-        const entity = this._DBOperator.accountDao.entity({
-          ...account,
-          user_id: user.userId,
-          network_id: account["blockchain_id"],
-        });
-        await this._DBOperator.accountDao.insertAccount(entity);
-
-        local.push(entity);
+    try {
+      const res = await this._TideWalletCommunicator.AccountList()
+      let list = res ?? [];
+  
+      const user = await this._DBOperator.userDao.findUser();
+  
+      for (const account of list) {
+        const id = account["account_id"];
+        const exist = local.findIndex((el) => el.accountId === id) > -1;
+  
+        if (!exist) {
+          const entity = this._DBOperator.accountDao.entity({
+            ...account,
+            user_id: user.userId,
+            network_id: account["blockchain_id"],
+          });
+          await this._DBOperator.accountDao.insertAccount(entity);
+  
+          local.push(entity);
+        }
       }
+    } catch (error) {
     }
-
     return local;
   }
 
@@ -198,10 +199,10 @@ class AccountCore {
   }
 
   async _addSupportedCurrencies(local) {
-    const res = await this._HttpAgent.get("/currency");
+    try {
+      const res = await this._TideWalletCommunicator.CurrencyList();
 
-    if (res.success) {
-      let list = res.data;
+      let list = res;
 
       list = list
         .filter((c) =>
@@ -210,6 +211,8 @@ class AccountCore {
         .map((c) => this._DBOperator.currencyDao.entity(c));
 
       await this._DBOperator.currencyDao.insertCurrencies(list);
+    } catch (error) {
+      
     }
   }
 

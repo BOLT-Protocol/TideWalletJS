@@ -1,10 +1,8 @@
 const AccountServiceDecorator = require("./accountServiceDecorator");
-const { ACCOUNT } = require("../models/account.model");
-const HTTPAgent = require("../helpers/httpAgent");
-const config = require("../constants/config");
-const DBOperator = require("../database/dbOperator");
+const { ACCOUNT, ACCOUNT_EVT } = require("../models/account.model");
+
 class EthereumService extends AccountServiceDecorator {
-  constructor(service) {
+  constructor(service, TideWalletCommunicator, DBOperator) {
     super();
     this.service = service;
     this._base = ACCOUNT.ETH;
@@ -16,8 +14,8 @@ class EthereumService extends AccountServiceDecorator {
     this._feeTimestamp = null;
     this._nonce = 0;
 
-    this._HTTPAgent = new HTTPAgent();
-    this._DBOperator = new DBOperator();
+    this._TideWalletCommunicator = TideWalletCommunicator;
+    this._DBOperator = DBOperator;
   }
 
   /**
@@ -35,7 +33,7 @@ class EthereumService extends AccountServiceDecorator {
     @override
   **/
   async start() {
-    console.log(this._base, " Service Start ", this._accountId, this._syncInterval);
+    console.log(this._base, " Service Start ", this.accountId, this._syncInterval);
     await this.service.start();
 
     this.synchro();
@@ -60,16 +58,12 @@ class EthereumService extends AccountServiceDecorator {
    **/
   async getReceivingAddress(accountcurrencyId) {
     if (this._address === null) {
-      const response = await this._HTTPAgent.get(
-        `${config.url}/wallet/account/address/${accountcurrencyId}/receive`
-      );
-      if (response.success) {
-        const data = response["data"];
-        const address = data["address"];
+      try {
+        const response = await this._TideWalletCommunicator.AccountReceive(accountcurrencyId);
+        const address = response["address"];
         this._address = address;
-
-        return [this._address, null];
-      } else {
+      } catch (error) {
+        console.log(error)
         //TODO
         return ["error", 0];
       }
@@ -102,19 +96,17 @@ class EthereumService extends AccountServiceDecorator {
       Date.now() - this._feeTimestamp >
         this.AVERAGE_FETCH_FEE_TIME
     ) {
-      const response = await this._HTTPAgent.get(
-        `${config.url}/blockchain/${blockchainId}/fee`
-      );
-      if (response.success) {
-        const { data } = response; // FEE will return String
-        const { slow, standard, fast } = data;
+      try {
+        const response = await this._TideWalletCommunicator.GetFee(blockchainId);
+        const { slow, standard, fast } = response;
         this._fee = {
           slow,
           standard,
           fast,
         };
         this._feeTimestamp = Date.now();
-      } else {
+      } catch (error) {
+        console.log(error)
         // TODO fee = null 前面會出錯
       }
     }
@@ -129,19 +121,20 @@ class EthereumService extends AccountServiceDecorator {
    * @returns {Array.<{success: Boolean, transaction: String}>} result
    **/
   async publishTransaction(blockchainId, transaction) {
-    const response = await this._HTTPAgent.post(
-      `${config.url}/blockchain/${blockchainId}/push-tx`,
-      {
+    try {
+      const body = {
         hex:
           "0x" + Buffer.from(transaction.serializeTransaction).toString("hex"),
       }
-    );
-    const { success, data } = response;
-    // transaction.id = response.data['txid'];
-    transaction.txId = data["txid"];
-    transaction.timestamp = Date.now();
-    transaction.confirmations = 0;
-    return [success, transaction];
+      const response = await this._TideWalletCommunicator.PublishTransaction(blockchainId, body);
+      transaction.txId = response["txid"];
+      transaction.timestamp = Date.now();
+      transaction.confirmations = 0;
+      return [true, transaction];
+    } catch (error) {
+      console.log(error);
+      return [false, transaction];
+    }
   }
 
   /**
@@ -181,73 +174,57 @@ class EthereumService extends AccountServiceDecorator {
    * @returns {Boolean} result
    **/
   async addToken(blockchainId, token) {
-    const res = await this._HTTPAgent.post(
-      `${config.url}/wallet/blockchain/${blockchainId}/contract/${token.contract}`,
-      {}
-    );
-    if (res.success == false) return false;
-
     try {
-      const { token_id: id } = res.data;
-      const updateResult = await this._HTTPAgent.get(
-        `${config.url}/wallet/account/${this.service.accountId}`
-      );
+      const res = await this._TideWalletCommunicator.TokenRegist(blockchainId, token.contract);
+      const { token_id: id } = res;
+      const updateResult = await this._TideWalletCommunicator.AccountDetail(this.service.accountId);
 
-      if (updateResult.success) {
-        const accountItem = updateResult.data;
-        const tokens = [accountItem, ...accountItem.tokens];
-        const index = tokens.findIndex((token) => token["token_id"] == id);
+      const accountItem = updateResult;
+      const tokens = [accountItem, ...accountItem.tokens];
+      const index = tokens.findIndex((token) => token["token_id"] == id);
 
-        const data = {
-          ...tokens[index],
-          icon: token.imgUrl || accountItem["icon"],
-          currency_id: id,
-        };
+      const data = {
+        ...tokens[index],
+        icon: token.imgUrl || accountItem["icon"],
+        currency_id: id,
+      };
 
-        const curr = this._DBOperator.currencyDao.entity({
-          ...data,
-        });
-        await this._DBOperator.currencyDao.insertCurrency(curr);
+      const curr = this._DBOperator.currencyDao.entity({
+        ...data,
+      });
+      await this._DBOperator.currencyDao.insertCurrency(curr);
 
-        const now = Date.now();
-        const v = this._DBOperator.accountCurrencyDao.entity({
-          ...tks[index],
-          account_id: this.service.accountId,
-          currency_id: id,
-        });
+      const now = Date.now();
+      const v = this._DBOperator.accountCurrencyDao.entity({
+        ...tokens[index],
+        account_id: this.service.accountId,
+        currency_id: id,
+        last_sync_time: now,
+      });
 
-        AccountCurrencyEntity.fromJson(tks[index], this.service.accountId, now);
+      await this._DBOperator.accountCurrencyDao.insertAccount(v);
 
-        await this._DBOperator.accountCurrencyDao.insertAccount({
-          token: tokens[index],
-          accountId: this.service.accountId,
-          last_sync_time: now,
-        });
+      const findAccountCurrencies =
+        await this._DBOperator.accountCurrencyDao.findJoinedByAccountId(
+          this.service.accountId
+        );
 
-        const findAccountCurrencies =
-          await this._DBOperator.accountCurrencyDao.findJoinedByAccountId(
-            this.service.accountId
-          );
+      // List<Currency> cs = findAccountCurrencies
+      //     .map((c) => Currency.fromJoinCurrency(c, jcs[0], this.base))
+      //     .toList();
 
-        // List<Currency> cs = findAccountCurrencies
-        //     .map((c) => Currency.fromJoinCurrency(c, jcs[0], this.base))
-        //     .toList();
+      // TODO: messenger
+      // const msg = AccountMessage(evt: ACCOUNT_EVT.OnUpdateAccount, value: cs[0]);
+      // this.service.AccountCore().currencies[this.service.accountId] = cs;
 
-        // TODO: messenger
-        // const msg = AccountMessage(evt: ACCOUNT_EVT.OnUpdateAccount, value: cs[0]);
-        // this.service.AccountCore().currencies[this.service.accountId] = cs;
+      const currMsg = {
+        evt: ACCOUNT_EVT.OnUpdateCurrency,
+        value: this.service.AccountCore().currencies[this.service.accountId],
+      };
 
-        const currMsg = {
-          evt: ACCOUNT_EVT.OnUpdateCurrency,
-          value: this.service.AccountCore().currencies[this.service.accountId],
-        };
+      this.service.AccountCore().messenger.next(currMsg);
 
-        this.service.AccountCore().messenger.next(currMsg);
-
-        return true;
-      } else {
-        return false;
-      }
+      return true;
     } catch (e) {
       console.error(e);
 
@@ -275,17 +252,13 @@ class EthereumService extends AccountServiceDecorator {
         value: amount,
         data: message,
       };
-      const response = await this._HTTPAgent.post(
-        `${config.url}/blockchain/${blockchainId}/gas-limit`,
-        payload
-      );
-      if (response.success) {
-        const { data } = response;
-        this._gasLimit = Number(data.gasLimit);
-      } else {
+      try {
+        const response = await this._TideWalletCommunicator.GetGasLimit(blockchainId, payload);
+        this._gasLimit = Number(response.gasLimit);
+      } catch (error) {
         // TODO
         // _gasLimit = 21000;
-        throw new Error(response.message);
+        throw error;
       }
       return this._gasLimit;
     }
@@ -299,15 +272,13 @@ class EthereumService extends AccountServiceDecorator {
    * @returns {Number} nonce
    **/
   async getNonce(blockchainId, address) {
-    const response = await this._HTTPAgent.get(
-      `${config.url}/blockchain/${blockchainId}/address/${address}/nonce`
-    );
-    if (response.success) {
-      const { data } = response;
-      const nonce = Number(data["nonce"]);
+    try {
+      const response = await this._TideWalletCommunicator.GetNonce(blockchainId, address);
+      const nonce = Number(response["nonce"]);
       this._nonce = nonce;
       return nonce;
-    } else {
+    } catch (error) {
+      console.log(error);
       // TODO:
       return (this._nonce += 1);
     }

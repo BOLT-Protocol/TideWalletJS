@@ -155,7 +155,7 @@ class PaperWallet {
   static instance;
   constructor() {
     if (!PaperWallet.instance) {
-      this._user = null;
+      this._userInfo = {};
       PaperWallet.instance = this;
     }
 
@@ -164,11 +164,24 @@ class PaperWallet {
 
   /**
    * init
-   * @param {User} user 
+   * @param {Object} userInfo
+   * @param {String} userInfo.id
+   * @param {String} userInfo.thirdPartyId
+   * @param {String} userInfo.installId
+   * @param {Number} userInfo.timestamp
+   * @param {string} userInfo.keystore
    * @returns 
    */
-  init(user) {
-    this._user = user;
+  init(userInfo) {
+    this._userInfo = userInfo;
+  }
+
+  /**
+   * setKeyStore
+   * @param {string} keystore 
+   */
+  setKeyStore(keystore) {
+    this._userInfo.keystore = keystore;
   }
 
   /**
@@ -219,11 +232,11 @@ class PaperWallet {
             Buffer.concat([
               Buffer.from(
                 Cryptor.keccak256round(
-                  userIdentifierBuff || this._user.thirdPartyId,
+                  userIdentifierBuff || this._userInfo.thirdPartyId,
                   1
                 )
               ),
-              Buffer.from(Cryptor.keccak256round(userId || this._user.id, 1)),
+              Buffer.from(Cryptor.keccak256round(userId || this._userInfo.id, 1)),
             ]).toString()
           )
         ),
@@ -241,7 +254,7 @@ class PaperWallet {
                 )
               ),
               Buffer.from(
-                Cryptor.keccak256round(installIdBuff || this._user.installId, 1)
+                Cryptor.keccak256round(installIdBuff || this._userInfo.installId, 1)
               ),
             ]).toString()
           )
@@ -410,13 +423,13 @@ class PaperWallet {
    */
   async _getSeedByKeyStore() {
     const password = this.getPassword({
-      userIdentifier: this._user.thirdPartyId,
-      userId: this._user.id,
-      installId: this._user.installId,
-      timestamp: this._user.timestamp
+      userIdentifier: this._userInfo.thirdPartyId,
+      userId: this._userInfo.id,
+      installId: this._userInfo.installId,
+      timestamp: this._userInfo.timestamp
     })
-    const keyStore = await this._user.getKeystore();
-    const pk = PaperWallet.recoverFromJson(keyStore, password);
+    const keystore = this._userInfo.keystore;
+    const pk = PaperWallet.recoverFromJson(keystore, password);
     const seed = PaperWallet.magicSeed(pk);
     return seed;
   }
