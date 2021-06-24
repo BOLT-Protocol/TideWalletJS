@@ -74,7 +74,7 @@ class TideWalletCommunicator {
       if (res.success) {
         this.token = res.data.token;
         this.tokenSecret = res.data.tokenSecret;
-        this.httpAgent.setToken(res.data.token);
+        this.httpAgent.setToken(res.data.token, res.data.tokenSecret);
         return { success: true, token: res.data.token, tokenSecret: res.data.tokenSecret, userID: res.data.user_id };
       }
       this.token = null;
@@ -100,7 +100,7 @@ class TideWalletCommunicator {
       if (res.success) {
         this.token = token;
         this.tokenSecret = tokenSecret;
-        this.httpAgent.setToken(token);
+        this.httpAgent.setToken(token, tokenSecret);
         return { userID: res.data.user_id };
       }
       this.token = null;

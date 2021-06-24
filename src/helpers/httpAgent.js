@@ -18,8 +18,10 @@ class HTTPAgent {
     // TODO: retry, logger?
   }
 
-  setToken(token) {
+  setToken(token, tokenSecret) {
     this.axios.defaults.headers.common["token"] = token;
+    this.token = token
+    this.tokenSecret = tokenSecret
   }
 
   getToken() {
@@ -31,21 +33,48 @@ class HTTPAgent {
     }
   }
 
-  _request(request) {
-    return request().then((res) => {
-      if (!res.data) {
-        return {
-          success: fasle,
-        };
-      }
+  _request(request, renewTimes = 5) {
+    return request()
+      .then((res) => {
+        if (!res.data) {
+          return {
+            success: fasle,
+          };
+        }
 
-      return {
-        success: res.data.success,
-        data: res.data.payload,
-        message: res.data.message,
-        code: res.data.code,
-      };
-    });
+        if (res.data.code === '03000001' && renewTimes > 0) {
+          // refresh token
+          const body = {
+            token: this.token,
+            tokenSecret: this.tokenSecret
+          }
+
+          return this.post(url+ '/token/renew', body)
+            .then((resRenewToken) => {
+              if (resRenewToken.success) {
+                this.axios.defaults.headers.common["token"] = resRenewToken.data.token;
+                this.token = resRenewToken.data.token;
+                this.tokenSecret = resRenewToken.data.tokenSecret;
+    
+                return this._request(request, renewTimes - 1)
+              }
+
+              return {
+                success: res.data.success,
+                data: res.data.payload,
+                message: res.data.message,
+                code: res.data.code,
+              };
+            })
+        }
+
+        return {
+          success: res.data.success,
+          data: res.data.payload,
+          message: res.data.message,
+          code: res.data.code,
+        };
+      })
   }
 
   get(path) {

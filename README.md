@@ -56,7 +56,7 @@
   const agent = new Agent();
 
   // Set token to headers
-  agent.setToken("token_123");
+  agent.setToken("token_123", "token_secret_123");
 
   agent.get("/blockchain").then((res) => {
       // ...
