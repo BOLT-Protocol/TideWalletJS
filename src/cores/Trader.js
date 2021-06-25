@@ -39,32 +39,46 @@ class Trader {
         ];
         await this._DBOperator.exchangeRateDao.insertExchangeRates(rates);
 
-        this._fiats = fiats;
-        this._cryptos = cryptos;
+        this._fiats = fiats
+          .map((r) => ({
+            currencyId: r.currency_id,
+            name: r.name,
+            exchangeRate: new BigNumber(r.rate),
+          }));
+        this._cryptos = cryptos
+          .map((r) => ({
+            currencyId: r.currency_id,
+            name: r.name,
+            exchangeRate: new BigNumber(r.rate),
+          }));
       } catch (error) {
         console.log(error);
       }
     } else {
       this._fiats = local
         .filter((rate) => rate.type === 'fiat')
-        .map((r) => {
-          delete r.type;
-          delete r.lastSyncTime;
-          return r;
-        });
-
+        .map((r) => ({
+          currencyId: r.exchangeRateId,
+          name: r.name,
+          exchangeRate: new BigNumber(r.rate),
+        }));
       this._cryptos = local
         .filter((rate) => rate.type === 'currency')
-        .map((r) => {
-          delete r.type;
-          delete r.lastSyncTime;
-          return r;
-        });
+        .map((r) => ({
+          currencyId: r.exchangeRateId,
+          name: r.name,
+          exchangeRate: new BigNumber(r.rate),
+        }));
     }
 
     return this._fiats;
   }
 
+  /**
+   * 
+   * @param {object} fiat
+   * @param {string} fiat.name
+   */
   setSelectedFiat(fiat) {
     this._DBOperator.prefDao.setSelectedFiat(fiat.name);
   }
@@ -78,33 +92,65 @@ class Trader {
     return fiat;
   }
 
+  /**
+   * calculateToUSD
+   * @param {object} _currency
+   * @param {string} _currency.currencyId
+   * @param {BigNumber} _currency.amount
+   * @returns {BigNumber} 
+   */
   calculateToUSD(_currency) {
     const crypto = this._cryptos.find((c) => c.currencyId === _currency.currencyId);
-    if (!crypto) return '0';
+    if (!crypto) return new BigNumber(0);
 
-    const bnAmount = new BigNumber(_currency.amount);
+    const bnAmount = _currency.amount;
     const bnExCh = new BigNumber(crypto.exchangeRate);
-    return bnAmount.multipliedBy(bnExCh).toFixed();
+    return bnAmount.multipliedBy(bnExCh);
   }
 
+  /**
+   * calculateUSDToCurrency
+   * @param {object} _currency
+   * @param {string} _currency.currencyId
+   * @param {BigNumber} amountInUSD 
+   * @returns {BigNumber}
+   */
   calculateUSDToCurrency(_currency, amountInUSD) {
     const crypto = this._cryptos.find((c) => c.currencyId === _currency.currencyId);
-    if (!crypto) return '0';
+    if (!crypto) return new BigNumber(0);
 
-    const bnAmountInUSD = new BigNumber(amountInUSD);
+    const bnAmountInUSD = amountInUSD;
     const bnExCh = new BigNumber(crypto.exchangeRate);
-    return bnAmountInUSD.dividedBy(bnExCh).toFixed();
+    return bnAmountInUSD.dividedBy(bnExCh);
   }
 
+  /**
+   * calculateAmountToUSD
+   * @param {object} _currency
+   * @param {string} _currency.currencyId
+   * @param {BigNumber} amount 
+   * @returns {BigNumber}
+   */
   calculateAmountToUSD(_currency, amount) {
     const crypto = this._cryptos.find((c) => c.currencyId === _currency.currencyId);
-    if (!crypto) return '0';
+    if (!crypto) return new BigNumber(0);
 
-    const bnAmount = new BigNumber(amount);
+    const bnAmount = amount;
     const bnExCh = new BigNumber(crypto.exchangeRate);
-    return bnAmount.multipliedBy(bnExCh).toFixed();
+    return bnAmount.multipliedBy(bnExCh);
   }
 
+  /**
+   * 
+   * @param {object} sellCurrency
+   * @param {string} sellCurrency.currencyId
+   * @param {object} buyCurrency
+   * @param {string} buyCurrency.currencyId
+   * @param {BigNumber} sellAmount 
+   * @returns {object} result
+   * @returns {BigNumber} result.buyAmount
+   * @returns {BigNumber} result.exchangeRate
+   */
   getSwapRateAndAmount(sellCurrency, buyCurrency, sellAmount) {
     // const sellCryptos = this._cryptos.find((c) => c.currencyId == sellCurrency.currencyId);
     // const buyCryptos = this._cryptos.find((c) => c.currencyId == buyCurrency.currencyId);
@@ -113,9 +159,11 @@ class Trader {
     // console.log(
     //     `buyCryptos ${buyCryptos.name} [${buyCryptos.currencyId}]: ${buyCryptos.exchangeRate}`);
 
-    const exchangeRate = this.calculateUSDToCurrency(buyCurrency, this.calculateAmountToUSD(sellCurrency, 1));
-    const buyAmount = this.calculateUSDToCurrency(buyCurrency, new BigNumber(sellAmount).multipliedBy(new BigNumber(exchangeRate)));
-    return {"buyAmount": buyAmount, "exchangeRate": exchangeRate};
+    const exchangeRate = this.calculateUSDToCurrency(buyCurrency, this.calculateAmountToUSD(sellCurrency, new BigNumber(1)));
+    const buyAmount = this.calculateUSDToCurrency(buyCurrency, sellAmount.multipliedBy(exchangeRate));
+    console.log('buyAmount.toFixed():', buyAmount.toFixed())
+    console.log('exchangeRate.toFixed():', exchangeRate.toFixed())
+    return {buyAmount, exchangeRate};
   }
 }
 
