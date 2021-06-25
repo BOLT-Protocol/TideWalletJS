@@ -23,6 +23,19 @@ class Cryptor {
     }
     return Buffer.from(hexStr, 'hex');
   }
+
+  static pathParse(keyPath) {
+    if (typeof keyPath !== 'string') throw new Error('keyPath should be string');
+    // keyPath = "m/84'/3324'/0'/0/0"
+
+    const arr = keyPath.split('/');
+    const chainIndex = arr[4];
+    const keyIndex = arr[5];
+    const options = {
+      path: `${arr[0]}/${arr[1]}/${arr[2]}`,
+    }
+    return { chainIndex, keyIndex, options };
+  }
 }
 
 module.exports = Cryptor;

@@ -27,6 +27,7 @@ class TideWalletCore {
    */
    setUserInfo(userInfo) {
     this._userInfo = userInfo;
+    console.log(userInfo)
   }
 
   /**
@@ -289,20 +290,6 @@ class TideWalletCore {
     return extPK;
   }
 
-  /**
-   * getPriKey
-   * @param {number} chainIndex 
-   * @param {number} keyIndex 
-   * @param {object} [options]
-   * @param {string} [options.path] - default EXT_PATH
-   * @returns 
-   */
-  async getPriKey(chainIndex, keyIndex, options = {}) {
-    const seed = await this._getSeedByKeyStore();
-    const privateKey = PaperWallet.getPriKey(Buffer.from(seed, 'hex'), chainIndex, keyIndex, options);
-    return privateKey;
-  }
-
   //////////////////////////////////////////////////////////////////////
 
   // /**
@@ -318,11 +305,18 @@ class TideWalletCore {
   //   return this._signer.sign(buffer, keyPath.chainIndex, keyPath.keyIndex);
   // }
 
-  async signBuffer(signFunc, params) {
-    const {hashData, chainIndex, keyIndex, options} = params;
+  /**
+   * 
+   * @param {object} param
+   * @param {string} param.keyPath
+   * @param {Buffer} param.data -  hash data buffer
+   * @returns 
+   */
+  async signBuffer({ keyPath, data }) {
+    const {chainIndex, keyIndex, options} = Cryptor.pathParse(keyPath);
     const seed = await this._getSeedByKeyStore();
     const privateKey = PaperWallet.getPriKey(Buffer.from(seed, 'hex'), chainIndex, keyIndex, options);
-    return signFunc(privateKey, hashData);
+    return Signer._sign(data, Buffer.from(privateKey, 'hex'));
   }
 
   async signData({ keyPath, jsonData }) {
