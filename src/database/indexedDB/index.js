@@ -117,7 +117,7 @@ class IndexedDB {
       );
 
       const rate = this.db.createObjectStore(OBJ_EXCHANGE_RATE, {
-        keyPath: "exchange_rateId",
+        keyPath: "exchangeRateId",
       });
 
       const pref = this.db.createObjectStore(OBJ_PREF, {
@@ -637,10 +637,10 @@ class PrefDao extends DAO {
     return result;
   }
 
-  setSelectedFiat(symbol) {
+  setSelectedFiat(name) {
     return this._write({
       prefId: PrefDao.SELECTED_FIAT_KEY,
-      symbol,
+      name,
     });
   }
 }

@@ -72,7 +72,7 @@ class Trader {
 
     if (name == null || name == undefined) return this._fiats[0];
 
-    const fiat = this._fiats.find((f) => f.name === name) || this._fiats[0];
+    const fiat = this._fiats.find((f) => f.name === name);
     return fiat;
   }
 
