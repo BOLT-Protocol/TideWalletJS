@@ -1,8 +1,6 @@
 const EthUtils = require('ethereumjs-util');
 const { BN, ecsign } = EthUtils;
 
-const PaperWallet = require('./PaperWallet');
-
 const ZERO32 = Buffer.alloc(32, 0);
 const EC_GROUP_ORDER = Buffer.from('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141', 'hex');
 
@@ -23,11 +21,11 @@ class Signer {
 
   /**
    * init
-   * @param {PaperWallet} paperWallet 
+   * @param {TideWalletcore} TideWalletcore 
    * @returns 
    */
-  init(paperWallet) {
-    this._paperWallet = paperWallet;
+  init(TideWalletcore) {
+    this._TideWalletcore = TideWalletcore;
   }
 
   _isScalar(x) {
@@ -57,13 +55,7 @@ class Signer {
   }
 
   async sign(hashData, chainIndex, keyIndex, options = {}) {
-    const privateKey = await this._paperWallet.getPriKey(chainIndex, keyIndex, options);
-    if (privateKey) {
-      return this._sign(
-        hashData,
-        Buffer.from(privateKey, 'hex')
-      );
-    }
+    return this._TideWalletcore.signBuffer(this._sign, {hashData, chainIndex, keyIndex, options})
   }
 }
 
