@@ -46,17 +46,19 @@ class Trader {
       }
     } else {
       this._fiats = local
-        .where((rate) => rate.type === 'fiat')
+        .filter((rate) => rate.type === 'fiat')
         .map((r) => {
           delete r.type;
-          delete r.timestamp;
+          delete r.lastSyncTime;
+          return r;
         });
 
       this._cryptos = local
-        .where((rate) => rate.type === 'currency')
+        .filter((rate) => rate.type === 'currency')
         .map((r) => {
           delete r.type;
-          delete r.timestamp;
+          delete r.lastSyncTime;
+          return r;
         });
     }
 
