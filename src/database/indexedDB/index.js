@@ -117,7 +117,7 @@ class IndexedDB {
       );
 
       const rate = this.db.createObjectStore(OBJ_EXCHANGE_RATE, {
-        keyPath: "exchange_rateId",
+        keyPath: "exchangeRateId",
       });
 
       const pref = this.db.createObjectStore(OBJ_PREF, {
@@ -574,12 +574,12 @@ class AccountCurrencyDao extends DAO {
 }
 
 class ExchangeRateDao extends DAO {
-  entity({ exchangeRateId, name, rate, lastSyncTime, type }) {
+  entity({ currency_id, name, rate, timestamp, type }) {
     return {
-      exchange_rateId: exchangeRateId,
+      exchangeRateId: currency_id,
       name,
       rate,
-      lastSyncTime,
+      lastSyncTime: timestamp,
       type,
     };
   }
@@ -603,9 +603,12 @@ class UtxoDao extends DAO {
 }
 
 class PrefDao extends DAO {
+  static AUTH_ITEM_KEY = 1;
+  static SELECTED_FIAT_KEY = 2;
+
   entity({ token, tokenSecret }) {
     return {
-      prefId: 1,
+      prefId: PrefDao.AUTH_ITEM_KEY,
       token,
       tokenSecret,
     };
@@ -615,16 +618,29 @@ class PrefDao extends DAO {
   }
 
   async getAuthItem() {
-    const result = await this._read(1);
+    const result = await this._read(PrefDao.AUTH_ITEM_KEY);
 
     return result;
   }
 
   setAuthItem(token, tokenSecret) {
     return this._write({
-      prefId: 1,
+      prefId: PrefDao.AUTH_ITEM_KEY,
       token,
       tokenSecret,
+    });
+  }
+
+  async getSelectedFiat() {
+    const result = await this._read(PrefDao.SELECTED_FIAT_KEY);
+
+    return result;
+  }
+
+  setSelectedFiat(name) {
+    return this._write({
+      prefId: PrefDao.SELECTED_FIAT_KEY,
+      name,
     });
   }
 }

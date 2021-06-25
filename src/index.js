@@ -150,7 +150,7 @@ if (isBrowser()) {
       OAuthID: 'test2ejknkjdniednwjq',
       InstallID: '11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249'
     };
-    await tw.init({ user2, api });
+    await tw.init({ user: user2, api });
   }
 }
 
