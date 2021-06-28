@@ -1,4 +1,5 @@
 const PaperWallet = require("./PaperWallet");
+const TideWalletCore = require("./TideWalletCore");
 const config = require("./../constants/config");
 const Mnemonic = require("../helpers/Mnemonic");
 
@@ -12,7 +13,7 @@ class User {
 
     this._communicator = TideWalletCommunicator;
     this._DBOperator = DBOperator;
-    this._PaperWallet = new PaperWallet();
+    this._TideWalletCore = new TideWalletCore();
   }
 
   /**
@@ -46,7 +47,7 @@ class User {
     const userId = user[0];
     const userSecret = user[1];
     const timestamp = Math.floor(new Date() / 1000);
-    const { wallet, extendPublicKey: extPK } = await this._PaperWallet.createWallet({
+    const { wallet, extendPublicKey: extPK } = await this._TideWalletCore.createWallet({
       userIdentifier,
       userId,
       userSecret,
@@ -150,7 +151,7 @@ class User {
     const userId = user[0];
     const timestamp = Math.floor(new Date() / 1000);
     
-    const { wallet, extendPublicKey: extPK } = await this._PaperWallet.createWalletWithSeed({
+    const { wallet, extendPublicKey: extPK } = await this._TideWalletCore.createWalletWithSeed({
       seed,
       userIdentifier,
       userId,
@@ -278,7 +279,7 @@ class User {
       timestamp: user.timestamp,
       keystore: user.keystore
     }
-    this._PaperWallet.init(userInfo);
+    this._TideWalletCore.setUserInfo(userInfo);
 
     const item = await this._DBOperator.prefDao.getAuthItem();
     if (item != null) {

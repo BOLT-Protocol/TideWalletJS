@@ -1,8 +1,6 @@
 const EthUtils = require('ethereumjs-util');
 const { BN, ecsign } = EthUtils;
 
-const PaperWallet = require('./PaperWallet');
-
 const ZERO32 = Buffer.alloc(32, 0);
 const EC_GROUP_ORDER = Buffer.from('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141', 'hex');
 
@@ -23,18 +21,18 @@ class Signer {
 
   /**
    * init
-   * @param {PaperWallet} paperWallet 
+   * @param {TideWalletcore} TideWalletcore 
    * @returns 
    */
-  init(paperWallet) {
-    this._paperWallet = paperWallet;
+  init(TideWalletcore) {
+    this._TideWalletcore = TideWalletcore;
   }
 
-  _isScalar(x) {
+  static _isScalar(x) {
     return x.length == 32;
   }
 
-  _compare(a, b) {
+  static _compare(a, b) {
     const aa = new BN(a);
     const bb = new BN(b);
     if (aa.eq(bb)) return 0;
@@ -42,28 +40,22 @@ class Signer {
     return -1;
   }
 
-  _isPrivate(x) {
-    if (!this._isScalar(x)) return false;
-    return this._compare(x, ZERO32) > 0 && // > 0
-        this._compare(x, EC_GROUP_ORDER) < 0; // < G
+  static _isPrivate(x) {
+    if (!Signer._isScalar(x)) return false;
+    return Signer._compare(x, ZERO32) > 0 && // > 0
+        Signer._compare(x, EC_GROUP_ORDER) < 0; // < G
   }
 
-  _sign(hashData, privateKey) {
-    if(!Buffer.isBuffer(hashData) || !this._isScalar(hashData)) throw new Error(THROW_BAD_HASH);
-    if(!Buffer.isBuffer(privateKey) || !this._isPrivate(privateKey)) throw new Error(THROW_BAD_PRIVATE);
+  static _sign(hashData, privateKey) {
+    if(!Buffer.isBuffer(hashData) || !Signer._isScalar(hashData)) throw new Error(THROW_BAD_HASH);
+    if(!Buffer.isBuffer(privateKey) || !Signer._isPrivate(privateKey)) throw new Error(THROW_BAD_PRIVATE);
 
     const sig = ecsign(hashData, privateKey);
     return sig;
   }
 
-  async sign(hashData, chainIndex, keyIndex, options = {}) {
-    const privateKey = await this._paperWallet.getPriKey(chainIndex, keyIndex, options);
-    if (privateKey) {
-      return this._sign(
-        hashData,
-        Buffer.from(privateKey, 'hex')
-      );
-    }
+  async sign({ keyPath, data }) {
+    return this._TideWalletcore.signBuffer({ keyPath, data })
   }
 }
 

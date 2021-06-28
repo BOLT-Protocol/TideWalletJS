@@ -153,7 +153,7 @@ test("User _registerUser", async () => {
         expect.assertions(1);
         let result = false;
         if (!await _user1.checkUser()) {
-            const { wallet, extendPublicKey: extPK } = await _user1._PaperWallet.createWallet({
+            const { wallet, extendPublicKey: extPK } = await _user1._TideWalletCore.createWallet({
                 userIdentifier,
                 userId,
                 userSecret,
