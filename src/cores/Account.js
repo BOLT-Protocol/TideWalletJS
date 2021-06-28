@@ -258,7 +258,8 @@ class AccountCore {
    * @returns {string} The address
    */
    async getReceiveAddress(accountcurrencyId) {
-    const address = await this.getCurrencies(accountcurrencyId).getReceivingAddress();
+    const svc = this.getService(accountcurrencyId);
+    const address = await svc.getReceivingAddress(accountcurrencyId);
     return address;
   }
 }
