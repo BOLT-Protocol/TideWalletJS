@@ -43,7 +43,6 @@ class TideWallet {
     await this.account.init();
 
     this.trader = new Trader(initObj);
-    this.communicator = communicator; // ++ 確定是否要這樣做
   
     const listener = this.account.messenger.subscribe((v) => {
       this.notice(v, 'update');
@@ -72,13 +71,20 @@ class TideWallet {
 
   async overview() {
     const currencies = await this.account.getAllCurrencies();
-    const fiat = await this.trader.getFiatList();
+    const fiat = await this.trader.getSelectedFiat();
+    const bnRate = new BigNumber(fiat.rate);
     const balance = currencies.reduce((rs, curr) => {
-      return rs;
+      const bnBalance = new BigNumber(curr.balance);
+      const bnRs = new BigNumber(rs);
+      return bnRs.plus(
+        this.trader.calculateToUSD({ currencyId: curr.currencyId, amount: bnBalance }))
+        .toFixed();
     }, 0);
+    const bnBalance = new BigNumber(balance);
+    const balanceFiat = bnBalance.multipliedBy(bnRate).toFixed();
 
     const dashboard = {
-      balance,
+      balance: balanceFiat,
       currencies
     };
     return dashboard;
@@ -96,15 +102,10 @@ class TideWallet {
     return { asset, transactions };
   }
 
-  // ++ 確定是否要這樣做
-  async getTransactionDetail({ transactionID }) {
-    try {
-      const tx = this.communicator.TransactionDetail(transactionID);
-      return tx;
-    } catch (error) {
-      console.error(error);
-      return error;
-    }
+  async getTransactionDetail({ assetID, transactionID }) {
+    const txs = await this.account.getTransactions(assetID);
+    const tx = txs.find((r) => r.txId === transactionID );
+    return tx;
   }
 
   async getReceivingAddress({ accountID }) {
@@ -133,14 +134,13 @@ class TideWallet {
       return res;
   }
 
-  // ++ 確定是否要這樣做
   async sync() {
-    await this.account.sync();
+    this.account.sync();
+    return true;
   }
 
-  // need help
   async backup() {
-
+    return this.user.getKeystore();
   }
 
   async close() {
@@ -168,7 +168,7 @@ if (isBrowser()) {
   window.test = async() => {
     const tw = new TideWallet();
     const api = {
-      apiURL: 'https://staging.tidewallet.io/api/v1',
+      apiURL: 'https://service.tidewallet.io/api/v1',
       apiKey: 'f2a76e8431b02f263a0e1a0c34a70466',
       apiSecret: '9e37d67450dc906042fde75113ecb78c',
     };
