@@ -31,7 +31,7 @@ class AccountCore {
     this._settingOptions = options;
   }
 
-  constructor({TideWalletCommunicator, DBOperator}) {
+  constructor({TideWalletCommunicator, DBOperator, TideWalletCore}) {
     if (!AccountCore.instance) {
       this._messenger = null;
       this._isInit = false;
@@ -39,6 +39,7 @@ class AccountCore {
       this._services = [];
       this._DBOperator = DBOperator;
       this._TideWalletCommunicator = TideWalletCommunicator;
+      this._TideWalletCore = TideWalletCore;
       AccountCore.instance = this;
     }
 
@@ -69,13 +70,16 @@ class AccountCore {
       if (blockIndex > -1) {
         let svc;
         let _ACCOUNT;
+        let safeSigner;
         switch (chains[blockIndex].coinType) {
           case 60:
           case 603:
+            safeSigner = this._TideWalletCore.getSafeSigner("m/84'/3324'/0'/0/0");
             svc = new EthereumService(new AccountServiceBase(this), this._TideWalletCommunicator, this._DBOperator);
             _ACCOUNT = ACCOUNT.ETH;
             break;
           case 8017:
+            safeSigner = this._TideWalletCore.getSafeSigner("m/84'/3324'/0'/0/0");
             svc = new EthereumService(new AccountServiceBase(this), this._TideWalletCommunicator, this._DBOperator);
             _ACCOUNT = ACCOUNT.CFC;
 

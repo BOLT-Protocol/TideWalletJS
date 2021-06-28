@@ -64,7 +64,7 @@ class User {
       timestamp,
     });
 
-    return success;
+    return this._TideWalletCore;
   }
 
   /**
@@ -168,7 +168,7 @@ class User {
       timestamp,
     });
 
-    return success;
+    return this._TideWalletCore;
   }
 
   /**

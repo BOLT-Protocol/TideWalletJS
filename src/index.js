@@ -31,12 +31,13 @@ class TideWallet {
     const exist = await this.user.checkUser();
     if (!exist) {
       if(user.mnemonic && user.password) {
-        await this.user.createUserWithSeed(user.OAuthID, seed, user.InstallID);
+        this.core = await this.user.createUserWithSeed(user.OAuthID, seed, user.InstallID);
       } else {
-        await this.user.createUser(user.OAuthID, user.InstallID);
+        this.core = await this.user.createUser(user.OAuthID, user.InstallID);
       }
     }
   
+    initObj.TideWalletCore = this.core;
     this.account = new Account(initObj);
     this.account.setMessenger();
     await this.account.init();
@@ -117,7 +118,7 @@ class TideWallet {
     return true;
   }
 
-  _callback(data, eventName = '') {
+  notice(data, eventName = '') {
     const ev = eventName.toLocaleLowerCase();
     this.notifiers.forEach((notifier) => {
       if(!notifier) return;

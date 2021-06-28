@@ -1,5 +1,6 @@
 const PaperWallet = require('./PaperWallet');
 const Signer = require('./Signer');
+const SafeSigner = require('./SafeSigner');
 const Cryptor = require('../helpers/Cryptor');
 const rlp = require("./../helpers/rlp");
 
@@ -288,6 +289,12 @@ class TideWalletCore {
     const seed = await this._getSeedByKeyStore();
     const extPK = PaperWallet.getExtendedPublicKey(Buffer.from(seed, 'hex'));
     return extPK;
+  }
+
+  getSafeSigner(keyPath) {
+    const safeSigner = new SafeSigner((data) => {
+      return this.signBuffer({ keyPath, data });
+    });
   }
 
   //////////////////////////////////////////////////////////////////////
