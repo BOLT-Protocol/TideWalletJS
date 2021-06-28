@@ -536,7 +536,9 @@ class AccountCurrencyDao extends DAO {
     number_of_used_internal_key,
     last_sync_time,
     token_id,
-    account_token_id
+    account_token_id,
+    image,
+    symbol
   }) {
     return {
       accountcurrencyId:account_token_id ?? account_id,
@@ -546,6 +548,8 @@ class AccountCurrencyDao extends DAO {
       numberOfUsedExternalKey: number_of_used_external_key,
       numberOfUsedInternalKey: number_of_used_internal_key,
       lastSyncTime: last_sync_time,
+      image,
+      symbol
     };
   }
   constructor(db, name) {
