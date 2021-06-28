@@ -37,10 +37,9 @@ class UI {
     const db = new DBOperator();
     await db.init();
     this._user = new User({ TideWalletCommunicator: this._communicator, DBOperator: db });
-    const check = await this._user.checkUser();
-    if (!check) {
+    const userCheck = await this._user.checkUser()
+    if (!userCheck) {
       const res = await this._createUser(user.OAuthID, user.InstallID);
-      return res
     }
     return true;
   }
@@ -98,13 +97,18 @@ class UI {
 
   async _createUser(userIdentifier, _installId = '') {
     const installId = config.installId || _installId
+    const { userId, userSecret } = await await this._communicator.oathRegister(userIdentifier);
+    const timestamp = Math.floor(new Date() / 1000)
+    const credentialData = this._user._generateCredentialData({ userIdentifier, userId, userSecret, installId, timestamp })
+    const wallet = await PaperWallet.createWallet(credentialData.key, credentialData.password);
+    const privateKey = PaperWallet.recoverFromJson(JSON.stringify(wallet), credentialData.password)
+    const seed = await PaperWallet.magicSeed(privateKey);
+    const _seed = Buffer.from(seed)
+    const extPK = PaperWallet.getExtendedPublicKey(_seed);
 
-    try {
-      const success = await this._user.createUser(userIdentifier, installId);
-      return success
-    } catch (e) {
-      return false
-    }
+    const res = await this._communicator.register(installId, installId, extPK);
+
+    return res;
   }
 }
 
