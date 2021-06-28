@@ -3,6 +3,9 @@ const { ACCOUNT } = require("../models/account.model");
 const AccountServiceBase = require("../services/accountServiceBase");
 const EthereumService = require("../services/ethereumService");
 const { network_publish } = require("../constants/config");
+const TransactionBase = require("../services/transactionService");
+const ETHTransaction = require("../services/transactionServiceETH");
+const BigNumber = require("bignumber.js");
 
 class AccountCore {
   static instance;
@@ -10,6 +13,7 @@ class AccountCore {
   _messenger = null;
   _settingOptions = [];
   _DBOperator = null;
+  _accounts = [];
 
   get currencies() {
     return this._currencies;
@@ -70,19 +74,15 @@ class AccountCore {
       if (blockIndex > -1) {
         let svc;
         let _ACCOUNT;
-        let safeSigner;
         switch (chains[blockIndex].coinType) {
           case 60:
           case 603:
-            safeSigner = this._TideWalletCore.getSafeSigner("m/84'/3324'/0'/0/0");
             svc = new EthereumService(new AccountServiceBase(this), this._TideWalletCommunicator, this._DBOperator);
             _ACCOUNT = ACCOUNT.ETH;
             break;
           case 8017:
-            safeSigner = this._TideWalletCore.getSafeSigner("m/84'/3324'/0'/0/0");
             svc = new EthereumService(new AccountServiceBase(this), this._TideWalletCommunicator, this._DBOperator);
             _ACCOUNT = ACCOUNT.CFC;
-
             break;
 
           default:
@@ -261,9 +261,66 @@ class AccountCore {
    * @param {string} accountId The accountId
    * @returns {string} The address
    */
-   async getReceiveAddress(accountcurrencyId) {
+  async getReceiveAddress(accountcurrencyId) {
     const address = await this.getCurrencies(accountcurrencyId).getReceivingAddress();
     return address;
+  }
+
+  /**
+   * Send transaction
+   * @method sendTransaction
+   * @param {string} accountcurrencyId The accountcurrencyId
+   * @param {object} param The transaction content
+   * @param {number} param.amount
+   * @param {string} param.from
+   * @param {string} param.to
+   * @param {number} param.gasPrice
+   * @param {number} param.gasUsed
+   * @param {string} param.gasPrice
+   * @param {number} param.keyIndex
+   * @returns {boolean}} success
+   */
+  async sendTransaction(
+    accountCurrency,
+    { amount, from, to, gasPrice, gasUsed, message, keyIndex }
+  ) {
+    let safeSigner;
+    switch (accountCurrency.accountType) {
+      case ACCOUNT.ETH:
+      case ACCOUNT.CFC:
+        safeSigner = this._TideWalletCore.getSafeSigner("m/84'/3324'/0'/0/0");
+        const svc = this.getService(accountCurrency.accountId);
+        const address = svc.getReceivingAddress(
+          accountCurrency.accountcurrencyId
+        );
+        const account = this._accounts.find(
+          (acc) => acc.accountId === svc.accountId
+        );
+
+        const nonce = await svc.getNonce(account.networkId, address);
+
+        const txSvc = new ETHTransaction(new TransactionBase(), safeSigner);
+        const signedTx = txSvc.prepareTransaction({
+          amount: BigNumber(amount),
+          from,
+          to,
+          gasPrice: BigNumber(gasPrice),
+          gasUsed: BigNumber(gasUsed),
+          message,
+          nonce,
+        });
+
+        const [success, tx] = await svc.publishTransaction(
+          account.networkId,
+          signedTx
+        );
+
+        console.log(signedTx); //-- debug info
+        console.log(tx); //-- debug info
+        return success;
+      default:
+        return null;
+    }
   }
 }
 

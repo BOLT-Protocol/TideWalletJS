@@ -1,60 +1,103 @@
-function verifyEthereumAddress() {
-  // if (address.contains(':')) {
-  //     address = address.split(':')[1];
-  //   }
-  //   if (!isValidFormat(address)) {
-  //     return false;
-  //   }
-  //   address = stripHexPrefix(address);
-  //   // if all lowercase or all uppercase, as in checksum is not present
-  //   if (RegExp(r"^[0-9a-f]{40}$").hasMatch(address) ||
-  //       RegExp(r"^[0-9A-F]{40}$").hasMatch(address)) {
-  //     return true;
-  //   }
-  //   String checksumAddress;
-  //   try {
-  //     checksumAddress = eip55Address(address);
-  //   } catch (err) {
-  //     return false;
-  //   }
-  //   return address == checksumAddress.substring(2);
+const rlp = require("rlp");
+
+/**
+ * Checks if the given string is an address
+ *
+ * @method isAddress
+ * @param {String} address the given HEX adress
+ * @return {Boolean}
+ */
+var isAddress = function (address) {
+  if (!/^(0x)?[0-9a-f]{40}$/i.test(address)) {
+    // check if it has the basic requirements of an address
+    return false;
+  } else if (
+    /^(0x)?[0-9a-f]{40}$/.test(address) ||
+    /^(0x)?[0-9A-F]{40}$/.test(address)
+  ) {
+    // If it's all small caps or all all caps, return true
+    return true;
+  } else {
+    // Otherwise check each case
+    return isChecksumAddress(address);
+  }
+};
+
+/**
+ * Checks if the given string is a checksummed address
+ *
+ * @method isChecksumAddress
+ * @param {String} address the given HEX adress
+ * @return {Boolean}
+ */
+var isChecksumAddress = function (address) {
+  // Check each case
+  address = address.replace("0x", "");
+  var addressHash = sha3(address.toLowerCase());
+  for (var i = 0; i < 40; i++) {
+    // the nth letter should be uppercase if the nth digit of casemap is 1
+    if (
+      (parseInt(addressHash[i], 16) > 7 &&
+        address[i].toUpperCase() !== address[i]) ||
+      (parseInt(addressHash[i], 16) <= 7 &&
+        address[i].toLowerCase() !== address[i])
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
+
+function verifyEthereumAddress(address) {
+  if (address.contains(":")) {
+    address = address.split(":")[1];
+  }
+
+  return isAddress(address);
 }
 
+/**
+ * RLP encode ETH Transation
+ * @method encodeToRlp
+ * @param {ETHTransaction} transaction The ETHTransaction
+ * @returns {Buffer} rlp
+ */
 function encodeToRlp(transaction) {
-  // const list = [
-  //   transaction.nonce,
-  //   BigInt.parse(transaction.gasPrice.toString()),
-  //   transaction.gasUsed.toInt(),
-  // ];
-  // if (transaction.to != null) {
-  //   list.add(getEthereumAddressBytes(transaction.to));
-  // } else {
-  //   list.add('');
-  // }
-  // list
-  //   ..add(BigInt.parse(transaction.amount.toString()))
-  //   ..add(transaction.message);
-  // if (transaction.signature != null) {
-  //   list
-  //     ..add(transaction.signature.v)
-  //     ..add(transaction.signature.r)
-  //     ..add(transaction.signature.s);
-  // }
-  // Log.debug('ETH list: $list');
-  // return rlp.encode(list);
+  const list = [
+    Buffer.from(transaction.nonce.toString(16)),
+    transaction.gasPrice.toString(16),
+    transaction.gasUsed.toString(16),
+  ].map((v) => `0x${v}`);
+
+  if (transaction.to) {
+    list.push(transaction.to);
+  } else {
+    list.push("");
+  }
+
+  list.push(`0x${transaction.amount.toString(16)}`);
+
+  if (transaction.message) {
+    list.push(transaction.message);
+  } else {
+    list.push("");
+  }
+
+  if (transaction.signature) {
+    list.push(transaction.signature.v);
+    list.push(transaction.signature.r.toNumber());
+    list.push(transaction.signature.s.toNumber());
+  }
+
+  return rlp.encode(list);
 }
 
 function getEthereumAddressBytes(address) {
-  // if (!isValidFormat(address)) {
-  //   throw ArgumentError.value(address, "address", "invalid address");
-  // }
-  // final String addr = stripHexPrefix(address).toLowerCase();
-  // Uint8List buffer = Uint8List.fromList(hex.decode(addr));
-  // return buffer;
+  return Buffer.from(address, "hex");
 }
 
 module.exports = {
   encodeToRlp,
   verifyEthereumAddress,
-  getEthereumAddressBytes
+  getEthereumAddressBytes,
 };

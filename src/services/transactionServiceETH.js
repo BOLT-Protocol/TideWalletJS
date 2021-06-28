@@ -1,30 +1,43 @@
 const TransactionDecorator = require("./accountServiceDecorator");
 const { ACCOUNT } = require("../models/account.model");
 const Cryptor = require("../helpers/Cryptor");
-const {  encodeToRlp, verifyEthereumAddress, getEthereumAddressBytes } = require('../helpers/ethereumUtils');
+const {
+  encodeToRlp,
+  verifyEthereumAddress,
+  getEthereumAddressBytes,
+} = require("../helpers/ethereumUtils");
+const EthereumTransaction = require("../models/transactionETH.model");
+const { Signature } = require("../models/tranasction.model");
+
 class TransactionServiceETH extends TransactionDecorator {
   service = null;
   _base = ACCOUNT.ETH;
   _currencyDecimals = 18;
 
-  constructor(service) {
+  constructor(service, signer) {
     this.service = service;
+    this.signer = signer;
   }
 
-  _signTransaction(transaction, privKey) {
-
-    // TODO: 
-    console.log("ETH from privKey: ", privKey);
+  _signTransaction(transaction) {
     const payload = encodeToRlp(transaction);
-    const rawDataHash = Buffer.from(Cryptor.keccak256round(payload, 1), "hex");
-    const signature = Signer().sign(rawDataHash, privKey);
+    const rawDataHash = Buffer.from(
+      Cryptor.keccak256round(payload.toString("hex"), 1),
+      "hex"
+    );
+    const signature = this.signer.sign({ data: rawDataHash });
     console.log("ETH signature: ", signature);
 
     const chainIdV =
       transaction.chainId != null
         ? signature.v - 27 + (transaction.chainId * 2 + 35)
         : signature.v;
-    signature = MsgSignature(signature.r, signature.s, chainIdV);
+    signature = Signature({
+      v: chainIdV,
+      r: signature.r,
+      s: signature.s,
+    });
+
     transaction.signature = signature;
     return transaction;
   }
@@ -46,21 +59,37 @@ class TransactionServiceETH extends TransactionDecorator {
 
   /**
    * @override
+   * @method prepareTransaction
+   * @param {object} param
+   * @param {string} param.to
+   * @param {BigNumber} param.amount
+   * @param {BigNumber} param.gasPrice
+   * @param {BigNumber} param.gasUsed
+   * @param {stringm} param.message
+   * @param {number} param.chainId
+   * @param {number} param.nonce
+   * @returns {ETHTransaction} transaction 
    */
-  prepareTransaction() {
-    // const transaction = EthereumTransaction.prepareTransaction(
-    //   from: changeAddress,
-    //   to: to.contains(':') ? to.split(':')[1] : to,
-    //   nonce: nonce,
-    //   amount: amount, // in wei
-    //   gasPrice: gasPrice, // in wei
-    //   gasUsed: gasLimit,
-    //   message: message,
-    //   chainId: chainId,
-    //   signature: MsgSignature(BigInt.zero, BigInt.zero, chainId),
-    //   fee: gasLimit * gasPrice, // in wei
-    // );
-  
+  prepareTransaction({
+    to,
+    amount,
+    gasPrice,
+    gasUsed,
+    message,
+    chainId,
+    nonce,
+  }) {
+    const transaction = EthereumTransaction.createTransaction({
+      to,
+      amount,
+      gasPrice,
+      gasUsed,
+      message,
+      chainId,
+      fee: gasLimit * gasPrice,
+      nonce,
+    });
+
     return this._signTransaction(transaction, privKey);
   }
 }
