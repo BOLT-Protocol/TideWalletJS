@@ -102,6 +102,10 @@ class AccountCore {
     this._addAccount(accounts);
   }
 
+  /**
+   * close all services
+   * @method close
+   */
   async sync() {
     if (this._isInit) {
       this._services.forEach((svc) => {
@@ -110,6 +114,10 @@ class AccountCore {
     }
   }
 
+  /**
+   * close all services
+   * @method close
+   */
   close() {
     this._isInit = false;
     this._services.forEach((svc) => {

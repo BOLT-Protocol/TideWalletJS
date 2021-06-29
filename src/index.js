@@ -8,6 +8,7 @@ const { isBrowser } = require("./helpers/env");
 const DBOperator = require("./database/dbOperator");
 const TideWalletCommunicator = require("./cores/TideWalletCommunicator");
 const TideWalletCore = require("./cores/TideWalletCore");
+const packageInfo = require("../package.json");
 
 class TideWallet {
   // eventType: ready, update, notice
@@ -43,6 +44,7 @@ class TideWallet {
     await this.account.init();
 
     this.trader = new Trader(initObj);
+    await this.trader.getFiatList();
   
     const listener = this.account.messenger.subscribe((v) => {
       this.notice(v, 'update');
@@ -69,10 +71,16 @@ class TideWallet {
     return true;
   }
 
+  async getWalletConfig() {
+    const fiat = await this.trader.getSelectedFiat();
+    const version = packageInfo.version;
+    return { fiat, version };
+  }
+
   async overview() {
     const currencies = await this.account.getAllCurrencies();
     const fiat = await this.trader.getSelectedFiat();
-    const bnRate = new BigNumber(fiat.rate);
+    const bnRate = fiat.exchangeRate;
     const balance = currencies.reduce((rs, curr) => {
       const bnBalance = new BigNumber(curr.balance);
       const bnRs = new BigNumber(rs);
@@ -146,6 +154,12 @@ class TideWallet {
   async close() {
     // release all resources
     this.account.close();
+    for(const index in this.notifiers) {
+      this.removeNotifier(index);
+    }
+    delete this.user;
+    delete this.account;
+    delete this.trader
     return true;
   }
 
@@ -184,10 +198,14 @@ if (isBrowser()) {
     };
     await tw.init({ user: user2, api });
     //test
-    console.log('overview:', await tw.overview());
+    // console.log('overview:', await tw.overview());
     // console.log('getAssetDetail:', await tw.getAssetDetail({ assetID: "a7255d05-eacf-4278-9139-0cfceb9abed6" }));
-    console.log('getReceivingAddress:', await tw.getReceivingAddress({ accountID: "a7255d05-eacf-4278-9139-0cfceb9abed6" }));
-
+    // console.log('getTransactionDetail:', await tw.getTransactionDetail({ assetID: "a7255d05-eacf-4278-9139-0cfceb9abed6", transactionID:"" }));
+    // console.log('getReceivingAddress:', await tw.getReceivingAddress({ accountID: "a7255d05-eacf-4278-9139-0cfceb9abed6" }));
+    // console.log('getWalletConfig:', await tw.getWalletConfig());
+    // await tw.sync();
+    // console.log('backup:', await tw.backup());
+    // await tw.close();
   }
 }
 
