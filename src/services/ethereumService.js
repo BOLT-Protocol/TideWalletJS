@@ -167,8 +167,8 @@ class EthereumService extends AccountServiceDecorator {
   /**
    * @override
    **/
-  synchro() {
-    this.service.synchro();
+  synchro(force = false) {
+    this.service.synchro(force);
   }
 
   /**

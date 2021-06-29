@@ -109,7 +109,7 @@ class AccountCore {
   async sync() {
     if (this._isInit) {
       this._services.forEach((svc) => {
-        svc.synchro();
+        svc.synchro(true);
       });
     }
   }
