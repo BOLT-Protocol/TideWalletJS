@@ -328,14 +328,13 @@ class AccountServiceBase extends AccountService {
 
     if (now - this._lastSyncTimestamp > this._syncInterval || force) {
       const currs = await this._getData();
-      const v = currs.map((c) =>
-        this._DBOperator.accountCurrencyDao.entity({
-          ...c,
-          accountcurrency_id: c["account_id"] ?? c["account_token_id"],
-          account_id: this._accountId,
-          last_sync_time: now,
-        })
-      );
+      const v = currs.map((c) => this._DBOperator.accountCurrencyDao.entity({
+        ...c,
+        accountcurrency_id: c['account_id'] ?? c['account_token_id'],
+        account_id: this._accountId,
+        last_sync_time: now,
+        image: c['icon']
+      }));
 
       await this._DBOperator.accountCurrencyDao.insertCurrencies(v);
     }
