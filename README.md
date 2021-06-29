@@ -101,21 +101,103 @@ const user = {
 tidewallet.init({ mnemonic, api });
 ```
 
+- Get WalletConfig
+```javascript
+let walletConfig = tidewallet.getWalletConfig()
+
+// walletConfig = {
+//   fiat: {
+//     currencyId: "5b1ea92e584bf50020130613",
+//     exchangeRate: BigNumber {s: 1, e: 0, c: Array(2)},
+//     name: "CNY"
+//   },
+//   version: "1.0.0",
+// }
+```
+
 - Get Overview
 ```javascript
 let overview = await tidewallet.overview();
+
+// overview = {
+//   balance: "0",
+//   currencies: [
+//     {
+//       accountId: "a7255d05-eacf-4278-9139-0cfceb9abed6",
+//       accountType: "CFC",
+//       accountcurrencyId: "a7255d05-eacf-4278-9139-0cfceb9abed6",
+//       balance: "0",
+//       currencyId: "7a55ef8a-a668-11eb-bcbc-0242ac130002",
+//       lastSyncTime: 1624951601016,
+//       numberOfUsedExternalKey: undefined,
+//       numberOfUsedInternalKey: undefined,
+//     },
+//   ]
+// }
 ```
 - Get Asset Detail and Transaction List
 ```javascript
 let assetDetail = await tidewallet.getAssetDetail({ assetID });
+
+// assetDetail = {
+//   asset: [
+//     {
+//       accountId: "a7255d05-eacf-4278-9139-0cfceb9abed6",
+//       accountType: "CFC",
+//       accountcurrencyId: "a7255d05-eacf-4278-9139-0cfceb9abed6",
+//       balance: "0",
+//       currencyId: "7a55ef8a-a668-11eb-bcbc-0242ac130002",
+//       lastSyncTime: 1624951601016,
+//       numberOfUsedExternalKey: undefined,
+//       numberOfUsedInternalKey: undefined,
+//     },
+//   ],
+//   transactions: [
+//     {
+//       accountcurrencyId: "a7255d05-eacf-4278-9139-0cfceb9abed6",
+//       amount: "10",
+//       confirmation: 764,
+//       destinctionAddress: "0x49dcda35c2836296c5bc303525b4800276fdb907",
+//       direction: "receive",
+//       fee: "0.000021",
+//       gasPrice: "0.000000001",
+//       gasUsed: undefined,
+//       note: "0x",
+//       sourceAddress: "0x27642a1f15aa546c97b709a058b4434e93d28a29",
+//       status: "success",
+//       timestamp: 1624949933,
+//       transactionId: "a7255d05-eacf-4278-9139-0cfceb9abed60x52fc770ee037f42a81313fceb2463928a47b9befe936b6596450c2f160e08cd2",
+//       txId: "0x52fc770ee037f42a81313fceb2463928a47b9befe936b6596450c2f160e08cd2"
+//     },
+//   ],
+// }
 ```
 - Get Transaction Detail
 ```javascript
 let transactionDetail = await tidewallet.getTransactionDetail({ transactionID });
+
+// transactionDetail = {
+//   accountcurrencyId: "a7255d05-eacf-4278-9139-0cfceb9abed6",
+//   amount: "10",
+//   confirmation: 764,
+//   destinctionAddress: "0x49dcda35c2836296c5bc303525b4800276fdb907",
+//   direction: "receive",
+//   fee: "0.000021",
+//   gasPrice: "0.000000001",
+//   gasUsed: undefined,
+//   note: "0x",
+//   sourceAddress: "0x27642a1f15aa546c97b709a058b4434e93d28a29",
+//   status: "success",
+//   timestamp: 1624949933,
+//   transactionId: "a7255d05-eacf-4278-9139-0cfceb9abed60x52fc770ee037f42a81313fceb2463928a47b9befe936b6596450c2f160e08cd2",
+//   txId: "0x52fc770ee037f42a81313fceb2463928a47b9befe936b6596450c2f160e08cd2"
+// }
 ```
 - Get Receiving Address
 ```javascript
 let address = await tidewallet.getReceivingAddress({ accountID });
+
+// address = ["0x49dcda35c2836296c5bc303525b4800276fdb907", null]
 ```
 - Get Transaction Fee
 ```javascript
@@ -133,6 +215,8 @@ tidewallet.sync();
 - Backup TideWallet
 ```javascript
 let paperWallet = tidewallet.backup();
+
+// paperWallet = '{"keyObject":{"metadata":{"nonce":"FgiVWg8jCKsb3Mpz5L3KWeYRK4yhKQgo","iterations":10000},"public":{},"private":"aohJw4fPEXsgWv+TjlweHsRc4p0UHBhJvoTtDQ1uw7oMJTRglT5/7TwOtSisiyLCrHuiEkFuRcrp5O82fo99Ar8Qel0MtkP4hGs52uRfJ1DJjQ=="}}'
 ```
 - Close TideWallet
 ```javascript
