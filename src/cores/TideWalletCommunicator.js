@@ -11,7 +11,7 @@ class TideWalletCommunicator {
       this.apiURL = apiURL;
       this.apiKey = apiKey;
       this.apiSecret = apiSecret;
-      this.httpAgent = new HTTPAgent();
+      this.httpAgent = new HTTPAgent({ apiURL });
   
       this.token;
       this.tokenSecret;
@@ -296,17 +296,17 @@ class TideWalletCommunicator {
    *  tokenSecret: string
    * }
    */
-  async AccessTokenRenew() {
+  async AccessTokenRenew({ token, tokenSecret }) {
     try {
-      if (!this.httpAgent.getToken()) return { message: 'need login' };
       const body = {
-        token: this.token,
-        tokenSecret: this.tokenSecret
+        token,
+        tokenSecret
       }
       const res = await this.httpAgent.post(this.apiURL + '/token/renew', body);
       if (res.success) {
         this.token = res.data.token;
         this.tokenSecret = res.data.tokenSecret;
+        this.httpAgent.setToken(this.token);
         return res.data;
       }
       return Promise.reject({ message: res.message, code: res.code });

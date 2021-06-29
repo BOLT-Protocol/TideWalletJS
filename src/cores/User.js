@@ -1,4 +1,5 @@
 const PaperWallet = require("./PaperWallet");
+const TideWalletCore = require("./TideWalletCore");
 const config = require("./../constants/config");
 const Mnemonic = require("../helpers/Mnemonic");
 
@@ -12,7 +13,7 @@ class User {
 
     this._communicator = TideWalletCommunicator;
     this._DBOperator = DBOperator;
-    this._PaperWallet = new PaperWallet();
+    this._TideWalletCore = new TideWalletCore();
   }
 
   /**
@@ -46,7 +47,7 @@ class User {
     const userId = user[0];
     const userSecret = user[1];
     const timestamp = Math.floor(new Date() / 1000);
-    const { wallet, extendPublicKey: extPK } = await this._PaperWallet.createWallet({
+    const { wallet, extendPublicKey: extPK } = await this._TideWalletCore.createWallet({
       userIdentifier,
       userId,
       userSecret,
@@ -63,7 +64,7 @@ class User {
       timestamp,
     });
 
-    return success;
+    return this._TideWalletCore;
   }
 
   /**
@@ -150,7 +151,7 @@ class User {
     const userId = user[0];
     const timestamp = Math.floor(new Date() / 1000);
     
-    const { wallet, extendPublicKey: extPK } = await this._PaperWallet.createWalletWithSeed({
+    const { wallet, extendPublicKey: extPK } = await this._TideWalletCore.createWalletWithSeed({
       seed,
       userIdentifier,
       userId,
@@ -167,7 +168,7 @@ class User {
       timestamp,
     });
 
-    return success;
+    return this._TideWalletCore;
   }
 
   /**
@@ -278,11 +279,34 @@ class User {
       timestamp: user.timestamp,
       keystore: user.keystore
     }
-    this._PaperWallet.init(userInfo);
+    this._TideWalletCore.setUserInfo(userInfo);
 
     const item = await this._DBOperator.prefDao.getAuthItem();
     if (item != null) {
-      this._communicator.login(item.token, item.tokenSecret);
+      let _token = item.token
+      let _tokenSecret = item.tokenSecret
+      try {
+        await this._communicator.AccessTokenRenew({
+            token: _token,
+            tokenSecret: _tokenSecret
+          })
+        await this._communicator.login(_token, _tokenSecret);
+      } catch (e) {
+        console.trace(e);
+        const res = await this._communicator.register(this.installId, this.installId, await this._TideWalletCore.getExtendedPublicKey());
+
+        if (res.token) {
+          _token = res.token
+          _tokenSecret = res.tokenSecret
+          await this._DBOperator.prefDao.setAuthItem(
+            _token,
+            _tokenSecret
+          );
+        }
+      }
+
+      // verify, if not verify, set token null
+      await this._communicator.login(_token, _tokenSecret);
     }
   }
 
@@ -300,7 +324,6 @@ class User {
 
   /**
    * get keystore
-   * @param {String} password
    * @returns {String} keystore
    */
   async getKeystore() {
