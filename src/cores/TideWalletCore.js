@@ -287,7 +287,7 @@ class TideWalletCore {
    */
   async getExtendedPublicKey() {
     const seed = await this._getSeedByKeyStore();
-    const extPK = PaperWallet.getExtendedPublicKey(Buffer.from(seed, 'hex'));
+    const extPK = PaperWallet.getExtendedPublicKey(Buffer.from(seed));
     return extPK;
   }
 

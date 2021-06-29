@@ -41,6 +41,8 @@ class TideWallet {
     this.account = new Account(initObj);
     this.account.setMessenger();
     await this.account.init();
+
+    this.trader = new Trader(initObj);
   
     const listener = this.account.messenger.subscribe((v) => {
       this.notice(v, 'update');
@@ -69,52 +71,81 @@ class TideWallet {
 
   async overview() {
     const currencies = await this.account.getAllCurrencies();
-    const fiat = [];
+    const fiat = await this.trader.getSelectedFiat();
+    const bnRate = new BigNumber(fiat.rate);
     const balance = currencies.reduce((rs, curr) => {
-      return rs;
+      const bnBalance = new BigNumber(curr.balance);
+      const bnRs = new BigNumber(rs);
+      return bnRs.plus(
+        this.trader.calculateToUSD({ currencyId: curr.currencyId, amount: bnBalance }))
+        .toFixed();
     }, 0);
+    const bnBalance = new BigNumber(balance);
+    const balanceFiat = bnBalance.multipliedBy(bnRate).toFixed();
 
     const dashboard = {
-      balance,
+      balance: balanceFiat,
       currencies
     };
     return dashboard;
   }
 
-  async getCurrencyDetail({ accountcurrencyId }) {
-
+  /**
+   * 
+   * @param {object} accountInfo
+   * @param {string} accountInfo.assetID
+   */
+  async getAssetDetail({ assetID }) {
+    const asset = await this.account.getCurrencies(assetID);
+    const transactions = await this.account.getTransactions(assetID);
+    
+    return { asset, transactions };
   }
 
-  async getTransactionDetail() {
-
+  async getTransactionDetail({ assetID, transactionID }) {
+    const txs = await this.account.getTransactions(assetID);
+    const tx = txs.find((r) => r.txId === transactionID );
+    return tx;
   }
 
-  async getReceivingAddress() {
+  async getReceivingAddress({ accountID }) {
+    const address = await this.account.getReceiveAddress(accountID);
 
+    return address;
   }
 
-  async getTransactionFee() {
+  // ++ need help
+  async getTransactionFee({ accountID, blockchainID, from, to, amount, data }) {
+    const svc = this.account.getService(accountID);
+    const fees = svc.getTransactionFee(blockchainID);
 
+    return fees;
   }
 
+  // need help
   async prepareTransaction() {
 
   }
 
-  async sendTransaction() {
+  async sendTransaction({ accountID, blockchainID, transaction }) {
+      const svc = this.account.getService(accountID);
+      const res = svc.publishTransaction(blockchainID, transaction);
 
+      return res;
   }
 
   async sync() {
-
+    this.account.sync();
+    return true;
   }
 
   async backup() {
-
+    return this.user.getKeystore();
   }
 
   async close() {
     // release all resources
+    this.account.close();
     return true;
   }
 
@@ -152,6 +183,11 @@ if (isBrowser()) {
       InstallID: '11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249'
     };
     await tw.init({ user: user2, api });
+    //test
+    console.log('overview:', await tw.overview());
+    // console.log('getAssetDetail:', await tw.getAssetDetail({ assetID: "a7255d05-eacf-4278-9139-0cfceb9abed6" }));
+    console.log('getReceivingAddress:', await tw.getReceivingAddress({ accountID: "a7255d05-eacf-4278-9139-0cfceb9abed6" }));
+
   }
 }
 
