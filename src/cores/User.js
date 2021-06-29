@@ -292,7 +292,7 @@ class User {
           })
         await this._communicator.login(_token, _tokenSecret);
       } catch (e) {
-        console.error('_initUser', e);
+        console.trace(e);
         const res = await this._communicator.register(this.installId, this.installId, await this._TideWalletCore.getExtendedPublicKey());
 
         if (res.token) {

@@ -13,7 +13,6 @@ class AccountCore {
   _messenger = null;
   _settingOptions = [];
   _DBOperator = null;
-  _accounts = [];
 
   get currencies() {
     return this._currencies;
@@ -296,7 +295,6 @@ class AccountCore {
    * @param {string} accountcurrencyId The accountcurrencyId
    * @param {object} param The transaction content
    * @param {number} param.amount
-   * @param {string} param.from
    * @param {string} param.to
    * @param {number} param.gasPrice
    * @param {number} param.gasUsed
@@ -306,7 +304,7 @@ class AccountCore {
    */
   async sendTransaction(
     accountCurrency,
-    { amount, from, to, gasPrice, gasUsed, message, keyIndex }
+    { amount, to, gasPrice, gasUsed, message }
   ) {
     let safeSigner;
     switch (accountCurrency.accountType) {
@@ -326,7 +324,6 @@ class AccountCore {
         const txSvc = new ETHTransaction(new TransactionBase(), safeSigner);
         const signedTx = txSvc.prepareTransaction({
           amount: BigNumber(amount),
-          from,
           to,
           gasPrice: BigNumber(gasPrice),
           gasUsed: BigNumber(gasUsed),
