@@ -102,14 +102,30 @@ class AccountCore {
     this._addAccount(accounts);
   }
 
+  async sync() {
+    if (this._isInit) {
+      this._services.forEach((svc) => {
+        svc.synchro();
+      });
+    }
+  }
+
   close() {
     this._isInit = false;
     this._services.forEach((svc) => {
       svc.stop();
     });
 
+    delete this._services;
     this._services = [];
+
+    delete this.accounts;
+    this.accounts = [];
+
+    delete this.currencies;
     this.currencies = {};
+
+    delete this._settingOptions;
     this._settingOptions = [];
   }
 
@@ -259,8 +275,9 @@ class AccountCore {
    * @param {string} accountId The accountId
    * @returns {string} The address
    */
-  async getReceiveAddress(accountcurrencyId) {
-    const address = await this.getCurrencies(accountcurrencyId).getReceivingAddress();
+   async getReceiveAddress(accountcurrencyId) {
+    const svc = this.getService(accountcurrencyId);
+    const address = await svc.getReceivingAddress(accountcurrencyId);
     return address;
   }
 

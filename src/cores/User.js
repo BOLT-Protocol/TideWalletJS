@@ -324,7 +324,6 @@ class User {
 
   /**
    * get keystore
-   * @param {String} password
    * @returns {String} keystore
    */
   async getKeystore() {
