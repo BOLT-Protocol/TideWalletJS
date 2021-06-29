@@ -338,6 +338,7 @@ class AccountServiceBase extends AccountService {
       );
 
       await this._DBOperator.accountCurrencyDao.insertCurrencies(v);
+      this._lastSyncTimestamp = now;
     }
 
     await this._pushResult();
