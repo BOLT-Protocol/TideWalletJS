@@ -55,7 +55,7 @@ class TideWalletCore {
       nonce = Number(nonce) + 1;
     }
 
-    return nonce;
+    return rlp.toBuffer(nonce).toString('hex');
   }
 
   /**
@@ -68,45 +68,26 @@ class TideWalletCore {
    * @returns {String} password
    */
    _getPassword({ userIdentifier, userId, installId, timestamp }) {
-    const userIdentifierBuff = Buffer.from(userIdentifier, "utf8").toString(
+    const userIdentifierBuff = Buffer.from(userIdentifier || this._userInfo.thirdPartyId, "utf8").toString(
       "hex"
     );
-    const installIdBuff = Buffer.from(installId).toString("hex");
+    const installIdBuff = Buffer.from(installId  || this._userInfo.installId).toString("hex");
     const pwseed = Cryptor.keccak256round(
-      Buffer.concat([
-        Buffer.from(
-          Cryptor.keccak256round(
-            Buffer.concat([
-              Buffer.from(
-                Cryptor.keccak256round(
-                  userIdentifierBuff || this._userInfo.thirdPartyId,
-                  1
-                )
-              ),
-              Buffer.from(Cryptor.keccak256round(userId || this._userInfo.id, 1)),
-            ]).toString()
-          )
-        ),
-        Buffer.from(
-          Cryptor.keccak256round(
-            Buffer.concat([
-              Buffer.from(
-                Cryptor.keccak256round(
-                  rlp
-                    .toBuffer(
-                      rlp.toBuffer(timestamp).toString("hex").slice(3, 6)
-                    )
-                    .toString("hex"),
-                  1
-                )
-              ),
-              Buffer.from(
-                Cryptor.keccak256round(installIdBuff || this._userInfo.installId, 1)
-              ),
-            ]).toString()
-          )
-        ),
-      ]).toString()
+      Cryptor.keccak256round(
+          Cryptor.keccak256round(userIdentifierBuff, 1) + 
+          Cryptor.keccak256round(userId || this._userInfo.id, 1),
+      ) +
+      Cryptor.keccak256round(
+        Cryptor.keccak256round(
+          rlp
+            .toBuffer(
+              rlp.toBuffer(timestamp).toString("hex").slice(3, 6)
+            )
+            .toString("hex"),
+          1
+        ) +
+        Cryptor.keccak256round(installIdBuff, 1)
+      )
     );
     const password = Cryptor.keccak256round(pwseed);
     return password;
@@ -122,37 +103,19 @@ class TideWalletCore {
     const userIdentifierBuff = Buffer.from(userIdentifier, "utf8").toString(
       "hex"
     );
-    const _main = Buffer.concat([
-      Buffer.from(userIdentifierBuff, "utf8"),
-      rlp.toBuffer(nonce),
-    ])
-      .toString()
-      .slice(0, 16);
+    const _main = (userIdentifierBuff + nonce).slice(0, 16);
 
-    const _extend = Cryptor.keccak256round(
-      rlp.toBuffer(nonce).toString("hex"),
-      1
-    ).slice(0, 8);
+    const _extend = Cryptor.keccak256round(nonce, 1).slice(0, 8);
 
     const seed = Cryptor.keccak256round(
-      Buffer.concat([
-        Buffer.from(
-          Cryptor.keccak256round(
-            Buffer.concat([
-              Buffer.from(Cryptor.keccak256round(_main, 1)),
-              Buffer.from(Cryptor.keccak256round(_extend, 1)),
-            ]).toString()
-          )
-        ),
-        Buffer.from(
-          Cryptor.keccak256round(
-            Buffer.concat([
-              Buffer.from(Cryptor.keccak256round(userId, 1)),
-              Buffer.from(Cryptor.keccak256round(userSecret, 1)),
-            ]).toString()
-          )
-        ),
-      ]).toString()
+      Cryptor.keccak256round(
+        Cryptor.keccak256round(_main, 1) +
+        Cryptor.keccak256round(_extend, 1)
+      ) +
+      Cryptor.keccak256round(
+        Cryptor.keccak256round(userId, 1) +
+        Cryptor.keccak256round(userSecret, 1)
+      )
     );
     return {seed, _extend};
   }
@@ -225,7 +188,7 @@ class TideWalletCore {
       credentialData.password
     );
     const seed = await PaperWallet.magicSeed(privateKey);
-    const _seed = Buffer.from(seed);
+    const _seed = Buffer.from(seed, 'hex');
     const extendPublicKey = PaperWallet.getExtendedPublicKey(_seed);
     return { wallet, extendPublicKey }
   }
@@ -259,7 +222,7 @@ class TideWalletCore {
       seed,
       password
     );
-    const _seed = Buffer.from(seed);
+    const _seed = Buffer.from(seed, 'hex');
     const extendPublicKey = PaperWallet.getExtendedPublicKey(_seed);
     return { wallet, extendPublicKey }
   }
@@ -287,7 +250,7 @@ class TideWalletCore {
    */
   async getExtendedPublicKey() {
     const seed = await this._getSeedByKeyStore();
-    const extPK = PaperWallet.getExtendedPublicKey(Buffer.from(seed));
+    const extPK = PaperWallet.getExtendedPublicKey(Buffer.from(seed, 'hex'));
     return extPK;
   }
 
