@@ -20,7 +20,7 @@ describe('construct by user', () => {
 
     test("TideWalletCore _getNonce ", () => {
         const nonce = _TideWalletCore._getNonce(userIdentifier)
-        expect(nonce).toBe(13305180);
+        expect(nonce).toBe('cb055c');
     });
     
     test("TideWalletCore getPassword ", () => {
