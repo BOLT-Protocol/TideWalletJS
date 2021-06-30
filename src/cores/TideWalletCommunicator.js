@@ -245,7 +245,7 @@ class TideWalletCommunicator {
    */
   async TokenList(blockchainID) {
     try {
-      const res = await this.httpAgent.get(this.apiURL + '/blockchain/' + blockchainID + '/token');
+      const res = await this.httpAgent.get(this.apiURL + '/blockchain/' + blockchainID + '/token?type=TideWallet');
       if (res.success) {
         return res.data;
       }
