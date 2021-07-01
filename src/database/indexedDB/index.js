@@ -620,10 +620,11 @@ class UtxoDao extends DAO {
     timestamp,
     address
   }) {
+    const DEFAULT_SEQUENCE = 0xffffffff; // temp
     return {
       utxoId: `${txid}-${vout}`,
       accountcurrencyId: accountId,
-      txId,
+      txId: txid,
       vout,
       type,
       amount,
@@ -633,7 +634,8 @@ class UtxoDao extends DAO {
       timestamp,
       locked: false,
       address,
-      sequence: BitcoinTransaction.DEFAULT_SEQUENCE,
+      // sequence: BitcoinTransaction.DEFAULT_SEQUENCE,
+      sequence: DEFAULT_SEQUENCE, // temp
     }
   }
     
@@ -643,6 +645,10 @@ class UtxoDao extends DAO {
 
   async insertUtxos(utxos) {
     return this._writeAll(utxos);
+  }
+
+  async findAllUtxos() {
+    return this._readAll();
   }
 }
 

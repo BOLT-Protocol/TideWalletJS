@@ -185,8 +185,7 @@ class BitcoinService extends AccountServiceDecorator {
             ...data, accountId
           })
         )
-        console.log('utxos:', utxos) // --
-        this._DBOperator.utxoDao.insertUtxos(utxos);
+        await this._DBOperator.utxoDao.insertUtxos(utxos);
       } catch (error) {
         console.trace(error);
       }
