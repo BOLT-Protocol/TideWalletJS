@@ -287,9 +287,13 @@ class User {
       let _tokenSecret = item.tokenSecret
       try {
         await this._communicator.AccessTokenRenew({
-            token: _token,
-            tokenSecret: _tokenSecret
-          })
+          token: _token,
+          tokenSecret: _tokenSecret
+        })
+        await this._DBOperator.prefDao.setAuthItem(
+          _token,
+          _tokenSecret
+        );
         await this._communicator.login(_token, _tokenSecret);
       } catch (e) {
         console.trace(e);
