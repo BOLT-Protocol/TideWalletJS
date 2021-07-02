@@ -2,6 +2,7 @@ const { Subject } = require("rxjs");
 const { ACCOUNT } = require("../models/account.model");
 const AccountServiceBase = require("../services/accountServiceBase");
 const EthereumService = require("../services/ethereumService");
+const BitcoinService = require("../services/bitcoinService");
 const { network_publish } = require("../constants/config");
 const TransactionBase = require("../services/transactionService");
 const ETHTransaction = require("../services/transactionServiceETH");
@@ -74,6 +75,11 @@ class AccountCore {
         let svc;
         let _ACCOUNT;
         switch (chains[blockIndex].coinType) {
+          case 0:
+          case 1:
+            svc = new BitcoinService(new AccountServiceBase(this), this._TideWalletCommunicator, this._DBOperator);
+            _ACCOUNT = ACCOUNT.BTC;
+            break;
           case 60:
           case 603:
             svc = new EthereumService(new AccountServiceBase(this), this._TideWalletCommunicator, this._DBOperator);

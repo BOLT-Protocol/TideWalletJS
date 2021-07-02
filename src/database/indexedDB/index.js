@@ -158,8 +158,7 @@ class IndexedDB {
     return this._txDao;
   }
 
-  get utxo() {
-    // TODO:
+  get utxoDao() {
     return this._utxoDao;
   }
 
@@ -609,8 +608,47 @@ class ExchangeRateDao extends DAO {
 }
 
 class UtxoDao extends DAO {
+  entity({
+    accountId,
+    txid,
+    vout,
+    type,
+    amount,
+    chain_index,
+    key_index,
+    script,
+    timestamp,
+    address
+  }) {
+    const DEFAULT_SEQUENCE = 0xffffffff; // temp
+    return {
+      utxoId: `${txid}-${vout}`,
+      accountcurrencyId: accountId,
+      txId: txid,
+      vout,
+      type,
+      amount,
+      changeIndex: chain_index,
+      keyIndex: key_index,
+      script,
+      timestamp,
+      locked: false,
+      address,
+      // sequence: BitcoinTransaction.DEFAULT_SEQUENCE,
+      sequence: DEFAULT_SEQUENCE, // temp
+    }
+  }
+    
   constructor(db, name) {
     super(db, name);
+  }
+
+  async insertUtxos(utxos) {
+    return this._writeAll(utxos);
+  }
+
+  async findAllUtxos() {
+    return this._readAll();
   }
 }
 

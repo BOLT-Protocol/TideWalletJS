@@ -2,6 +2,8 @@
  @abstract
 **/
 class AccountService {
+  AVERAGE_FETCH_FEE_TIME = 1 * 60 * 60 * 1000; // milliseconds
+
   _syncInterval = 60 * 10 * 1000;
 
   _lastSyncTimestamp = 0;
