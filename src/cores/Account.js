@@ -65,6 +65,7 @@ class AccountCore {
     const accounts = await this._getAccounts();
     await this._getSupportedCurrencies();
 
+    const srvStart = [];
     for (const acc of accounts) {
       let blockIndex = chains.findIndex(
         (chain) => chain.networkId === acc.networkId
@@ -94,11 +95,17 @@ class AccountCore {
 
           svc.init(acc.accountId, _ACCOUNT);
 
-          await svc.start();
+          // await svc.start();
+          srvStart.push(svc.start());
         }
       }
     }
 
+    try {
+      const srvStartRes = await Promise.all(srvStart);
+    } catch (error) {
+      console.trace(error);
+    }
     this._addAccount(accounts);
   }
 
