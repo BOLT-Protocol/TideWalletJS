@@ -188,17 +188,18 @@ class AccountServiceBase extends AccountService {
    * @returns {void}
    */
   async _getSettingTokens() {
-    const acc = await this._DBOperator.accountDao.findAccount(this._accountId);
-    try {
-      const res = await this._TideWalletCommunicator.TokenList(acc.networkId);
-      const ds = res.map((tk) => ({
+    const tokens =
+      await this._DBOperator.currencyDao.findAllCurrenciesByAccountId(
+        this._accountId
+      );
+    if (tokens.length > 0) {
+      const acc = await this._DBOperator.accountDao.findAccount(this._accountId);
+      const ds = tokens.map((tk) => ({
         ...tk,
         accountId: this._accountId,
         blockchainId: acc.networkId,
       }));
       this._AccountCore.settingOptions += ds;
-    } catch (error) {
-      console.log(error);
     }
   }
 

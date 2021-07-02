@@ -286,15 +286,18 @@ class User {
       let _token = item.token
       let _tokenSecret = item.tokenSecret
       try {
-        await this._communicator.AccessTokenRenew({
-          token: _token,
-          tokenSecret: _tokenSecret
-        })
-        await this._DBOperator.prefDao.setAuthItem(
-          _token,
-          _tokenSecret
-        );
-        await this._communicator.login(_token, _tokenSecret);
+        const res = await this._communicator.AccessTokenRenew({
+            token: _token,
+            tokenSecret: _tokenSecret
+          })
+        if (res.token) {
+          _token = res.token
+          _tokenSecret = res.tokenSecret
+          await this._DBOperator.prefDao.setAuthItem(
+            _token,
+            _tokenSecret
+          );
+        }
       } catch (e) {
         console.trace(e);
         const res = await this._communicator.register(this.installId, this.installId, await this._TideWalletCore.getExtendedPublicKey());
@@ -307,10 +310,10 @@ class User {
             _tokenSecret
           );
         }
+        // verify, if not verify, set token null
+        await this._communicator.login(_token, _tokenSecret);
       }
 
-      // verify, if not verify, set token null
-      await this._communicator.login(_token, _tokenSecret);
     }
   }
 
