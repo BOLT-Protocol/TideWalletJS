@@ -18,7 +18,7 @@ class Cryptor {
   static randomBytes(length) {
     let hexStr = "";
     if (length > 0) {
-      hexStr = randomHex(length);
+      hexStr = randomrHex(length);
     }
     return Buffer.from(hexStr, "hex");
   }
