@@ -193,6 +193,8 @@ class AccountCore {
 
   async _getAccounts() {
     let result = await this._DBOperator.accountDao.findAllAccounts();
+    const user = await this._DBOperator.userDao.findUser();
+    result = result.filter((acc) => acc.userId === user.userId);
 
     if (result.length < 1) {
       result = await this._addAccount(result);
