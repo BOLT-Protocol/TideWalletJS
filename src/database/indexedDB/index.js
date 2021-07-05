@@ -445,7 +445,11 @@ class CurrencyDao extends DAO {
   insertCurrencies(currencies) {
     return this._writeAll(currencies);
   }
-
+  
+  findOneByCurrencyId(id) {
+    return this._read(id);
+  }
+  
   findAllCurrencies() {
     return this._readAll();
   }
@@ -474,6 +478,9 @@ class NetworkDao extends DAO {
 
   findAllNetworks() {
     return this._readAll();
+  }
+  findNetwork(network_id) {
+    return this._read(network_id);
   }
   insertNetworks(networks) {
     return this._writeAll(networks);
@@ -604,6 +611,10 @@ class ExchangeRateDao extends DAO {
 
   findAllExchageRates() {
     return this._readAll();
+  }
+
+  findExchageRate(name) {
+    return this._read(name);
   }
 }
 

@@ -270,11 +270,58 @@ class AccountCore {
    * @method getAllCurrencies
    * @returns {Array} The currency list
    */
-  getAllCurrencies() {
-    return Object.values(this._currencies).reduce(
+  async getAllCurrencies() {
+    const currencies = Object.values(this._currencies).reduce(
       (list, curr) => list.concat(curr),
       []
     );
+
+    // find exchange rate
+    const fiatObj = await this._DBOperator.prefDao.getSelectedFiat() || { currencyId:'5b1ea92e584bf50020130613', name: 'CNY' };
+    let FiatExchangeRateBN = fiatObj.exchangeRate
+    if (!FiatExchangeRateBN) {
+      const findAccount = await this._DBOperator.exchangeRateDao.findExchageRate(fiatObj.currencyId);
+      FiatExchangeRateBN = (typeof findAccount.rate === 'object') ? findAccount.rate : new BigNumber(findAccount.rate)
+    }
+
+    for (let i = 0; i < currencies.length; i++) {
+      const currency = currencies[i];
+      const currencyIndex = this._currencies[currency.accountId].findIndex((cur) => cur.accountcurrencyId === currency.accountcurrencyId)
+      if (!currency.name || !currency.decimals) {
+        const findCurrency = await this._DBOperator.currencyDao.findOneByCurrencyId(currency.currency_id);
+        if (findCurrency) {
+          currencies[i].name = findCurrency.name
+          currencies[i].decimals = findCurrency.decimals
+          if (currencyIndex !== -1 && this._currencies[currency.accountId][currencyIndex]) {
+            this._currencies[currency.accountId][currencyIndex].name = findCurrency.name
+            this._currencies[currency.accountId][currencyIndex].decimals = findCurrency.decimals
+          }
+        }
+      }
+      if (!currency.network) {
+        const findAccount = await this._DBOperator.accountDao.findAccount(currency.accountId);
+        if (findAccount && findAccount.networkId) {
+          const findNetwork = await this._DBOperator.networkDao.findNetwork(findAccount.networkId)
+          if (findNetwork.network) {
+            currencies[i].network = findNetwork.network
+            if (currencyIndex !== -1 && this._currencies[currency.accountId][currencyIndex]) {
+              this._currencies[currency.accountId][currencyIndex].network = findNetwork.network
+            }
+          }
+        }
+      }
+      
+      // calculate inFiat
+      const CurrencyRateObj = await this._DBOperator.exchangeRateDao.findExchageRate(currency.currencyId)
+      let CurrencyRateBN = (CurrencyRateObj && CurrencyRateObj.rate) 
+        ? (typeof CurrencyRateObj.rate === 'object') 
+          ? CurrencyRateObj.rate
+          : new BigNumber(CurrencyRateObj.rate) 
+        : new BigNumber(0)
+      
+      currencies[i].inFiat = FiatExchangeRateBN.multipliedBy(CurrencyRateBN).toFixed()
+    }
+    return currencies
   }
 
   /**

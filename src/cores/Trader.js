@@ -43,13 +43,13 @@ class Trader {
           .map((r) => ({
             currencyId: r.currency_id,
             name: r.name,
-            exchangeRate: new BigNumber(r.rate),
+            exchangeRate: new BigNumber(r.rate).toFixed(),
           }));
         this._cryptos = cryptos
           .map((r) => ({
             currencyId: r.currency_id,
             name: r.name,
-            exchangeRate: new BigNumber(r.rate),
+            exchangeRate: new BigNumber(r.rate).toFixed(),
           }));
       } catch (error) {
         console.log(error);
@@ -60,14 +60,14 @@ class Trader {
         .map((r) => ({
           currencyId: r.exchangeRateId,
           name: r.name,
-          exchangeRate: new BigNumber(r.rate),
+          exchangeRate: new BigNumber(r.rate).toFixed(),
         }));
       this._cryptos = local
         .filter((rate) => rate.type === 'currency')
         .map((r) => ({
           currencyId: r.exchangeRateId,
           name: r.name,
-          exchangeRate: new BigNumber(r.rate),
+          exchangeRate: new BigNumber(r.rate).toFixed(),
         }));
     }
 
