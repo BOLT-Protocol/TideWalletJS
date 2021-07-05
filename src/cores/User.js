@@ -14,6 +14,7 @@ class User {
     this._communicator = TideWalletCommunicator;
     this._DBOperator = DBOperator;
     this._TideWalletCore = new TideWalletCore();
+    this._initFromRegist = false;
   }
 
   /**
@@ -28,6 +29,7 @@ class User {
     console.log("checkUser: ", user);
 
     if (user) {
+      this._initFromRegist = false;
       await this._initUser(user);
       return true;
     }
@@ -131,6 +133,7 @@ class User {
         backup_status: false,
       });
       await this._DBOperator.userDao.insertUser(user);
+      this._initFromRegist = true;
       await this._initUser(user);
       return true;
     } catch (error) {
@@ -282,7 +285,7 @@ class User {
     this._TideWalletCore.setUserInfo(userInfo);
 
     const item = await this._DBOperator.prefDao.getAuthItem();
-    if (item != null) {
+    if (item != null && !this._initFromRegist) {
       let _token = item.token
       let _tokenSecret = item.tokenSecret
       try {
