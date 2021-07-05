@@ -11,6 +11,7 @@ const BigNumber = require("bignumber.js");
 class AccountCore {
   static instance;
   _currencies = {};
+  _accounts = [];
   _messenger = null;
   _settingOptions = [];
   _DBOperator = null;
@@ -35,7 +36,7 @@ class AccountCore {
     this._settingOptions = options;
   }
 
-  constructor({TideWalletCommunicator, DBOperator, TideWalletCore}) {
+  constructor({ TideWalletCommunicator, DBOperator, TideWalletCore }) {
     if (!AccountCore.instance) {
       this._messenger = null;
       this._isInit = false;
@@ -63,11 +64,11 @@ class AccountCore {
 
   async _initAccounts() {
     const chains = await this._getNetworks(network_publish);
-    const accounts = await this._getAccounts();
+    this._accounts = await this._getAccounts();
     await this._getSupportedCurrencies();
 
     const srvStart = [];
-    for (const acc of accounts) {
+    for (const acc of this._accounts) {
       let blockIndex = chains.findIndex(
         (chain) => chain.networkId === acc.networkId
       );
@@ -78,16 +79,28 @@ class AccountCore {
         switch (chains[blockIndex].coinType) {
           case 0:
           case 1:
-            svc = new BitcoinService(new AccountServiceBase(this), this._TideWalletCommunicator, this._DBOperator);
+            svc = new BitcoinService(
+              new AccountServiceBase(this),
+              this._TideWalletCommunicator,
+              this._DBOperator
+            );
             _ACCOUNT = ACCOUNT.BTC;
             break;
           case 60:
           case 603:
-            svc = new EthereumService(new AccountServiceBase(this), this._TideWalletCommunicator, this._DBOperator);
+            svc = new EthereumService(
+              new AccountServiceBase(this),
+              this._TideWalletCommunicator,
+              this._DBOperator
+            );
             _ACCOUNT = ACCOUNT.ETH;
             break;
           case 8017:
-            svc = new EthereumService(new AccountServiceBase(this), this._TideWalletCommunicator, this._DBOperator);
+            svc = new EthereumService(
+              new AccountServiceBase(this),
+              this._TideWalletCommunicator,
+              this._DBOperator
+            );
             _ACCOUNT = ACCOUNT.CFC;
             break;
 
@@ -112,7 +125,7 @@ class AccountCore {
     } catch (error) {
       console.trace(error);
     }
-    this._addAccount(accounts);
+    this._addAccount(this._accounts);
   }
 
   /**
@@ -160,6 +173,17 @@ class AccountCore {
     return this._services.find((svc) => svc.accountId === accountId);
   }
 
+  /**
+   * Get blockchainID by accountId
+   * @method getBlockchainID
+   * @param {string} accountId The accountId
+   * @returns {string} The blockchainID
+   */
+  getBlockchainID(accountId) {
+    const account = this._accounts.find((acc) => acc.accountId === accountId);
+    return account.networkId;
+  }
+
   async _getNetworks(publish = true) {
     let networks = await this._DBOperator.networkDao.findAllNetworks();
 
@@ -177,9 +201,7 @@ class AccountCore {
         );
         networks = enties;
         await this._DBOperator.networkDao.insertNetworks(enties);
-      } catch (error) {
-        
-      }
+      } catch (error) {}
     }
 
     if (this._debugMode || !publish) {
@@ -204,15 +226,15 @@ class AccountCore {
 
   async _addAccount(local) {
     try {
-      const res = await this._TideWalletCommunicator.AccountList()
+      const res = await this._TideWalletCommunicator.AccountList();
       let list = res ?? [];
-  
+
       const user = await this._DBOperator.userDao.findUser();
-  
+
       for (const account of list) {
         const id = account["account_id"];
         const exist = local.findIndex((el) => el.accountId === id) > -1;
-  
+
         if (!exist) {
           const entity = this._DBOperator.accountDao.entity({
             ...account,
@@ -220,12 +242,11 @@ class AccountCore {
             network_id: account["blockchain_id"],
           });
           await this._DBOperator.accountDao.insertAccount(entity);
-  
+
           local.push(entity);
         }
       }
-    } catch (error) {
-    }
+    } catch (error) {}
     return local;
   }
 
@@ -296,10 +317,22 @@ class AccountCore {
    * @param {string} accountId The accountId
    * @returns {string} The address
    */
-   async getReceiveAddress(accountcurrencyId) {
+  async getReceiveAddress(accountcurrencyId) {
     const svc = this.getService(accountcurrencyId);
     const address = await svc.getReceivingAddress(accountcurrencyId);
     return address;
+  }
+
+  async getTransactionFee(accountcurrencyId, { to, amount, data } = {}) {
+    const svc = this.getService(accountcurrencyId);
+    const blockchainID = this.getBlockchainID(accountID);
+    console.log("blockchainID", blockchainID);
+    const fees = svc.getTransactionFee(blockchainID);
+    let gasLimit = 21000;
+    if (to) gasLimit = svc.estimateGasLimit(blockchainID, to, amount, data);
+    console.log("fees", fees);
+    console.log("gasLimit", gasLimit);
+    return { ...fees, gasLimit };
   }
 
   /**

@@ -65,11 +65,13 @@ class EthereumService extends AccountServiceDecorator {
   async getReceivingAddress(accountcurrencyId) {
     if (this._address === null) {
       try {
-        const response = await this._TideWalletCommunicator.AccountReceive(accountcurrencyId);
+        const response = await this._TideWalletCommunicator.AccountReceive(
+          accountcurrencyId
+        );
         const address = response["address"];
         this._address = address;
       } catch (error) {
-        console.log(error)
+        console.log(error);
         //TODO
         return ["error", 0];
       }
@@ -102,7 +104,9 @@ class EthereumService extends AccountServiceDecorator {
       Date.now() - this._feeTimestamp > this.AVERAGE_FETCH_FEE_TIME
     ) {
       try {
-        const response = await this._TideWalletCommunicator.GetFee(blockchainId);
+        const response = await this._TideWalletCommunicator.GetFee(
+          blockchainId
+        );
         const { slow, standard, fast } = response;
         this._fee = {
           slow,
@@ -111,7 +115,7 @@ class EthereumService extends AccountServiceDecorator {
         };
         this._feeTimestamp = Date.now();
       } catch (error) {
-        console.log(error)
+        console.log(error);
         // TODO fee = null 前面會出錯
       }
     }
@@ -130,8 +134,11 @@ class EthereumService extends AccountServiceDecorator {
       const body = {
         hex:
           "0x" + Buffer.from(transaction.serializeTransaction).toString("hex"),
-      }
-      const response = await this._TideWalletCommunicator.PublishTransaction(blockchainId, body);
+      };
+      const response = await this._TideWalletCommunicator.PublishTransaction(
+        blockchainId,
+        body
+      );
       transaction.txId = response["txid"];
       transaction.timestamp = Date.now();
       transaction.confirmations = 0;
@@ -180,9 +187,14 @@ class EthereumService extends AccountServiceDecorator {
    */
   async addToken(blockchainId, token) {
     try {
-      const res = await this._TideWalletCommunicator.TokenRegist(blockchainId, token.contract);
+      const res = await this._TideWalletCommunicator.TokenRegist(
+        blockchainId,
+        token.contract
+      );
       const { token_id: id } = res;
-      const updateResult = await this._TideWalletCommunicator.AccountDetail(this.service.accountId);
+      const updateResult = await this._TideWalletCommunicator.AccountDetail(
+        this.service.accountId
+      );
 
       const accountItem = updateResult;
       const tokens = [accountItem, ...accountItem.tokens];
@@ -241,16 +253,16 @@ class EthereumService extends AccountServiceDecorator {
    * estimateGasLimit
    * @override
    * @param {String} blockchainId
-   * @param {String} from
    * @param {String} to
    * @param {String} amount
    * @param {String} message
    * @returns {Boolean} result
    */
-  async estimateGasLimit(blockchainId, from, to, amount, message) {
+  async estimateGasLimit(blockchainId, to, amount = 0, message = "0x") {
     if (message == "0x" && this._gasLimit != null) {
       return this._gasLimit;
     } else {
+      const from = await this.getReceivingAddress();
       const payload = {
         fromAddress: from,
         toAddress: to,
@@ -258,7 +270,10 @@ class EthereumService extends AccountServiceDecorator {
         data: message,
       };
       try {
-        const response = await this._TideWalletCommunicator.GetGasLimit(blockchainId, payload);
+        const response = await this._TideWalletCommunicator.GetGasLimit(
+          blockchainId,
+          payload
+        );
         this._gasLimit = Number(response.gasLimit);
       } catch (error) {
         // TODO
@@ -278,7 +293,10 @@ class EthereumService extends AccountServiceDecorator {
    */
   async getNonce(blockchainId, address) {
     try {
-      const response = await this._TideWalletCommunicator.GetNonce(blockchainId, address);
+      const response = await this._TideWalletCommunicator.GetNonce(
+        blockchainId,
+        address
+      );
       const nonce = Number(response["nonce"]);
       this._nonce = nonce;
       return nonce;

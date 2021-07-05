@@ -132,12 +132,13 @@ class TideWallet {
     return address;
   }
 
-  // ++ need help
-  async getTransactionFee({ accountID, blockchainID, from, to, amount, data }) {
-    const svc = this.account.getService(accountID);
-    const fees = svc.getTransactionFee(blockchainID);
-
-    return fees;
+  async getTransactionFee(accountID, { to, amount, data } = {}) {
+    const result = await this.account.getTransactionFee(accountID, {
+      to,
+      amount,
+      data,
+    });
+    return result;
   }
 
   // need help
@@ -209,8 +210,13 @@ if (isBrowser()) {
     };
     await tw.init({ user: user2, api });
     //test
-    console.log('overview:', await tw.overview());
-    // console.log('getAssetDetail:', await tw.getAssetDetail({ assetID: "a7255d05-eacf-4278-9139-0cfceb9abed6" }));
+    console.log("overview:", await tw.overview());
+    console.log(
+      "getTransactionFee:",
+      await tw.getTransactionFee({
+        assetID: "a7255d05-eacf-4278-9139-0cfceb9abed6",
+      })
+    );
     // console.log('getTransactionDetail:', await tw.getTransactionDetail({ assetID: "a7255d05-eacf-4278-9139-0cfceb9abed6", transactionID:"" }));
     // console.log('getReceivingAddress:', await tw.getReceivingAddress({ accountID: "a7255d05-eacf-4278-9139-0cfceb9abed6" }));
     // console.log('getWalletConfig:', await tw.getWalletConfig());
