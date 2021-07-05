@@ -53,6 +53,7 @@ class TideWallet {
     const listener = this.account.messenger.subscribe((v) => {
       this.notice(v, "update");
     });
+    this.notice({}, "ready");
     return true;
   }
 
