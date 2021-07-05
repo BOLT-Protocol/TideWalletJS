@@ -325,7 +325,7 @@ class AccountCore {
 
   async getTransactionFee(accountcurrencyId, { to, amount, data } = {}) {
     const svc = this.getService(accountcurrencyId);
-    const blockchainID = this.getBlockchainID(accountID);
+    const blockchainID = this.getBlockchainID(accountcurrencyId);
     console.log("blockchainID", blockchainID);
     const fees = svc.getTransactionFee(blockchainID);
     let gasLimit = 21000;
