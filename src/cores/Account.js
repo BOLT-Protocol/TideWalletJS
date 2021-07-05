@@ -319,7 +319,8 @@ class AccountCore {
           : new BigNumber(CurrencyRateObj.rate) 
         : new BigNumber(0)
       
-      currencies[i].inFiat = FiatExchangeRateBN.multipliedBy(CurrencyRateBN).toFixed()
+      const balanceBN = new BigNumber(currency.balance)
+      currencies[i].inFiat = balanceBN.multipliedBy(FiatExchangeRateBN.multipliedBy(CurrencyRateBN)).toFixed()
     }
     return currencies
   }
