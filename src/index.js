@@ -29,7 +29,7 @@ class TideWallet {
 
     this.user = new User(initObj);
 
-    const exist = await this.user.checkUser();
+    const exist = await this.user.checkUser(user.OAuthID);
     if (!exist) {
       if (user.mnemonic && user.password) {
         this.core = await this.user.createUserWithSeed(
@@ -40,6 +40,8 @@ class TideWallet {
       } else {
         this.core = await this.user.createUser(user.OAuthID, user.InstallID);
       }
+    } else {
+      this.core = this.user._TideWalletCore;
     }
 
     initObj.TideWalletCore = this.core;
