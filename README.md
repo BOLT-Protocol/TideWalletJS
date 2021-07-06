@@ -201,7 +201,7 @@ let address = await tidewallet.getReceivingAddress({ accountID });
 ```
 - Get Transaction Fee
 ```javascript
-let fee = await tidewallet.getTransactionFee({ blockchainID, from, to, amount, data });
+let fee = await tidewallet.getTransactionFee({ accountID, blockchainID, from, to, amount, data });
 ```
 - Send a transaction
 ```javascript
