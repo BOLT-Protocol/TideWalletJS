@@ -21,7 +21,7 @@ class TideWallet {
     return this;
   }
 
-  async init({ user, api }) {
+  async init({ user, api, debugMode = false, networkPublish = true }) {
     const communicator = new TideWalletCommunicator(api);
     const db = new DBOperator();
     await db.init();
@@ -29,7 +29,7 @@ class TideWallet {
 
     this.user = new User(initObj);
 
-    const exist = await this.user.checkUser();
+    const exist = await this.user.checkUser(user.OAuthID);
     if (!exist) {
       if (user.mnemonic && user.password) {
         this.core = await this.user.createUserWithSeed(
@@ -40,12 +40,14 @@ class TideWallet {
       } else {
         this.core = await this.user.createUser(user.OAuthID, user.InstallID);
       }
+    } else {
+      this.core = this.user._TideWalletCore;
     }
 
     initObj.TideWalletCore = this.core;
     this.account = new Account(initObj);
     this.account.setMessenger();
-    await this.account.init();
+    await this.account.init({ debugMode, networkPublish });
 
     this.trader = new Trader(initObj);
     await this.trader.getFiatList();
@@ -209,7 +211,7 @@ if (isBrowser()) {
       InstallID:
         "11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249",
     };
-    await tw.init({ user: user2, api });
+    await tw.init({ user: user2, api, debugMode: false, networkPublish: true });
     //test
     console.log("overview:", await tw.overview());
     console.log(

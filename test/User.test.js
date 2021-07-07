@@ -16,6 +16,11 @@ describe('User checkUser', () => {
             // mock http response
             const communicator = {
                 login: () => true,
+                oathRegister: () => ({ userId: 'test_id' }),
+                AccessTokenRenew: () => ({
+                    token: 'test_Token',
+                    tokenSecret: 'test_TokenSecret'
+                })
             }
             // mock db return
             const _DBOperator = {
@@ -32,13 +37,16 @@ describe('User checkUser', () => {
                 prefDao: {
                     getAuthItem: () => ({
                         token: 'test_Token'
+                    }),
+                    setAuthItem: () => ({
+                        token: 'test_Token'
                     })
                 }
             }
             const initObj = { TideWalletCommunicator: communicator, DBOperator: _DBOperator };
             const _user1 = new User(initObj);
 
-            const checkUser = await _user1.checkUser()
+            const checkUser = await _user1.checkUser('test_thirdPartyId')
             expect(checkUser).toBe(true);
             expect(_user1.id).toBe('test_id');
         }
@@ -47,7 +55,9 @@ describe('User checkUser', () => {
     test("not found user", async () => {
         {
             // mock http response
-            const communicator = {}
+            const communicator = {
+                oathRegister: () => ({ userId: 'test_id' }),
+            }
             // mock db return
             const _DBOperator = {
                 userDao: {
@@ -166,7 +176,7 @@ test("User _registerUser", async () => {
     }
 })
 
-test("User createUserWithSeed ", async () => {
+test.only("User createUserWithSeed ", async () => {
     {
         const _seed = 'e48f77df468d4890f92392568451e7f73e1757c4287c02b04b8b7d9dba063a13';
 
@@ -274,12 +284,19 @@ test('User _initUser', async () => {
     {
         // mock http response
         const communicator = {
-            login: () => true
+            login: () => true,
+            AccessTokenRenew: () => ({
+                token: 'test_Token',
+                tokenSecret: 'test_TokenSecret'
+            })
         }
         // mock db return
         const _DBOperator = {
             prefDao: {
                 getAuthItem: () => ({
+                    token: 'test_Token'
+                }),
+                setAuthItem: () => ({
                     token: 'test_Token'
                 })
             }

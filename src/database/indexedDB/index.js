@@ -352,8 +352,8 @@ class UserDao extends DAO {
     };
   }
 
-  findUser() {
-    return this._read();
+  findUser(userId) {
+    return this._read(userId);
   }
 
   insertUser(userEntity) {
@@ -364,8 +364,8 @@ class UserDao extends DAO {
     return this._write(userEntity);
   }
 
-  deleteUser() {
-    return this._delete(1);
+  deleteUser(userId) {
+    return this._delete(userId);
   }
 }
 
@@ -710,9 +710,9 @@ class PrefDao extends DAO {
   static AUTH_ITEM_KEY = 1;
   static SELECTED_FIAT_KEY = 2;
 
-  entity({ token, tokenSecret }) {
+  entity({ userId, token, tokenSecret }) {
     return {
-      prefId: PrefDao.AUTH_ITEM_KEY,
+      prefId: `${PrefDao.AUTH_ITEM_KEY}-${userId}`,
       token,
       tokenSecret,
     };
@@ -721,15 +721,15 @@ class PrefDao extends DAO {
     super(db, name);
   }
 
-  async getAuthItem() {
-    const result = await this._read(PrefDao.AUTH_ITEM_KEY);
+  async getAuthItem(userId) {
+    const result = await this._read(`${PrefDao.AUTH_ITEM_KEY}-${userId}`);
 
     return result;
   }
 
-  setAuthItem(token, tokenSecret) {
+  setAuthItem(userId, token, tokenSecret) {
     return this._write({
-      prefId: PrefDao.AUTH_ITEM_KEY,
+      prefId: `${PrefDao.AUTH_ITEM_KEY}-${userId}`,
       token,
       tokenSecret,
     });

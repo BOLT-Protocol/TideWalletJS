@@ -45,7 +45,7 @@
       console.log(e);
     })
 
-    dbOperator.userDao.findUser();
+    dbOperator.userDao.findUser(userId);
     ```
 
 ### Helpers
