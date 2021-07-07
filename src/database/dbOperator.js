@@ -14,21 +14,21 @@ class DBOperator {
     return this.database.accountDao;
   }
 
-  // get currencyDao() {
-  //   return this.database.currencyDao;
-  // }
+  get currencyDao() {
+    return this.database.currencyDao;
+  }
 
   get transactionDao() {
     return this.database.transactionDao;
   }
 
-  // get networkDao() {
-  //   return this.database.networkDao;
-  // }
+  get networkDao() {
+    return this.database.networkDao;
+  }
 
-  // get accountCurrencyDao() {
-  //   return this.database.accountCurrencyDao;
-  // }
+  get accountCurrencyDao() {
+    return this.database.accountCurrencyDao;
+  }
 
   get utxoDao() {
     return this.database.utxoDao;

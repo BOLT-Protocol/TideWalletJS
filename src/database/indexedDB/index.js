@@ -33,10 +33,10 @@ class IndexedDB {
   db = null;
   _userDao = null;
   _accountDao = null;
-  // _currencyDao = null;
-  // _networkDao = null;
+  _currencyDao = null;
+  _networkDao = null;
   _txDao = null;
-  // _accountcurrencyDao = null;
+  _accountcurrencyDao = null;
   _utxoDao = null;
   _exchangeRateDao = null;
   _prefDao = null;
@@ -60,14 +60,14 @@ class IndexedDB {
 
         this._userDao = new UserDao(this.db, OBJ_USER);
         this._accountDao = new AccountDao(this.db, OBJ_ACCOUNT);
-        // this._currencyDao = new CurrencyDao(this.db, OBJ_CURRENCY);
-        // this._networkDao = new NetworkDao(this.db, OBJ_NETWORK);
+        this._currencyDao = new CurrencyDao(this.db, OBJ_CURRENCY);
+        this._networkDao = new NetworkDao(this.db, OBJ_NETWORK);
         this._txDao = new TransactionDao(this.db, OBJ_TX);
         this._utxoDao = new UtxoDao(this.db, OBJ_UTXO);
-        // this._accountcurrencyDao = new AccountCurrencyDao(
-        //   this.db,
-        //   OBJ_ACCOUNT_CURRENCY
-        // );
+        this._accountcurrencyDao = new AccountCurrencyDao(
+          this.db,
+          OBJ_ACCOUNT_CURRENCY
+        );
         this._exchangeRateDao = new ExchangeRateDao(this.db, OBJ_EXCHANGE_RATE);
         this._prefDao = new PrefDao(this.db, OBJ_PREF);
 
