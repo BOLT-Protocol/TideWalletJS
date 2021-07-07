@@ -221,7 +221,7 @@ class EthereumService extends AccountServiceDecorator {
 
       await this._DBOperator.accountCurrencyDao.insertAccount(v);
 
-      const findAccountCurrencies =
+      const findAccount
         await this._DBOperator.accountCurrencyDao.findJoinedByAccountId(
           this.service.accountId
         );

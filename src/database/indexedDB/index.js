@@ -33,10 +33,10 @@ class IndexedDB {
   db = null;
   _userDao = null;
   _accountDao = null;
-  _currencyDao = null;
-  _networkDao = null;
+  // _currencyDao = null;
+  // _networkDao = null;
   _txDao = null;
-  _accountcurrencyDao = null;
+  // _accountcurrencyDao = null;
   _utxoDao = null;
   _exchangeRateDao = null;
   _prefDao = null;
@@ -60,14 +60,14 @@ class IndexedDB {
 
         this._userDao = new UserDao(this.db, OBJ_USER);
         this._accountDao = new AccountDao(this.db, OBJ_ACCOUNT);
-        this._currencyDao = new CurrencyDao(this.db, OBJ_CURRENCY);
-        this._networkDao = new NetworkDao(this.db, OBJ_NETWORK);
+        // this._currencyDao = new CurrencyDao(this.db, OBJ_CURRENCY);
+        // this._networkDao = new NetworkDao(this.db, OBJ_NETWORK);
         this._txDao = new TransactionDao(this.db, OBJ_TX);
         this._utxoDao = new UtxoDao(this.db, OBJ_UTXO);
-        this._accountcurrencyDao = new AccountCurrencyDao(
-          this.db,
-          OBJ_ACCOUNT_CURRENCY
-        );
+        // this._accountcurrencyDao = new AccountCurrencyDao(
+        //   this.db,
+        //   OBJ_ACCOUNT_CURRENCY
+        // );
         this._exchangeRateDao = new ExchangeRateDao(this.db, OBJ_EXCHANGE_RATE);
         this._prefDao = new PrefDao(this.db, OBJ_PREF);
 
@@ -138,13 +138,13 @@ class IndexedDB {
     return this._accountDao;
   }
 
-  get currencyDao() {
-    return this._currencyDao;
-  }
+  // get currencyDao() {
+  //   return this._currencyDao;
+  // }
 
-  get accountCurrencyDao() {
-    return this._accountcurrencyDao;
-  }
+  // get accountCurrencyDao() {
+  //   return this._accountcurrencyDao;
+  // }
 
   get networkDao() {
     return this._networkDao;
@@ -377,13 +377,64 @@ class AccountDao extends DAO {
   /**
    * @override
    */
-  entity({ account_id, user_id, network_id, account_index }) {
+  entity({
+    id, // account_token_id || account_id
+    account_id,
+    user_id,
+    network_id, // || blockchain_id ++,
+    currency_id, // currency_id || token_id
+    balance, // Join AccountCurrency
+    last_sync_time, // Join AccountCurrency
+    purpose, // Join Account
+    coin_type__account, // Join Account
+    account_index, // Join Account
+    curve_type, // Join Account
+    blockchain, // Join Blockchain
+    coin_type__blockchain, // Join Blockchain
+    publish, // Join Blockchain
+    chain_id, // Join Blockchain  || network_id
+    name, // Join Currency
+    description,
+    symbol, // Join Currency
+    decimals, // Join Currency
+    total_supply, // Join Currency
+    contract, // Join Currency
+    type, // Join Currency
+    icon, // Join Currency || url
+    exchange_rate, // ++ Join Currency || inUSD,
+    // tokens, // ++ Join Currency
+  }) {
     return {
-      accountId: account_id,
+      id,
       userId: user_id,
-      networkId: network_id,
+      accountId: account_id,
+      blockchainId: network_id,
+      currencyId: currency_id,
+      balance,
+      lastSyncTime: last_sync_time,
+      purpose,
+      accountCoinType: coin_type__account,
       accountIndex: account_index,
+      curveType: curve_type,
+      blockchain,
+      blockchainCoinType: coin_type__blockchain,
+      publish,
+      chainId: chain_id,
+      name,
+      description,
+      symbol,
+      decimals,
+      totalSupply: total_supply,
+      contract,
+      type,
+      icon,
+      exchangeRate: exchange_rate,
+      // tokens,
     };
+  }
+
+  constructor(db, name) {
+    super(db, name);
   }
 
   findAllAccounts() {
@@ -401,6 +452,10 @@ class AccountDao extends DAO {
   insertAccounts(accounts) {
     return this._writeAll(accounts);
   }
+
+  findAllAccountsByAccountId(accountId) {
+    return this._readAll(accountId, "accountId");
+  }
 }
 
 class CurrencyDao extends DAO {
@@ -409,38 +464,41 @@ class CurrencyDao extends DAO {
    */
   entity({
     currency_id,
-    name,
-    description,
-    symbol,
     decimals,
-    // address,
-    total_supply,
-    contract,
-    type,
+    exchange_rate,
     icon,
+    name,
+    symbol,
+    type,
+    description, // ++ [Did not provided by Backend Service]
+    // address,  // ++ [Did not provided by Backend Service]
+    total_supply, // ++ [Did not provided by Backend Service]
+    contract,  // ++ [Did not provided by Backend Service]
   }) {
     const _type = type === 0 ? "fiat" : type === 1 ? "currency" : "token";
 
     return {
       currencyId: currency_id,
-      name,
-      description,
-      symbol,
       decimals,
+      exchangeRate: exchange_rate,
+      image: icon,
+      name,
+      symbol,
+      type: _type,
+      
+      description,
       address: contract,
       totalSupply: total_supply,
       contract,
-      type: _type,
-      image: icon,
     };
   }
   constructor(db, name) {
     super(db, name);
   }
 
-  insertCurrency(currencyEntity) {
-    return this._write(currencyEntity);
-  }
+  // insertCurrency(currencyEntity) {
+  //   return this._write(currencyEntity);
+  // }
 
   insertCurrencies(currencies) {
     return this._writeAll(currencies);
@@ -450,9 +508,9 @@ class CurrencyDao extends DAO {
     return this._readAll();
   }
 
-  findAllCurrenciesByAccountId(accountId) {
-    return this._readAll(accountId, "accountId");
-  }
+  // findAllCurrenciesByAccountId(accountId) {
+  //   return this._readAll(accountId, "accountId");
+  // }
 }
 
 class NetworkDao extends DAO {
@@ -533,56 +591,52 @@ class TransactionDao extends DAO {
   }
 }
 
-class AccountCurrencyDao extends DAO {
-  entity({
-    // accountcurrency_id,
-    account_id,
-    currency_id,
-    balance,
-    number_of_used_external_key,
-    number_of_used_internal_key,
-    last_sync_time,
-    token_id,
-    account_token_id,
-    image,
-    symbol
-  }) {
-    return {
-      accountcurrencyId: account_token_id ?? account_id,
-      accountId: account_id,
-      currencyId: currency_id ?? token_id,
-      balance,
-      numberOfUsedExternalKey: number_of_used_external_key,
-      numberOfUsedInternalKey: number_of_used_internal_key,
-      lastSyncTime: last_sync_time,
-      image,
-      symbol
-    };
-  }
-  constructor(db, name) {
-    super(db, name);
-  }
+// class AccountCurrencyDao extends DAO {
+//   entity({
+//     // accountcurrency_id,
+//     account_id,
+//     currency_id,
+//     balance,
+//     number_of_used_external_key,
+//     number_of_used_internal_key,
+//     last_sync_time,
+//     token_id,
+//     account_token_id,
+//   }) {
+//     return {
+//       accountcurrencyId: account_token_id ?? account_id,
+//       accountId: account_id,
+//       currencyId: currency_id ?? token_id,
+//       balance,
+//       numberOfUsedExternalKey: number_of_used_external_key,
+//       numberOfUsedInternalKey: number_of_used_internal_key,
+//       lastSyncTime: last_sync_time,
+//     };
+//   }
+//   constructor(db, name) {
+//     super(db, name);
+//   }
 
-  findOneByAccountyId(id) {
-    return this._read(id);
-  }
+//   findOneByAccountyId(id) {
+//     return this._read(id);
+//   }
 
-  findAllCurrencies() {
-    return this._readAll();
-  }
+//   findAllCurrencies() {
+//     return this._readAll();
+//   }
 
-  findJoinedByAccountId(accountId) {
-    return this._readAll(accountId, "accountId");
-  }
+//   findJoinedByAccountId(accountId) {
+//     return this._readAll(accountId, "accountId");
+//   }
 
-  insertAccount(entity) {
-    return this._write(entity);
-  }
+//   insertAccount(entity) {
+//     return this._write(entity);
+//   }
 
-  insertCurrencies(currencies) {
-    return this._writeAll(currencies);
-  }
-}
+//   insertCurrencies(currencies) {
+//     return this._writeAll(currencies);
+//   }
+// }
 
 class ExchangeRateDao extends DAO {
   entity({ currency_id, name, rate, timestamp, type }) {
@@ -618,7 +672,7 @@ class UtxoDao extends DAO {
     key_index,
     script,
     timestamp,
-    address
+    address,
   }) {
     const DEFAULT_SEQUENCE = 0xffffffff; // temp
     return {
@@ -636,9 +690,9 @@ class UtxoDao extends DAO {
       address,
       // sequence: BitcoinTransaction.DEFAULT_SEQUENCE,
       sequence: DEFAULT_SEQUENCE, // temp
-    }
+    };
   }
-    
+
   constructor(db, name) {
     super(db, name);
   }

@@ -10,23 +10,23 @@ const BigNumber = require("bignumber.js");
 
 class AccountCore {
   static instance;
-  _currencies = {};
+  // _currencies = {};
   _accounts = [];
   _messenger = null;
   _settingOptions = [];
   _DBOperator = null;
 
-  get currencies() {
-    return this._currencies;
-  }
+  // get currencies() {
+  //   return this._currencies;
+  // }
 
   get messenger() {
     return this._messenger;
   }
 
-  set currencies(currs) {
-    this._currencies = currs;
-  }
+  // set currencies(currs) {
+  //   this._currencies = currs;
+  // }
 
   get settingOptions() {
     return this._settingOptions;
@@ -64,11 +64,24 @@ class AccountCore {
 
   async _initAccounts() {
     const chains = await this._getNetworks(network_publish);
-    this._accounts = await this._getAccounts();
-    await this._getSupportedCurrencies();
+    const accounts = await this._getAccounts();
+    const currencies = await this._getSupportedCurrencies();
+    /**
+ * {networkId: "80000000", network: "Bitcoin", coinType: 0, publish: true, chainId: 0}
+chainId: 0
+coinType: 0
+network: "Bitcoin"
+networkId: "80000000"
+publish: true
 
+{accountId: "15beebda-0ae0-4eab-beb5-0b4de0c589b2", userId: "2d9d1a4951b06ab25f39eaf4", networkId: "80000CFC", accountIndex: "0"}
+accountId: "15beebda-0ae0-4eab-beb5-0b4de0c589b2"
+accountIndex: "0"
+networkId: "80000CFC"
+userId: "2d9d1a4951b06ab25f39eaf4"
+ */
     const srvStart = [];
-    for (const acc of this._accounts) {
+    for (const acc of accounts) {
       let blockIndex = chains.findIndex(
         (chain) => chain.networkId === acc.networkId
       );
@@ -107,7 +120,7 @@ class AccountCore {
           default:
         }
 
-        if (svc && !this._currencies[acc.accountid]) {
+        if (svc && !this._currencies[acc.accountId]) {
           this._currencies[acc.accountId] = [];
 
           this._services.push(svc);
@@ -125,7 +138,7 @@ class AccountCore {
     } catch (error) {
       console.trace(error);
     }
-    this._addAccount(this._accounts);
+    this._addAccount(accounts);
   }
 
   /**
@@ -156,8 +169,8 @@ class AccountCore {
     delete this.accounts;
     this.accounts = [];
 
-    delete this.currencies;
-    this.currencies = {};
+    // delete this.currencies;
+    // this.currencies = {};
 
     delete this._settingOptions;
     this._settingOptions = [];
@@ -184,9 +197,11 @@ class AccountCore {
     return account.networkId;
   }
 
+  // get supported blockchain from DB
   async _getNetworks(publish = true) {
     let networks = await this._DBOperator.networkDao.findAllNetworks();
 
+    // if DB is empty get supported blockchain from backend service
     if (!networks || networks.length < 1) {
       try {
         const res = await this._TideWalletCommunicator.BlockchainList();
@@ -214,9 +229,9 @@ class AccountCore {
   }
 
   async _getAccounts() {
-    let result = await this._DBOperator.accountDao.findAllAccounts();
+    let accounts = await this._DBOperator.accountDao.findAllAccounts();
 
-    if (result.length < 1) {
+    if (!accounts || accounts.length < 1) {
       result = await this._addAccount(result);
       return result;
     }
@@ -226,8 +241,7 @@ class AccountCore {
 
   async _addAccount(local) {
     try {
-      const res = await this._TideWalletCommunicator.AccountList();
-      let list = res ?? [];
+      const list = (await this._TideWalletCommunicator.AccountList()) ?? [];
 
       const user = await this._DBOperator.userDao.findUser();
 
@@ -251,29 +265,22 @@ class AccountCore {
   }
 
   async _getSupportedCurrencies() {
-    const local = await this._DBOperator.currencyDao.findAllCurrencies();
+    // get supported currencies from DB
+    let currencies = await this._DBOperator.currencyDao.findAllCurrencies();
 
-    if (local.length < 1) {
-      await this._addSupportedCurrencies(local);
+    // if DB is empty get supported currencies from backend service
+    if (!currencies || currencies.length < 1) {
+      try {
+        const res = await this._TideWalletCommunicator.CurrencyList();
+        const enties = res.map((c) => this._DBOperator.currencyDao.entity(c));
+        currencies = enties;
+        // write currencies to DB
+        await this._DBOperator.currencyDao.insertCurrencies(currencies);
+      } catch (error) {
+        console.log(error);
+      }
     }
-  }
-
-  async _addSupportedCurrencies(local) {
-    try {
-      const res = await this._TideWalletCommunicator.CurrencyList();
-
-      let list = res;
-
-      list = list
-        .filter((c) =>
-          local.findIndex((l) => l.currencyId === c["currency_id"] > -1)
-        )
-        .map((c) => this._DBOperator.currencyDao.entity(c));
-
-      await this._DBOperator.currencyDao.insertCurrencies(list);
-    } catch (error) {
-      console.log(error);
-    }
+    return currencies;
   }
 
   /**
@@ -326,10 +333,10 @@ class AccountCore {
   async getTransactionFee(accountcurrencyId, { to, amount, data } = {}) {
     const svc = this.getService(accountcurrencyId);
     const blockchainID = this.getBlockchainID(accountcurrencyId);
-    console.log("blockchainID", blockchainID);
-    const fees = svc.getTransactionFee(blockchainID);
+    const fees = await svc.getTransactionFee(blockchainID); // ++ to CoinUint 0706
     let gasLimit = 21000;
-    if (to) gasLimit = svc.estimateGasLimit(blockchainID, to, amount, data);
+    if (to)
+      gasLimit = await svc.estimateGasLimit(blockchainID, to, amount, data);
     console.log("fees", fees);
     console.log("gasLimit", gasLimit);
     return { ...fees, gasLimit };
@@ -356,7 +363,7 @@ class AccountCore {
     switch (accountCurrency.accountType) {
       case ACCOUNT.ETH:
       case ACCOUNT.CFC:
-        safeSigner = this._TideWalletCore.getSafeSigner("m/84'/3324'/0'/0/0");
+        safeSigner = this._TideWalletCore.getSafeSigner("m/84'/3324'/0'/0/0"); // ++ get path from accountDao
         const svc = this.getService(accountCurrency.accountId);
         const address = svc.getReceivingAddress(
           accountCurrency.accountcurrencyId

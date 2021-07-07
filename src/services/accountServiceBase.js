@@ -334,7 +334,6 @@ class AccountServiceBase extends AccountService {
         accountcurrency_id: c['account_id'] ?? c['account_token_id'],
         account_id: this._accountId,
         last_sync_time: now,
-        image: c['icon']
       }));
 
       await this._DBOperator.accountCurrencyDao.insertCurrencies(v);
