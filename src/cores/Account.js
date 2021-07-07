@@ -10,23 +10,23 @@ const BigNumber = require("bignumber.js");
 
 class AccountCore {
   static instance;
-  // _currencies = {};
+  _currencies = {};
   _accounts = [];
   _messenger = null;
   _settingOptions = [];
   _DBOperator = null;
 
-  // get currencies() {
-  //   return this._currencies;
-  // }
+  get currencies() {
+    return this._currencies;
+  }
 
   get messenger() {
     return this._messenger;
   }
 
-  // set currencies(currs) {
-  //   this._currencies = currs;
-  // }
+  set currencies(currs) {
+    this._currencies = currs;
+  }
 
   get settingOptions() {
     return this._settingOptions;
@@ -71,7 +71,7 @@ class AccountCore {
     const srvStart = [];
     for (const acc of accounts) {
       let currency = currencies.find((c) => c.currencyId === acc.currencyId);
-      if(currency){
+      if (currency) {
         acc.name = currency.name;
         acc.description = currency.description;
         acc.symbol = currency.symbol;
@@ -173,8 +173,8 @@ class AccountCore {
     delete this.accounts;
     this.accounts = [];
 
-    // delete this.currencies;
-    // this.currencies = {};
+    delete this.currencies;
+    this.currencies = {};
 
     delete this._settingOptions;
     this._settingOptions = [];

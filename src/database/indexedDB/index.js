@@ -452,10 +452,6 @@ class AccountDao extends DAO {
   insertAccounts(accounts) {
     return this._writeAll(accounts);
   }
-
-  findAllAccountsByAccountId(accountId) {
-    return this._readAll(accountId, "accountId");
-  }
 }
 
 class CurrencyDao extends DAO {
