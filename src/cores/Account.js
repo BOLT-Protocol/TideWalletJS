@@ -1,5 +1,5 @@
 const { Subject } = require("rxjs");
-const { ACCOUNT } = require("../models/account.model");
+const { Account, ACCOUNT } = require("../models/account.model");
 const AccountServiceBase = require("../services/accountServiceBase");
 const EthereumService = require("../services/ethereumService");
 const BitcoinService = require("../services/bitcoinService");
@@ -66,32 +66,34 @@ class AccountCore {
   async _initAccounts() {
     const chains = await this._getNetworks(this._networkPublish);
     const accounts = await this._getAccounts();
-    const currency = await this._getSupportedCurrencies();
-    /**
- * {networkId: "80000000", network: "Bitcoin", coinType: 0, publish: true, chainId: 0}
-chainId: 0
-coinType: 0
-network: "Bitcoin"
-networkId: "80000000"
-publish: true
-
-{accountId: "15beebda-0ae0-4eab-beb5-0b4de0c589b2", userId: "2d9d1a4951b06ab25f39eaf4", networkId: "80000CFC", accountIndex: "0"}
-accountId: "15beebda-0ae0-4eab-beb5-0b4de0c589b2"
-accountIndex: "0"
-networkId: "80000CFC"
-userId: "2d9d1a4951b06ab25f39eaf4"
- */
+    const currencies = await this._getSupportedCurrencies();
 
     const srvStart = [];
     for (const acc of accounts) {
-      let blockIndex = chains.findIndex(
-        (chain) => chain.networkId === acc.networkId
-      );
+      let currency = currencies.find((c) => c.currencyId === acc.currencyId);
+      if(currency){
+        acc.name = currency.name;
+        acc.description = currency.description;
+        acc.symbol = currency.symbol;
+        acc.decimals = currency.decimals;
+        acc.totalSupply = currency.totalSupply;
+        acc.contract = currency.contract;
+        acc.type = currency.type;
+        acc.icon = currency.icon;
+        acc.exchangeRate = currency.exchangeRate;
+      }
 
-      if (blockIndex > -1) {
+      let chain = chains.find((c) => c.networkId === acc.networkId);
+      if (!chain) {
+        acc.blockchainCoinType = chain.coinType;
+        acc.blockchainId = chain.blockchainId;
+        acc.chainId = chain.chainId;
+        acc.publish = chain.publish;
+        console.log(acc);
+
         let svc;
         let _ACCOUNT;
-        switch (chains[blockIndex].coinType) {
+        switch (chain.coinType) {
           case 0:
           case 1:
             svc = new BitcoinService(
@@ -199,6 +201,11 @@ userId: "2d9d1a4951b06ab25f39eaf4"
     return account.networkId;
   }
 
+  /**
+   *
+   * @param {Boolean} publish
+   * @returns NetworkDao entity
+   */
   // get supported blockchain from DB
   async _getNetworks(publish = true) {
     let networks = await this._DBOperator.networkDao.findAllNetworks();
@@ -207,10 +214,10 @@ userId: "2d9d1a4951b06ab25f39eaf4"
     if (!networks || networks.length < 1) {
       try {
         const res = await this._TideWalletCommunicator.BlockchainList();
-        const enties = res.map((n) =>
+        const enties = res?.map((n) =>
           this._DBOperator.networkDao.entity({
-            network_id: n["blockchain_id"],
-            network: n["name"],
+            blockchain_id: n["blockchain_id"],
+            blockchain: n["name"],
             coin_type: n["coin_type"],
             chain_id: n["network_id"],
             publish: n["publish"],
@@ -218,7 +225,9 @@ userId: "2d9d1a4951b06ab25f39eaf4"
         );
         networks = enties;
         await this._DBOperator.networkDao.insertNetworks(enties);
-      } catch (error) {}
+      } catch (error) {
+        console.log(error); // ++ throw exception
+      }
     }
 
     if (this._debugMode || !publish) {
@@ -230,44 +239,60 @@ userId: "2d9d1a4951b06ab25f39eaf4"
     }
   }
 
+  /**
+   *
+   * @returns AccountDao entity
+   */
   async _getAccounts() {
-    let result = await this._DBOperator.accountDao.findAllAccounts();
-    result = result.filter(
+    let accounts = await this._DBOperator.accountDao.findAllAccounts();
+
+    // Filter accounts by current User
+    accounts = accounts.filter(
       (acc) => acc.userId === this._TideWalletCore.userInfo.id
     );
 
     if (!accounts || accounts.length < 1) {
-      result = await this._addAccount(result);
-      return result;
+      try {
+        const res = await this._TideWalletCommunicator.AccountList();
+        /**
+         * a
+         * account_id
+         * purpose ++
+         * coin_type__account ++
+         * account_index
+         * curve_type ++
+         * balance --
+         * blockchain_id
+         * currency_id
+         * network_id --
+         * publish --
+         *
+         */
+        const enties = res?.map((a) =>
+          this._DBOperator.accountDao.entity({
+            ...a,
+            id: a["account_id"],
+            user_id: this._TideWalletCore.userInfo.id,
+            purpose: 84,
+            coin_type__account: 3324,
+            curve_type: 0,
+            chain_id: a["network_id"],
+          })
+        );
+        accounts = enties;
+        // await this._DBOperator.accountDao.insertAccounts(accounts);
+      } catch (error) {
+        console.log(error); // ++ throw exception
+      }
     }
 
-    return result;
+    return accounts;
   }
 
-  async _addAccount(local) {
-    try {
-      const res = await this._TideWalletCommunicator.AccountList();
-      let list = res ?? [];
-
-      for (const account of list) {
-        const id = account["account_id"];
-        const exist = local.findIndex((el) => el.accountId === id) > -1;
-
-        if (!exist) {
-          const entity = this._DBOperator.accountDao.entity({
-            ...account,
-            user_id: this._TideWalletCore.userInfo.id,
-            network_id: account["blockchain_id"],
-          });
-          await this._DBOperator.accountDao.insertAccount(entity);
-
-          local.push(entity);
-        }
-      }
-    } catch (error) {}
-    return local;
-  }
-
+  /**
+   *
+   * @returns CurrencyDao entity
+   */
   async _getSupportedCurrencies() {
     // get supported currencies from DB
     let currencies = await this._DBOperator.currencyDao.findAllCurrencies();
@@ -276,12 +301,26 @@ userId: "2d9d1a4951b06ab25f39eaf4"
     if (!currencies || currencies.length < 1) {
       try {
         const res = await this._TideWalletCommunicator.CurrencyList();
-        const enties = res.map((c) => this._DBOperator.currencyDao.entity(c));
+        /**
+         * c
+         * currency_id
+         * name
+         * description ++
+         * symbol
+         * decimals
+         * total_supply ++
+         * contract ++
+         * type
+         * icon
+         * exchange_rate
+         * publish --
+         */
+        const enties = res?.map((c) => this._DBOperator.currencyDao.entity(c));
         currencies = enties;
         // write currencies to DB
         await this._DBOperator.currencyDao.insertCurrencies(currencies);
       } catch (error) {
-        console.log(error);
+        console.log(error); // ++ throw exception
       }
     }
     return currencies;

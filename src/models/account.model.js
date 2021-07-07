@@ -3,7 +3,7 @@ class Account {
     id,
     account_id,
     user_id,
-    network_id,
+    blockchain_id,
     currency_id,
     balance,
     last_sync_time,
@@ -28,7 +28,7 @@ class Account {
     this.id = id;
     this.accountId = account_id;
     this.userId = user_id;
-    this.networkId = network_id;
+    this.blockchainId = blockchain_id;
     this.currencyId = currency_id;
     this.balance = balance;
     this.lastSyncTime = last_sync_time;
