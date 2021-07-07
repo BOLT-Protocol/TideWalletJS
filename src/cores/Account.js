@@ -54,15 +54,16 @@ class AccountCore {
     this._messenger = new Subject();
   }
 
-  async init(debugMode = false) {
+  async init({ debugMode = false, networkPublish = network_publish }) {
     this._debugMode = debugMode;
+    this._networkPublish = networkPublish
     this._isInit = true;
 
     await this._initAccounts();
   }
 
   async _initAccounts() {
-    const chains = await this._getNetworks(network_publish);
+    const chains = await this._getNetworks(this._networkPublish);
     const accounts = await this._getAccounts();
     await this._getSupportedCurrencies();
 
