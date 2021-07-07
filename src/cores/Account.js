@@ -54,15 +54,16 @@ class AccountCore {
     this._messenger = new Subject();
   }
 
-  async init(debugMode = false) {
+  async init({ debugMode = false, networkPublish = network_publish }) {
     this._debugMode = debugMode;
+    this._networkPublish = networkPublish
     this._isInit = true;
 
     await this._initAccounts();
   }
 
   async _initAccounts() {
-    const chains = await this._getNetworks(network_publish);
+    const chains = await this._getNetworks(this._networkPublish);
     const accounts = await this._getAccounts();
     await this._getSupportedCurrencies();
 
@@ -193,8 +194,7 @@ class AccountCore {
 
   async _getAccounts() {
     let result = await this._DBOperator.accountDao.findAllAccounts();
-    const user = await this._DBOperator.userDao.findUser();
-    result = result.filter((acc) => acc.userId === user.userId);
+    result = result.filter((acc) => acc.userId === this._TideWalletCore.userInfo.id);
 
     if (result.length < 1) {
       result = await this._addAccount(result);
@@ -209,8 +209,6 @@ class AccountCore {
       const res = await this._TideWalletCommunicator.AccountList()
       let list = res ?? [];
   
-      const user = await this._DBOperator.userDao.findUser();
-  
       for (const account of list) {
         const id = account["account_id"];
         const exist = local.findIndex((el) => el.accountId === id) > -1;
@@ -218,7 +216,7 @@ class AccountCore {
         if (!exist) {
           const entity = this._DBOperator.accountDao.entity({
             ...account,
-            user_id: user.userId,
+            user_id: this._TideWalletCore.userInfo.id,
             network_id: account["blockchain_id"],
           });
           await this._DBOperator.accountDao.insertAccount(entity);
