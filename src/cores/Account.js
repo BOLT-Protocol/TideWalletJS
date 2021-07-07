@@ -84,9 +84,9 @@ class AccountCore {
       }
 
       let chain = chains.find((c) => c.networkId === acc.networkId);
-      if (!chain) {
+      if (chain) {
         acc.blockchainCoinType = chain.coinType;
-        acc.blockchainId = chain.blockchainId;
+        acc.blockchainId = chain.networkId;
         acc.chainId = chain.chainId;
         acc.publish = chain.publish;
         console.log(acc);
@@ -142,7 +142,6 @@ class AccountCore {
     } catch (error) {
       console.trace(error);
     }
-    this._addAccount(accounts);
   }
 
   /**
@@ -214,17 +213,19 @@ class AccountCore {
     if (!networks || networks.length < 1) {
       try {
         const res = await this._TideWalletCommunicator.BlockchainList();
+        console.log(res)
         const enties = res?.map((n) =>
           this._DBOperator.networkDao.entity({
-            blockchain_id: n["blockchain_id"],
-            blockchain: n["name"],
+            network_id: n["blockchain_id"],
+            network: n["name"],
             coin_type: n["coin_type"],
             chain_id: n["network_id"],
             publish: n["publish"],
           })
         );
+        console.log(enties)
         networks = enties;
-        await this._DBOperator.networkDao.insertNetworks(enties);
+        await this._DBOperator.networkDao.insertNetworks(networks);
       } catch (error) {
         console.log(error); // ++ throw exception
       }
@@ -287,6 +288,31 @@ class AccountCore {
     }
 
     return accounts;
+  }
+
+  async _addAccount(local) {
+    try {
+      const res = await this._TideWalletCommunicator.AccountList();
+      let list = res ?? [];
+      const user = await this._DBOperator.userDao.findUser();
+
+      for (const account of list) {
+        const id = account["account_id"];
+        const exist = local.findIndex((el) => el.accountId === id) > -1;
+
+        if (!exist) {
+          const entity = this._DBOperator.accountDao.entity({
+            ...account,
+            user_id: user.userId,
+            network_id: account["blockchain_id"],
+          });
+          await this._DBOperator.accountDao.insertAccount(entity);
+          console.log(entity)
+          local.push(entity);
+        }
+      }
+    } catch (error) {}
+    return local;
   }
 
   /**

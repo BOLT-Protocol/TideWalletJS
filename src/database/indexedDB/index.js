@@ -433,10 +433,6 @@ class AccountDao extends DAO {
     };
   }
 
-  constructor(db, name) {
-    super(db, name);
-  }
-
   findAllAccounts() {
     return this._readAll();
   }
@@ -469,7 +465,7 @@ class CurrencyDao extends DAO {
     description, // ++ [Did not provided by Backend Service]
     // address,  // ++ [Did not provided by Backend Service]
     total_supply, // ++ [Did not provided by Backend Service]
-    contract,  // ++ [Did not provided by Backend Service]
+    contract, // ++ [Did not provided by Backend Service]
   }) {
     const _type = type === 0 ? "fiat" : type === 1 ? "currency" : "token";
 
@@ -481,7 +477,7 @@ class CurrencyDao extends DAO {
       name,
       symbol,
       type: _type,
-      
+
       description,
       address: contract,
       totalSupply: total_supply,
@@ -513,13 +509,13 @@ class NetworkDao extends DAO {
   /**
    * @override
    */
-  entity({ blockchain_id, blockchain, coin_type, publish, chain_id }) {
+  entity({ network_id, network, coin_type, publish, chain_id }) {
     return {
-      blockchainId: blockchain_id,
-      blockchain,
+      networkId: network_id,
+      network,
       coinType: coin_type,
-      chainId: chain_id,
       publish,
+      chainId: chain_id,
     };
   }
   constructor(db, name) {
