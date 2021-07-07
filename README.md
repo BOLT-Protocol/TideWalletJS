@@ -80,7 +80,12 @@ const user = {
   TideWalletID: 'myTideWalletID',
   InstallID: 'myInstallID'
 };
-tidewallet.init({ user, api });
+
+const debugMode = false;
+
+const networkPublish = true
+
+tidewallet.init({ user, api, debugMode, networkPublish });
 ```
 
 - Initial with Mnemonic
