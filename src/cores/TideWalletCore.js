@@ -9,7 +9,7 @@ class TideWalletCore {
 
   constructor() {
     if (!TideWalletCore.instance) {
-      this._userInfo = {};
+      this.userInfo = {};
       TideWalletCore.instance = this;
     }
 
@@ -27,7 +27,7 @@ class TideWalletCore {
    * @returns 
    */
    setUserInfo(userInfo) {
-    this._userInfo = userInfo;
+    this.userInfo = userInfo;
     console.log(userInfo)
   }
 
@@ -68,14 +68,14 @@ class TideWalletCore {
    * @returns {String} password
    */
    _getPassword({ userIdentifier, userId, installId, timestamp }) {
-    const userIdentifierBuff = Buffer.from(userIdentifier || this._userInfo.thirdPartyId, "utf8").toString(
+    const userIdentifierBuff = Buffer.from(userIdentifier || this.userInfo.thirdPartyId, "utf8").toString(
       "hex"
     );
-    const installIdBuff = Buffer.from(installId  || this._userInfo.installId).toString("hex");
+    const installIdBuff = Buffer.from(installId  || this.userInfo.installId).toString("hex");
     const pwseed = Cryptor.keccak256round(
       Cryptor.keccak256round(
           Cryptor.keccak256round(userIdentifierBuff, 1) + 
-          Cryptor.keccak256round(userId || this._userInfo.id, 1),
+          Cryptor.keccak256round(userId || this.userInfo.id, 1),
       ) +
       Cryptor.keccak256round(
         Cryptor.keccak256round(
@@ -233,12 +233,12 @@ class TideWalletCore {
    */
   async _getSeedByKeyStore() {
     const password = this._getPassword({
-      userIdentifier: this._userInfo.thirdPartyId,
-      userId: this._userInfo.id,
-      installId: this._userInfo.installId,
-      timestamp: this._userInfo.timestamp
+      userIdentifier: this.userInfo.thirdPartyId,
+      userId: this.userInfo.id,
+      installId: this.userInfo.installId,
+      timestamp: this.userInfo.timestamp
     })
-    const keystore = this._userInfo.keystore;
+    const keystore = this.userInfo.keystore;
     const pk = PaperWallet.recoverFromJson(keystore, password);
     const seed = PaperWallet.magicSeed(pk);
     return seed;

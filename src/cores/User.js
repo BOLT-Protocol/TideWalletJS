@@ -14,24 +14,34 @@ class User {
     this._communicator = TideWalletCommunicator;
     this._DBOperator = DBOperator;
     this._TideWalletCore = new TideWalletCore();
+    this._initFromRegist = false;
   }
 
   /**
    * check user
    * @returns {boolean}
    */
-  async checkUser() {
-    // TODO: find user table
-    const user = await this._DBOperator.userDao.findUser();
+  async checkUser(userIdentifier) {
+    try {
+      if (!this.id) {
+        const userInfo = await this._getUser(userIdentifier);
+        this.id = userInfo[0];
+      }
+      const user = await this._DBOperator.userDao.findUser(this.id);
+      
+      // TODO: Remove this log
+      console.log("checkUser: ", user);
 
-    // TODO: Remove this log
-    console.log("checkUser: ", user);
-
-    if (user) {
-      await this._initUser(user);
-      return true;
+      if (user) {
+        this._initFromRegist = false;
+        await this._initUser(user);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.trace(error);
+      return false;
     }
-    return false;
   }
 
   /**
@@ -117,6 +127,7 @@ class User {
       const res = await this._communicator.register(installId, installId, extendPublicKey);
 
       await this._DBOperator.prefDao.setAuthItem(
+        userId,
         res.token,
         res.tokenSecret
       );
@@ -131,6 +142,7 @@ class User {
         backup_status: false,
       });
       await this._DBOperator.userDao.insertUser(user);
+      this._initFromRegist = true;
       await this._initUser(user);
       return true;
     } catch (error) {
@@ -187,7 +199,7 @@ class User {
    * @returns {}
    */
   async updatePassword(oldPassword, newpassword) {
-    const user = await this._DBOperator.userDao.findUser();
+    const user = await this._DBOperator.userDao.findUser(this.id);
 
     const wallet = await this.restorePaperWallet(user.keystore, oldPassword);
   }
@@ -236,7 +248,7 @@ class User {
    * @returns isBackup
    */
   async checkWalletBackup() {
-    const _user = await this._DBOperator.userDao.findUser();
+    const _user = await this._DBOperator.userDao.findUser(this.id);
     if (_user != null) {
       return _user.backupStatus;
     }
@@ -249,7 +261,7 @@ class User {
    */
   async backupWallet() {
     try {
-      const _user = await this._DBOperator.userDao.findUser();
+      const _user = await this._DBOperator.userDao.findUser(this.id);
 
       // TODO: updateUser condition
       await this._DBOperator.userDao.updateUser({ backupStatus: true });
@@ -281,8 +293,8 @@ class User {
     }
     this._TideWalletCore.setUserInfo(userInfo);
 
-    const item = await this._DBOperator.prefDao.getAuthItem();
-    if (item != null) {
+    const item = await this._DBOperator.prefDao.getAuthItem(user.userId);
+    if (item != null && !this._initFromRegist) {
       let _token = item.token
       let _tokenSecret = item.tokenSecret
       try {
@@ -294,6 +306,7 @@ class User {
           _token = res.token
           _tokenSecret = res.tokenSecret
           await this._DBOperator.prefDao.setAuthItem(
+            user.userId,
             _token,
             _tokenSecret
           );
@@ -306,6 +319,7 @@ class User {
           _token = res.token
           _tokenSecret = res.tokenSecret
           await this._DBOperator.prefDao.setAuthItem(
+            user.userId,
             _token,
             _tokenSecret
           );
@@ -334,7 +348,7 @@ class User {
    * @returns {String} keystore
    */
   async getKeystore() {
-    const user = await this._DBOperator.userDao.findUser();
+    const user = await this._DBOperator.userDao.findUser(this.id);
 
     return user.keystore;
   }
@@ -344,7 +358,7 @@ class User {
    * @returns {Boolean}
    */
   async deleteUser() {
-    const user = await this._DBOperator.userDao.findUser();
+    const user = await this._DBOperator.userDao.findUser(this.id);
     const item = await this._DBOperator.userDao.deleteUser(user);
 
     if (item < 0) return false;

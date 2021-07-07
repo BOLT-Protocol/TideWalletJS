@@ -23,8 +23,13 @@ class Trader {
 
     if (!Array.isArray(local) || !local[0] || now - local[0].lastSyncTime > Trader.syncInterval) {
       try {
-        const fiats = await this._TideWalletCommunicator.FiatsRate();
-        const cryptos = await this._TideWalletCommunicator.CryptoRate();
+        const works = [
+          this._TideWalletCommunicator.FiatsRate(),
+          this._TideWalletCommunicator.CryptoRate()
+        ]
+        const res = await Promise.all(works);
+        const fiats = res[0];
+        const cryptos = res[1];
         const rates = [
           ...fiats.map(
             (e) => this._DBOperator.exchangeRateDao.entity({
