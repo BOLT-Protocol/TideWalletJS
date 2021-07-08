@@ -83,8 +83,11 @@ class IndexedDB {
   _createTable(version) {
     if (version <= 1) {
       const accounts = this.db.createObjectStore(OBJ_ACCOUNT, {
-        keyPath: "accountId",
+        keyPath: "id",
       });
+
+      let accountIndex = accounts.createIndex("accountId", "accountId");
+      let blockchainIndex = accounts.createIndex("blockchainId", "blockchainId");
 
       const txs = this.db.createObjectStore(OBJ_TX, {
         keyPath: "transactionId",
@@ -94,27 +97,19 @@ class IndexedDB {
       const currency = this.db.createObjectStore(OBJ_CURRENCY, {
         keyPath: "currencyId",
       });
-      let currencyIndex = currency.createIndex("accountId", "accountId");
+      let currencyIndex = currency.createIndex("blockchainId", "blockchainId");
 
       const user = this.db.createObjectStore(OBJ_USER, {
         keyPath: "userId",
       });
 
       const network = this.db.createObjectStore(OBJ_NETWORK, {
-        keyPath: "networkId",
+        keyPath: "blockchainId",
       });
 
       const utxo = this.db.createObjectStore(OBJ_UTXO, {
         keyPath: "utxoId",
       });
-
-      const accountcurrency = this.db.createObjectStore(OBJ_ACCOUNT_CURRENCY, {
-        keyPath: "accountcurrencyId",
-      });
-      let accountcurrencyIndex = accountcurrency.createIndex(
-        "accountId",
-        "accountId"
-      );
 
       const rate = this.db.createObjectStore(OBJ_EXCHANGE_RATE, {
         keyPath: "exchangeRateId",
@@ -140,10 +135,6 @@ class IndexedDB {
 
   get currencyDao() {
     return this._currencyDao;
-  }
-
-  get accountCurrencyDao() {
-    return this._accountcurrencyDao;
   }
 
   get networkDao() {
@@ -377,12 +368,58 @@ class AccountDao extends DAO {
   /**
    * @override
    */
-  entity({ account_id, user_id, network_id, account_index }) {
+  entity({
+    id, // account_token_id || account_id
+    account_id,
+    user_id,
+    blockchain_id, // || network_id ++,
+    currency_id, // currency_id || token_id
+    balance, // Join AccountCurrency
+    last_sync_time, // Join AccountCurrency
+    purpose, // Join Account
+    coin_type_account, // Join Account
+    account_index, // Join Account
+    curve_type, // Join Account
+    blockchain, // Join Blockchain
+    coin_type_blockchain, // Join Blockchain
+    publish, // Join Blockchain
+    chain_id, // Join Blockchain  || network_id
+    name, // Join Currency
+    description, // Join Currency
+    symbol, // Join Currency
+    decimals, // Join Currency
+    total_supply, // Join Currency
+    contract, // Join Currency
+    type, // Join Currency
+    icon, // Join Currency || url
+    exchange_rate, // ++ Join Currency || inUSD,
+  }) {
     return {
-      accountId: account_id,
+      id,
       userId: user_id,
-      networkId: network_id,
+      accountId: account_id,
+      blockchainId: blockchain_id,
+      currencyId: currency_id,
+      balance,
+      lastSyncTime: last_sync_time,
+      purpose,
+      accountCoinType: coin_type_account,
       accountIndex: account_index,
+      curveType: curve_type,
+      blockchain,
+      blockchainCoinType: coin_type_blockchain,
+      publish,
+      chainId: chain_id,
+      name,
+      description,
+      symbol,
+      decimals,
+      totalSupply: total_supply,
+      contract,
+      type,
+      icon,
+      exchangeRate: exchange_rate,
+      // tokens,
     };
   }
 
@@ -390,8 +427,12 @@ class AccountDao extends DAO {
     return this._readAll();
   }
 
-  findAccount(accountId) {
-    return this._read(accountId);
+  findAccount(id) {
+    return this._read(id);
+  }
+
+  findAllByAccountId(accountId) {
+    return this._readAll(accountId, "accountId");
   }
 
   insertAccount(accountEntiry) {
@@ -409,29 +450,34 @@ class CurrencyDao extends DAO {
    */
   entity({
     currency_id,
-    name,
-    description,
-    symbol,
     decimals,
-    // address,
-    total_supply,
-    contract,
-    type,
+    exchange_rate,
     icon,
+    name,
+    symbol,
+    type,
+    blockchain_id, // ++ for token
+    description, // ++ [Did not provided by Backend Service]
+    // address,  // ++ [Did not provided by Backend Service]
+    total_supply, // ++ [Did not provided by Backend Service]
+    contract, // ++ [Did not provided by Backend Service]
   }) {
     const _type = type === 0 ? "fiat" : type === 1 ? "currency" : "token";
 
     return {
       currencyId: currency_id,
-      name,
-      description,
-      symbol,
       decimals,
+      exchangeRate: exchange_rate,
+      image: icon,
+      name,
+      symbol,
+      type: _type,
+
+      blockchainId: blockchain_id,
+      description,
       address: contract,
       totalSupply: total_supply,
       contract,
-      type: _type,
-      image: icon,
     };
   }
   constructor(db, name) {
@@ -450,8 +496,8 @@ class CurrencyDao extends DAO {
     return this._readAll();
   }
 
-  findAllCurrenciesByAccountId(accountId) {
-    return this._readAll(accountId, "accountId");
+  findAllCurrenciesByBlockchainId(blockchainId) {
+    return this._readAll(blockchainId, "blockchainId");
   }
 }
 
@@ -459,9 +505,9 @@ class NetworkDao extends DAO {
   /**
    * @override
    */
-  entity({ network_id, network, coin_type, publish, chain_id }) {
+  entity({ blockchain_id, network, coin_type, publish, chain_id }) {
     return {
-      networkId: network_id,
+      blockchainId: blockchain_id,
       network,
       coinType: coin_type,
       publish,
@@ -544,8 +590,6 @@ class AccountCurrencyDao extends DAO {
     last_sync_time,
     token_id,
     account_token_id,
-    image,
-    symbol
   }) {
     return {
       accountcurrencyId: account_token_id ?? account_id,
@@ -555,8 +599,6 @@ class AccountCurrencyDao extends DAO {
       numberOfUsedExternalKey: number_of_used_external_key,
       numberOfUsedInternalKey: number_of_used_internal_key,
       lastSyncTime: last_sync_time,
-      image,
-      symbol
     };
   }
   constructor(db, name) {
@@ -618,7 +660,7 @@ class UtxoDao extends DAO {
     key_index,
     script,
     timestamp,
-    address
+    address,
   }) {
     const DEFAULT_SEQUENCE = 0xffffffff; // temp
     return {
@@ -636,9 +678,9 @@ class UtxoDao extends DAO {
       address,
       // sequence: BitcoinTransaction.DEFAULT_SEQUENCE,
       sequence: DEFAULT_SEQUENCE, // temp
-    }
+    };
   }
-    
+
   constructor(db, name) {
     super(db, name);
   }

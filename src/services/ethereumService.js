@@ -59,13 +59,13 @@ class EthereumService extends AccountServiceDecorator {
   /**
    * getReceivingAddress
    * @override
-   * @param {String} accountcurrencyId
+   * @param {String} id Account id
    * @returns {Array.<{address: String || error, code: Number}>} result
    */
-  async getReceivingAddress(accountcurrencyId) {
+  async getReceivingAddress(id) {
     if (this._address === null) {
       try {
-        const response = await this._TideWalletCommunicator.AccountReceive(accountcurrencyId);
+        const response = await this._TideWalletCommunicator.AccountReceive(id);
         const address = response["address"];
         this._address = address;
       } catch (error) {
@@ -80,11 +80,11 @@ class EthereumService extends AccountServiceDecorator {
   /**
    * getChangingAddress
    * @override
-   * @param {String} currencyId
+   * @param {String} id Account id
    * @returns {{address: String || error, code: Number}[]} result
    */
-  async getChangingAddress(currencyId) {
-    return await this.getReceivingAddress(currencyId);
+  async getChangingAddress(id) {
+    return await this.getReceivingAddress(id);
   }
 
   /**
@@ -169,72 +169,6 @@ class EthereumService extends AccountServiceDecorator {
    **/
   synchro(force = false) {
     this.service.synchro(force);
-  }
-
-  /**
-   * addToken
-   * @override
-   * @param {String} blockchainId
-   * @param {Object} token
-   * @returns {Boolean} result
-   */
-  async addToken(blockchainId, token) {
-    try {
-      const res = await this._TideWalletCommunicator.TokenRegist(blockchainId, token.contract);
-      const { token_id: id } = res;
-      const updateResult = await this._TideWalletCommunicator.AccountDetail(this.service.accountId);
-
-      const accountItem = updateResult;
-      const tokens = [accountItem, ...accountItem.tokens];
-      const index = tokens.findIndex((token) => token["token_id"] == id);
-
-      const data = {
-        ...tokens[index],
-        icon: token.imgUrl || accountItem["icon"],
-        currency_id: id,
-      };
-
-      const curr = this._DBOperator.currencyDao.entity({
-        ...data,
-      });
-      await this._DBOperator.currencyDao.insertCurrency(curr);
-
-      const now = Date.now();
-      const v = this._DBOperator.accountCurrencyDao.entity({
-        ...tokens[index],
-        account_id: this.service.accountId,
-        currency_id: id,
-        last_sync_time: now,
-      });
-
-      await this._DBOperator.accountCurrencyDao.insertAccount(v);
-
-      const findAccountCurrencies =
-        await this._DBOperator.accountCurrencyDao.findJoinedByAccountId(
-          this.service.accountId
-        );
-
-      // List<Currency> cs = findAccountCurrencies
-      //     .map((c) => Currency.fromJoinCurrency(c, jcs[0], this.base))
-      //     .toList();
-
-      // TODO: messenger
-      // const msg = AccountMessage(evt: ACCOUNT_EVT.OnUpdateAccount, value: cs[0]);
-      // this.service.AccountCore().currencies[this.service.accountId] = cs;
-
-      const currMsg = {
-        evt: ACCOUNT_EVT.OnUpdateCurrency,
-        value: this.service.AccountCore().currencies[this.service.accountId],
-      };
-
-      this.service.AccountCore().messenger.next(currMsg);
-
-      return true;
-    } catch (e) {
-      console.error(e);
-
-      return false;
-    }
   }
 
   /**

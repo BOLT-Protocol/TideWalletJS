@@ -26,10 +26,6 @@ class DBOperator {
     return this.database.networkDao;
   }
 
-  get accountCurrencyDao() {
-    return this.database.accountCurrencyDao;
-  }
-
   get utxoDao() {
     return this.database.utxoDao;
   }
