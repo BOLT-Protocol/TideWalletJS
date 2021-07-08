@@ -68,6 +68,7 @@ class AccountCore {
     const currencies = await this._getSupportedCurrencies();
     const srvStart = [];
     for (const acc of accounts) {
+      // Join Account with Currency
       let currency = currencies.find((c) => c.currencyId === acc.currencyId);
       if (currency) {
         acc.name = currency.name;
@@ -83,13 +84,14 @@ class AccountCore {
       let chain = chains.find(
         (chain) => chain.blockchainId === acc.blockchainId
       );
+      // Join Account with Network
       if (chain) {
         acc.blockchainCoinType = chain.coinType;
         acc.chainId = chain.chainId;
         acc.publish = chain.publish;
 
         await this._DBOperator.accountDao.insertAccount(acc);
-        
+
         let svc;
         let _ACCOUNT;
         switch (chain.coinType) {

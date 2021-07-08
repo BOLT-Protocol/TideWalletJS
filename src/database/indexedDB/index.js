@@ -145,10 +145,6 @@ class IndexedDB {
     return this._currencyDao;
   }
 
-  get accountCurrencyDao() {
-    return this._accountcurrencyDao;
-  }
-
   get networkDao() {
     return this._networkDao;
   }
