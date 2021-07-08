@@ -88,6 +88,8 @@ class AccountCore {
         acc.chainId = chain.chainId;
         acc.publish = chain.publish;
 
+        await this._DBOperator.accountDao.insertAccount(acc);
+        
         let svc;
         let _ACCOUNT;
         switch (chain.coinType) {
@@ -122,16 +124,13 @@ class AccountCore {
 
         if (svc && !this._accounts[acc.accountId]) {
           this._accounts[acc.accountId] = [];
-
           this._services.push(svc);
-
           svc.init(acc.accountId, _ACCOUNT);
-
           // await svc.start();
           srvStart.push(svc.start());
         }
       }
-      await this._DBOperator.accountDao.insertAccount(acc);
+     
     }
 
     await this._getSupportedToken(chains);
