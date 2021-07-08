@@ -111,14 +111,6 @@ class IndexedDB {
         keyPath: "utxoId",
       });
 
-      const accountcurrency = this.db.createObjectStore(OBJ_ACCOUNT_CURRENCY, {
-        keyPath: "accountcurrencyId",
-      });
-      let accountcurrencyIndex = accountcurrency.createIndex(
-        "accountId",
-        "accountId"
-      );
-
       const rate = this.db.createObjectStore(OBJ_EXCHANGE_RATE, {
         keyPath: "exchangeRateId",
       });
