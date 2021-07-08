@@ -83,8 +83,11 @@ class IndexedDB {
   _createTable(version) {
     if (version <= 1) {
       const accounts = this.db.createObjectStore(OBJ_ACCOUNT, {
-        keyPath: "accountId",
+        keyPath: "id",
       });
+
+      let accountIndex = accounts.createIndex("accountId", "accountId");
+      let blockchainIndex = accounts.createIndex("blockchainId", "blockchainId");
 
       const txs = this.db.createObjectStore(OBJ_TX, {
         keyPath: "transactionId",
@@ -94,14 +97,14 @@ class IndexedDB {
       const currency = this.db.createObjectStore(OBJ_CURRENCY, {
         keyPath: "currencyId",
       });
-      let currencyIndex = currency.createIndex("accountId", "accountId");
+      let currencyIndex = currency.createIndex("blockchainId", "blockchainId");
 
       const user = this.db.createObjectStore(OBJ_USER, {
         keyPath: "userId",
       });
 
       const network = this.db.createObjectStore(OBJ_NETWORK, {
-        keyPath: "networkId",
+        keyPath: "blockchainId",
       });
 
       const utxo = this.db.createObjectStore(OBJ_UTXO, {
@@ -402,7 +405,6 @@ class AccountDao extends DAO {
     type, // Join Currency
     icon, // Join Currency || url
     exchange_rate, // ++ Join Currency || inUSD,
-    // tokens, // ++ Join Currency
   }) {
     return {
       id,
@@ -437,8 +439,12 @@ class AccountDao extends DAO {
     return this._readAll();
   }
 
-  findAccount(accountId) {
-    return this._read(accountId);
+  findAccount(id) {
+    return this._read(id);
+  }
+
+  findAllByAccountId(accountId) {
+    return this._readAll(accountId, "accountId");
   }
 
   insertAccount(accountEntiry) {
@@ -462,6 +468,7 @@ class CurrencyDao extends DAO {
     name,
     symbol,
     type,
+    blockchain_id, // ++ for token
     description, // ++ [Did not provided by Backend Service]
     // address,  // ++ [Did not provided by Backend Service]
     total_supply, // ++ [Did not provided by Backend Service]
@@ -478,6 +485,7 @@ class CurrencyDao extends DAO {
       symbol,
       type: _type,
 
+      blockchainId: blockchain_id,
       description,
       address: contract,
       totalSupply: total_supply,
@@ -500,8 +508,8 @@ class CurrencyDao extends DAO {
     return this._readAll();
   }
 
-  findAllCurrenciesByAccountId(accountId) {
-    return this._readAll(accountId, "accountId");
+  findAllCurrenciesByBlockchainId(blockchainId) {
+    return this._readAll(blockchainId, "blockchainId");
   }
 }
 
@@ -509,9 +517,9 @@ class NetworkDao extends DAO {
   /**
    * @override
    */
-  entity({ network_id, network, coin_type, publish, chain_id }) {
+  entity({ blockchain_id, network, coin_type, publish, chain_id }) {
     return {
-      networkId: network_id,
+      blockchainId: blockchain_id,
       network,
       coinType: coin_type,
       publish,

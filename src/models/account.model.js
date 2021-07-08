@@ -22,7 +22,7 @@ class Account {
     total_supply,
     contract,
     type,
-    icon,
+    image,
     exchange_rate,
   }) {
     this.id = id;
@@ -47,7 +47,7 @@ class Account {
     this.totalSupply = total_supply;
     this.contract = contract;
     this.type = type;
-    this.icon = icon;
+    this.image = image;
     this.exchangeRate = exchange_rate;
   }
 }

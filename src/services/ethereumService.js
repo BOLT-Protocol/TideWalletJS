@@ -59,13 +59,13 @@ class EthereumService extends AccountServiceDecorator {
   /**
    * getReceivingAddress
    * @override
-   * @param {String} accountcurrencyId
+   * @param {String} id Account id
    * @returns {Array.<{address: String || error, code: Number}>} result
    */
-  async getReceivingAddress(accountcurrencyId) {
+  async getReceivingAddress(id) {
     if (this._address === null) {
       try {
-        const response = await this._TideWalletCommunicator.AccountReceive(accountcurrencyId);
+        const response = await this._TideWalletCommunicator.AccountReceive(id);
         const address = response["address"];
         this._address = address;
       } catch (error) {
@@ -80,11 +80,11 @@ class EthereumService extends AccountServiceDecorator {
   /**
    * getChangingAddress
    * @override
-   * @param {String} currencyId
+   * @param {String} id Account id
    * @returns {{address: String || error, code: Number}[]} result
    */
-  async getChangingAddress(currencyId) {
-    return await this.getReceivingAddress(currencyId);
+  async getChangingAddress(id) {
+    return await this.getReceivingAddress(id);
   }
 
   /**
@@ -178,6 +178,7 @@ class EthereumService extends AccountServiceDecorator {
    * @param {Object} token
    * @returns {Boolean} result
    */
+  // ++ need update => accountCurrencyDao => accountDao
   async addToken(blockchainId, token) {
     try {
       const res = await this._TideWalletCommunicator.TokenRegist(blockchainId, token.contract);

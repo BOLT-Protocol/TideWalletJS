@@ -1,5 +1,5 @@
 const { Subject } = require("rxjs");
-const { Account, ACCOUNT } = require("../models/account.model");
+const { ACCOUNT } = require("../models/account.model");
 const AccountServiceBase = require("../services/accountServiceBase");
 const EthereumService = require("../services/ethereumService");
 const BitcoinService = require("../services/bitcoinService");
@@ -10,22 +10,21 @@ const BigNumber = require("bignumber.js");
 
 class AccountCore {
   static instance;
-  _currencies = {};
-  _accounts = [];
+  _accounts = {};
   _messenger = null;
   _settingOptions = [];
   _DBOperator = null;
 
-  get currencies() {
-    return this._currencies;
+  get accounts() {
+    return this._accounts;
   }
 
   get messenger() {
     return this._messenger;
   }
 
-  set currencies(currs) {
-    this._currencies = currs;
+  set accounts(accounts) {
+    this._accounts = accounts;
   }
 
   get settingOptions() {
@@ -79,17 +78,19 @@ class AccountCore {
         acc.totalSupply = currency.totalSupply;
         acc.contract = currency.contract;
         acc.type = currency.type;
-        acc.icon = currency.icon;
+        acc.image = currency.image;
         acc.exchangeRate = currency.exchangeRate;
       }
 
-      let chain = chains.find((c) => c.networkId === acc.networkId);
+
+      let chain = chains.find(
+        (chain) => chain.blockchainId === acc.blockchainId
+      );
+
       if (chain) {
         acc.blockchainCoinType = chain.coinType;
-        acc.blockchainId = chain.networkId;
         acc.chainId = chain.chainId;
         acc.publish = chain.publish;
-        console.log(acc);
 
         let svc;
         let _ACCOUNT;
@@ -120,12 +121,12 @@ class AccountCore {
             );
             _ACCOUNT = ACCOUNT.CFC;
             break;
-
           default:
         }
 
-        if (svc && !this._currencies[acc.accountId]) {
-          this._currencies[acc.accountId] = [];
+        if (svc && !this._accounts[acc.accountId]) {
+          await this._DBOperator.accountDao.insertAccount(acc);
+          this._accounts[acc.accountId] = [];
 
           this._services.push(svc);
 
@@ -137,6 +138,8 @@ class AccountCore {
       }
     }
 
+    await this._getSupportedToken(chains);
+
     try {
       const srvStartRes = await Promise.all(srvStart);
     } catch (error) {
@@ -145,8 +148,8 @@ class AccountCore {
   }
 
   /**
-   * close all services
-   * @method close
+   * sync service
+   * @method sync
    */
   async sync() {
     if (this._isInit) {
@@ -196,8 +199,8 @@ class AccountCore {
    * @returns {string} The blockchainID
    */
   getBlockchainID(accountId) {
-    const account = this._accounts.find((acc) => acc.accountId === accountId);
-    return account.networkId;
+    const account = this._accounts[accountId][0];
+    return account.blockchainId;
   }
 
   /**
@@ -213,17 +216,16 @@ class AccountCore {
     if (!networks || networks.length < 1) {
       try {
         const res = await this._TideWalletCommunicator.BlockchainList();
-        console.log(res)
         const enties = res?.map((n) =>
           this._DBOperator.networkDao.entity({
-            network_id: n["blockchain_id"],
+            blockchain_id: n["blockchain_id"],
             network: n["name"],
             coin_type: n["coin_type"],
             chain_id: n["network_id"],
             publish: n["publish"],
           })
         );
-        console.log(enties)
+        console.log(enties);
         networks = enties;
         await this._DBOperator.networkDao.insertNetworks(networks);
       } catch (error) {
@@ -290,31 +292,6 @@ class AccountCore {
     return accounts;
   }
 
-  async _addAccount(local) {
-    try {
-      const res = await this._TideWalletCommunicator.AccountList();
-      let list = res ?? [];
-      const user = await this._DBOperator.userDao.findUser();
-
-      for (const account of list) {
-        const id = account["account_id"];
-        const exist = local.findIndex((el) => el.accountId === id) > -1;
-
-        if (!exist) {
-          const entity = this._DBOperator.accountDao.entity({
-            ...account,
-            user_id: user.userId,
-            network_id: account["blockchain_id"],
-          });
-          await this._DBOperator.accountDao.insertAccount(entity);
-          console.log(entity)
-          local.push(entity);
-        }
-      }
-    } catch (error) {}
-    return local;
-  }
-
   /**
    *
    * @returns CurrencyDao entity
@@ -353,13 +330,68 @@ class AccountCore {
   }
 
   /**
+   * Load setting page token list
+   * get each blockchain supported token and add it to _AccountCore.settingOptions
+   * @method _getSupportedToken
+   * @returns {void}
+   */
+  async _getSupportedToken(chains) {
+    for (let chain of chains) {
+      let tokens =
+        await this._DBOperator.currencyDao.findAllCurrenciesByBlockchainId(
+          chain.blockchainId
+        );
+      if (!tokens || tokens.length < 1) {
+        try {
+          const res = await this._TideWalletCommunicator.TokenList(
+            chain.blockchainId
+          );
+          /**
+         * CFC: 9bdfe7b7-7bef-4009-a6fb-6b628265d885
+         * 0:
+          blockchain_id: "80001F51"
+          contract: "0x44bf3a96420c0688d657aca23e343e79581304b1"
+          currency_id: "2c64a81c-bb62-41e2-abef-2fc524bb9124"
+          decimals: 18
+          exchange_rate: null
+          icon: "https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@9ab8d6934b83a4aa8ae5e8711609a70ca0ab1b2b/32/icon/xpa.png"
+          name: "XPlay"
+          publish: false
+          symbol: "XPA"
+          type: 2
+         * 1:
+          blockchain_id: "80001F51"
+          contract: "0x323ba586e7a634db733fea42956e71e9d2c992da"
+          currency_id: "051b654c-30d1-4a3c-b2b4-46ed7c08d461"
+          decimals: 0
+          exchange_rate: null
+          icon: "https://service.tidewallet.io/icon/ERC20.png"
+          name: "TestTokenTransfer"
+          publish: false
+          symbol: "TTT"
+          type: 2
+         */
+          if (res) {
+            tokens = res.map((t) => this._DBOperator.currencyDao.entity(t));
+            await this._DBOperator.currencyDao.insertCurrencies(tokens);
+          }
+        } catch (error) {
+          console.log(error); // ++ throw exception
+        }
+      }
+      console.log(tokens)
+      this.settingOptions += tokens;
+    }
+  }
+
+  /**
    * Get currency list by accountId
    * @method getCurrencies
    * @param {string} accountId The accountId
    * @returns {Array} The currency list
    */
   getCurrencies(accountId) {
-    return this._currencies[accountId];
+    return this._accounts[accountId];
   }
 
   /**
@@ -368,7 +400,7 @@ class AccountCore {
    * @returns {Array} The currency list
    */
   getAllCurrencies() {
-    return Object.values(this._currencies).reduce(
+    return Object.values(this._accounts).reduce(
       (list, curr) => list.concat(curr),
       []
     );
@@ -399,6 +431,14 @@ class AccountCore {
     return address;
   }
 
+  /**
+   * Get TransactionFee and gasLimit by accountcurrencyId
+   * @param {string} accountcurrencyId
+   * @param {string} to [optional]
+   * @param {string} amount [optional]
+   * @param {string} data [optional]
+   * @returns
+   */
   async getTransactionFee(accountcurrencyId, { to, amount, data } = {}) {
     const svc = this.getService(accountcurrencyId);
     const blockchainID = this.getBlockchainID(accountcurrencyId);
@@ -441,7 +481,7 @@ class AccountCore {
           (acc) => acc.accountId === svc.accountId
         );
 
-        const nonce = await svc.getNonce(account.networkId, address);
+        const nonce = await svc.getNonce(account.blockchainId, address);
 
         const txSvc = new ETHTransaction(new TransactionBase(), safeSigner);
         const signedTx = txSvc.prepareTransaction({
@@ -454,7 +494,7 @@ class AccountCore {
         });
 
         const [success, tx] = await svc.publishTransaction(
-          account.networkId,
+          account.blockchainId,
           signedTx
         );
 
