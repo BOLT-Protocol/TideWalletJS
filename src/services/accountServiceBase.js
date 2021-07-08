@@ -90,11 +90,10 @@ class AccountServiceBase extends AccountService {
           ...account,
           id: token["account_token_id"],
           currency_id: token["token_id"],
-          blockchain_id: token["blockchain_id"],
           name: token["name"], // Join Token
           symbol: token["symbol"], // Join Token
           type: token["type"], // Join Token
-          publish: token["publish"],
+          publish: token["publish"], // Join Token
           decimals: token["decimals"], // Join Token
           total_supply: token["total_supply"], // Join Token
           contract: token["contract"], // Join Token
