@@ -105,7 +105,6 @@ class AccountServiceBase extends AccountService {
         });
         return entity;
       });
-      console.log("insertAccount", tokens)
       await this._DBOperator.accountDao.insertAccounts(tokens);
 
       if (newTokens.length > 0) {
@@ -310,7 +309,6 @@ class AccountServiceBase extends AccountService {
       balance: `${payload["balance"]}`,
       last_sync_time: Date.now(),
     });
-    console.log("insertAccount", updated)
     await this._DBOperator.accountDao.insertAccount(updated);
     this._pushResult();
   }
@@ -333,7 +331,6 @@ class AccountServiceBase extends AccountService {
           last_sync_time: now,
         })
       );
-      console.log("insertAccount", v)
       await this._DBOperator.accountDao.insertAccounts(v);
       this._lastSyncTimestamp = now;
     }

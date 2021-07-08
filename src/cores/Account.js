@@ -66,7 +66,6 @@ class AccountCore {
     const chains = await this._getNetworks(this._networkPublish);
     const accounts = await this._getAccounts();
     const currencies = await this._getSupportedCurrencies();
-
     const srvStart = [];
     for (const acc of accounts) {
       let currency = currencies.find((c) => c.currencyId === acc.currencyId);
@@ -81,12 +80,9 @@ class AccountCore {
         acc.image = currency.image;
         acc.exchangeRate = currency.exchangeRate;
       }
-
-
       let chain = chains.find(
         (chain) => chain.blockchainId === acc.blockchainId
       );
-
       if (chain) {
         acc.blockchainCoinType = chain.coinType;
         acc.chainId = chain.chainId;
@@ -125,7 +121,6 @@ class AccountCore {
         }
 
         if (svc && !this._accounts[acc.accountId]) {
-          await this._DBOperator.accountDao.insertAccount(acc);
           this._accounts[acc.accountId] = [];
 
           this._services.push(svc);
@@ -136,6 +131,7 @@ class AccountCore {
           srvStart.push(svc.start());
         }
       }
+      await this._DBOperator.accountDao.insertAccount(acc);
     }
 
     await this._getSupportedToken(chains);
@@ -225,7 +221,6 @@ class AccountCore {
             publish: n["publish"],
           })
         );
-        console.log(enties);
         networks = enties;
         await this._DBOperator.networkDao.insertNetworks(networks);
       } catch (error) {
@@ -379,7 +374,6 @@ class AccountCore {
           console.log(error); // ++ throw exception
         }
       }
-      console.log(tokens)
       this.settingOptions += tokens;
     }
   }
