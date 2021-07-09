@@ -1,8 +1,5 @@
-import 'dart:typed_data';
-import 'package:convert/convert.dart';
-import 'package:decimal/decimal.dart';
+const BigNumber = require('bignumber.js');
 
-import 'utxo.model.dart';
 const Cryptor = require('../helpers/Cryptor');
 const BitcoinUtils = require('../helpers/bitcoinUtils');
 const {
@@ -38,9 +35,6 @@ class Input {
   /* used output's index in the previous transaction */
   // int vout;
   /* the signature produced to check validity */
-  final UnspentTxOut utxo;
-  scriptSig;
-  int sequence;
 
   constructor(utxo, hashType) {
     this.utxo = utxo,
@@ -52,7 +46,7 @@ class Input {
   }
 
   get reservedTxId() {
-    return Buffer.from(this.utxo.txId, 'hex');
+    return Buffer.from(this.utxo.txId, 'hex').reverse();
   }
 
   get voutInBuffer() {
@@ -151,141 +145,148 @@ class Input {
 }
 
 class Output {
-  /* value in bitcoins of the output (inSatoshi)*/
-  final Decimal amount; // inSatoshi
-  /* the address or public key of the recipient */
-  final String address;
-  final Uint8List script;
+  /**
+   * @param {BigNumber} amount value in bitcoins of the output (inSatoshi)
+   * @param {String} address the address or public key of the recipient
+   * @param {Buffer} script 
+   */
+  constructor(amount, address, script) {
+    this.amount = amount;
+    this.address = address;
+    this.script = script;
+  }
 
-  Output(this.amount, this.address, this.script);
-
-  Uint8List get amountInBuffer => Uint8List(8)
-    ..buffer.asByteData().setUint64(0, this.amount.toInt(), Endian.little);
+  get amountInBuffer() {
+    const amount = this.utxo.amountInSmallestUint.toString(16).padStart(8, '0');
+    return Buffer.from(amount, 'hex').reverse();
+  }
 }
 
 class BitcoinTransaction extends Transaction {
-  static const int ADVANCED_TRANSACTION_MARKER = 0x00;
-  static const int ADVANCED_TRANSACTION_FLAG = 0x01;
-  static const int DEFAULT_SEQUENCE = 0xffffffff;
+  static ADVANCED_TRANSACTION_MARKER = 0x00;
+  static ADVANCED_TRANSACTION_FLAG = 0x01;
+  static DEFAULT_SEQUENCE = 0xffffffff;
 
-  String id;
-  String currencyId;
-  String txId;
-  int locktime;
-  int timestamp;
-  int confirmations;
-  TransactionDirection direction;
-  TransactionStatus status;
-  String sourceAddresses = '';
-  String destinationAddresses = '';
-  Decimal amount;
-  Decimal fee;
-  Uint8List note;
+  currencyId;
+  note;
 
-  List<Input> _inputs;
-  List<Output> _outputs;
-  Uint8List _version;
-  Uint8List _lockTime;
-  SegwitType _segwitType;
-  UnspentTxOut _changeUtxo;
+  _inputs;
+  _outputs;
+  _version;
+  _lockTime;
+  _segwitType;
+  _changeUtxo;
   // bool _publish; //TODO get publish property from currency
 
-  List<Input> get inputs => this._inputs;
-  List<Output> get outputs => this._outputs;
-  UnspentTxOut get changeUtxo => this._changeUtxo;
+  get inputs() { return this._inputs };
+  get outputs() { return this._outputs };
+  get changeUtxo() { return this._changeUtxo };
 
-  BitcoinTransaction(
-      {this.id,
-      this.currencyId,
-      this.txId,
-      this.locktime,
-      this.timestamp,
-      this.confirmations,
-      this.direction,
-      this.status,
-      this.sourceAddresses,
-      this.destinationAddresses,
-      this.amount,
-      this.fee,
-      this.note});
+  constructor(values) {
+    super(values);
+    this.currencyId = values.currencyId;
+    this.note = note ? note : Buffer.from('0', 'hex');
 
-  BitcoinTransaction.prepareTransaction(bool publish, SegwitType segwitType,
-      this.amount, this.fee, Uint8List note,
-      {int lockTime}) // in Satoshi
-      : _segwitType = segwitType,
-        this.note = note ?? Uint8List(0) {
-    _inputs = [];
-    _outputs = [];
-    _segwitType = segwitType ?? SegwitType.nativeSegWit;
-    setVersion(publish ? 1 : 2);
-    setlockTime(lockTime ?? 0);
+    this._segwitType = values.segwitType;
+    this._inputs = [];
+    this._outputs = [];
+    this.setVersion(values.publish ? 1 : 2);
+    this.setlockTime(values.lockTime ? values.lockTime : 0);
   }
 
-  void setVersion(int version) {
-    _version = Uint8List(4)
-      ..buffer.asByteData().setUint32(0, version, Endian.little);
-    Log.verbose('_version: $_version');
+  static prepareTransaction({ publish, segwitType,
+    amount, fee, note, lockTime }) {
+    return new BitcoinTransaction({
+      segwitType: (segwitType ? segwitType : SegwitType.nativeSegWit),
+      amount,
+      fee,
+      note,
+      lockTime,
+      publish,
+      lockTime,
+    })
   }
 
-  void setlockTime(int locktime) {
-    _lockTime = Uint8List(4)
-      ..buffer.asByteData().setUint32(0, locktime, Endian.little);
-    Log.verbose('_lockTime: $_lockTime');
+  setVersion(version) {
+    this._version = Buffer.allocUnsafe(4);
+    this._version.writeInt32LE(version, 0);
   }
 
-  void addChangeUtxo(UnspentTxOut changeUtxo) {
+  setlockTime(locktime) {
+    this._lockTime = Buffer.allocUnsafe(4);
+    this._lockTime.writeInt32LE(locktime, 0);
+  }
+
+  /**
+   * 
+   * @param {UnspentTxOut} changeUtxo 
+   */
+  addChangeUtxo(changeUtxo) {
     this._changeUtxo = changeUtxo;
-    Log.verbose('addChangeUtxo: $changeUtxo');
   }
 
-  void addInput(UnspentTxOut utxo, HashType hashType) {
-    Input input = Input(utxo, hashType);
-    _inputs.add(input);
-    try {
-      this.sourceAddresses = this.sourceAddresses.isEmpty
-          ? this.sourceAddresses += utxo.address
-          : this.sourceAddresses += '${", " + utxo.address}';
-    } catch (e) {
-      Log.warning(e);
+  /**
+   * @param {UnspentTxOut} utxo  
+   * @param {HashType} hashType 
+   */
+  addInput(utxo, hashType) {
+    const input = new Input(utxo, hashType);
+    this._inputs.push(input);
+    if (!this.sourceAddresses.trim()) {
+      this.sourceAddresses += utxo.address;
+    } else {
+      this.sourceAddresses += `, ${utxo.address}`;
     }
   }
 
-  void addOutput(
-    Decimal amount, // in smallest uint
-    String address,
-    List<int> script,
-  ) {
+  /**
+   * @param {BigNumber} amount in smallest uint
+   * @param {string} address 
+   * @param {Array<number>} script
+   */
+  addOutput(amount, address, script) {
     if (script == null || script.length == 0) return null;
-    List<int> scriptLength;
+    let scriptLength = [];
     if (script.length < 0xFD) {
       scriptLength = [script.length];
     } else if (script.length <= 0xFFFF) {
-      List<int> scriptLengthData = (Uint8List(2)
-            ..buffer.asByteData().setUint32(0, script.length, Endian.little))
-          .toList();
-      scriptLength = [0xFD] + scriptLengthData;
+      const scriptLengthData = Buffer.allocUnsafe(2);
+      scriptLengthData.writeInt32LE(script.length, 0);
+      scriptLength = [0xFD, ...scriptLengthData];
     } else {
       Log.warning(' unsupported script length');
       return null;
     }
-    Output output =
-        Output(amount, address, Uint8List.fromList(scriptLength + script));
-    _outputs.add(output);
-    this.destinationAddresses = this.destinationAddresses.isEmpty
-        ? this.destinationAddresses += address
-        : this.destinationAddresses += '${", " + address}';
+    const output = new Output(amount, address, Buffer.from([...scriptLength, ...script]));
+    this._outputs.push(output);
+    if (!this.destinationAddresses.trim()) {
+      this.destinationAddresses += address;
+    } else {
+      this.destinationAddresses += `, ${address}`;
+    }
   }
 
-  void addData(List<int> data) {
-    int scriptLength = data.length + 2;
-    Output output = Output(Decimal.zero, '',
-        Uint8List.fromList([scriptLength, 0x6a, data.length, ...data]));
-    _outputs.add(output);
+  /**
+   * @param {Array<Number>} data 
+   */
+  addData(data) {
+    const scriptLength = data.length + 2;
+    const output = new Output(new BigNumber(0), '',
+        Buffer.from([scriptLength, 0x6a, data.length, ...data]));
+    this._outputs.push(output);
   }
 
-  Uint8List getRawDataToSign(int index) {
-    List<int> data = [];
-    Input selectedInput = this._inputs[index];
+  // ++ 邏輯怪怪的， rawDataToSign 應該要以this._segwitType為主，
+  // ++ 如果是 segwit 所有的 rawDataToSign 就都是segwit
+  // ++ 而不是根據選到的input
+  /**
+   * 
+   * @param {Number} index 
+   * @returns {Buffer}
+   */
+  getRawDataToSign(index) {
+    const data = [];
+    const selectedInput = this._inputs[index];
     if (selectedInput.isSegwit(this._segwitType)) {
       //  nVersion
       //  hashPrevouts
@@ -298,55 +299,57 @@ class BitcoinTransaction extends Transaction {
       //  nLockTime:    11000000
       //  nHashType:    01000000 // SIGHASH_ALL
 
-      List<int> prevouts = [];
-      List<int> sequences = [];
-      List<int> outputs = [];
-      for (Input input in this._inputs) {
-        prevouts.addAll(input.reservedTxId + input.voutInBuffer);
-        sequences.addAll(input.sequenceInBuffer);
+      const prevouts = [];
+      const sequences = [];
+      const outputs = [];
+      for (const input of this._inputs) {
+        prevouts.push(...input.reservedTxId, ...input.voutInBuffer);
+        sequences.push(...input.sequenceInBuffer);
       }
 
       if (selectedInput.hashType != HashType.SIGHASH_SINGLE ||
-          selectedInput.hashType != HashType.SIGHASH_NONE)
-        for (Output output in this._outputs) {
-          outputs.addAll(output.amountInBuffer + output.script);
-        }
-      else if (selectedInput.hashType == HashType.SIGHASH_SINGLE &&
-          index < this._outputs.length)
-        outputs.addAll(
-            this._outputs[index].amountInBuffer + this._outputs[index].script);
+          selectedInput.hashType != HashType.SIGHASH_NONE) {
+            for (const output of this._outputs) {
+              outputs.push(...output.amountInBuffer, ...output.script);
+            }
+      } else if (selectedInput.hashType == HashType.SIGHASH_SINGLE && index < this._outputs.length) {
+        outputs.push(
+          ...this._outputs[index].amountInBuffer, ...this._outputs[index].script);
+      }
 
-      List<int> hashPrevouts = Cryptor.sha256round(prevouts);
-      List<int> hashSequence = Cryptor.sha256round(sequences);
+      const hashPrevouts = Cryptor.sha256round(Buffer.from(prevouts));
+      const hashSequence = Cryptor.sha256round(Buffer.from(sequences));
 
-      Log.verbose('hashPrevouts: ${hex.encode(hashPrevouts)}');
-      Log.verbose('hashSequence: ${hex.encode(hashSequence)}');
+      console.log('hashPrevouts:', hashPrevouts.toString('hex'));
+      console.log('hashSequence:', hashSequence.toString('hex'));
 
       //  nVersion
-      data.addAll(this._version);
+      data.push(...this._version);
       //  hashPrevouts
       /* 
       If the ANYONECANPAY flag is not set, hashPrevouts is the double SHA256 of the serialization of all input outpoints;
       Otherwise, hashPrevouts is a uint256 of 0x0000......0000.
       */
-      if (selectedInput.hashType != HashType.SIGHASH_ANYONECANPAY)
-        data.addAll(hashPrevouts);
-      else
-        data.addAll(
-            Uint8List(32)..buffer.asByteData().setUint32(0, 0, Endian.little));
+      if (selectedInput.hashType != HashType.SIGHASH_ANYONECANPAY) {
+        data.push(...hashPrevouts);
+      } else {
+        const buf = Buffer.alloc(32, 0);
+        data.push(...buf);
+      }
 
       //  hashSequence
       /* 
       If none of the ANYONECANPAY, SINGLE, NONE sighash type is set, hashSequence is the double SHA256 of the serialization of nSequence of all inputs;
       Otherwise, hashSequence is a uint256 of 0x0000......0000.
        */
-      if (selectedInput.hashType == HashType.SIGHASH_ALL)
+      if (selectedInput.hashType == HashType.SIGHASH_ALL) {
         data.addAll(hashSequence);
-      else
-        data.addAll(
-            Uint8List(32)..buffer.asByteData().setUint32(0, 0, Endian.little));
+      } else {
+        const buf = Buffer.alloc(32, 0);
+        data.push(...buf);
+      }
       //  outpoint:
-      data.addAll(selectedInput.reservedTxId + selectedInput.voutInBuffer);
+      data.push(...selectedInput.reservedTxId, ...selectedInput.voutInBuffer);
       /*
       For P2WPKH witness program, the scriptCode is 0x1976a914{20-byte-pubkey-hash}88ac.
       For P2WSH witness program,
@@ -356,141 +359,139 @@ class BitcoinTransaction extends Transaction {
           (The exact semantics is demonstrated in the examples below)
        */
       //  scriptCode:
-      List<int> scriptCode =
-          toP2pkhScript(toPubKeyHash(selectedInput.publicKey));
-      Log.verbose(
-          'prevOutScript: ${hex.encode([scriptCode.length, ...scriptCode])}');
-      data.addAll([scriptCode.length, ...scriptCode]);
+      let scriptCode =
+        BitcoinUtils.toP2pkhScript(BitcoinUtils.toPubKeyHash(selectedInput.publicKey));
+      console.log('prevOutScript:', Buffer.from([scriptCode.length, ...scriptCode]).toString('hex'));
+
+      data.push(...scriptCode.length, ...scriptCode);
 
       //  amount:
-      data.addAll(selectedInput.amountInBuffer);
+      data.push(...selectedInput.amountInBuffer);
       //  nSequence:
-      data.addAll(selectedInput.sequenceInBuffer);
+      data.push(...selectedInput.sequenceInBuffer);
       //  hashOutputs
       /*
       If the sighash type is neither SINGLE nor NONE, hashOutputs is the double SHA256 of the serialization of all output amount (8-byte little endian) with scriptPubKey (serialized as scripts inside CTxOuts);
       If sighash type is SINGLE and the input index??  is smaller than the number of outputs, hashOutputs is the double SHA256 of the output amount with scriptPubKey of the same index as the input;
       Otherwise, hashOutputs is a uint256 of 0x0000......0000.
       */
-      if (outputs.isNotEmpty) {
-        Log.debug('outputs: ${hex.encode(outputs)}');
-        List<int> hashOutputs = Cryptor.sha256round(outputs);
-        data.addAll(hashOutputs);
-        Log.verbose('hashOutputs: ${hex.encode(hashOutputs)}');
-      } else
-        data.addAll(
-            Uint8List(32)..buffer.asByteData().setUint32(0, 0, Endian.little));
+      if (outputs.length != 0) {
+        console.log('outputs:', Buffer.from(outputs).toString('hex'));
+        const hashOutputs = Cryptor.sha256round(outputs);
+        console.log('hashOutputs:', hashOutputs.toString('hex'));
+        data.push(...hashOutputs);
+      } else {
+        const buf = Buffer.alloc(32, 0);
+        data.push(...buf);
+      }
 
       //  nLockTime:
-      data.addAll(this._lockTime);
+      data.push(...this._lockTime);
       //  nHashType:
-      data.addAll(selectedInput.hashTypeInBuffer);
+      data.push(...selectedInput.hashTypeInBuffer);
     } else {
       //  nVersion
-      data.addAll(this._version);
+      data.push(...this._version);
       // Input count
-      data.add(this._inputs.length);
-      for (Input input in this._inputs) {
+      data.push(this._inputs.length);
+      for (const input of this._inputs) {
         //  outpoint:
-        data.addAll(input.reservedTxId + input.voutInBuffer);
+        data.push(...input.reservedTxId, ...input.voutInBuffer);
         if (input == selectedInput) {
           //  txin:
-          List<int> script;
+          let script = [];
           if (input.utxo.type == BitcoinTransactionType.PUBKEYHASH) {
-            script = toP2pkhScript(toPubKeyHash(input.publicKey));
+            script = BitcoinUtils.toP2pkhScript(BitcoinUtils.toPubKeyHash(input.publicKey));
           } else if (input.utxo.type == BitcoinTransactionType.PUBKEY) {
-            script = toP2pkScript(input.publicKey);
+            script = BitcoinUtils.toP2pkScript(input.publicKey);
           } else if (input.utxo.type == BitcoinTransactionType.SCRIPTHASH) {
-            script = pubkeyToBIP49RedeemScript(input.publicKey);
+            script = BitcoinUtils.pubkeyToBIP49RedeemScript(input.publicKey);
           } else if (input.utxo.type ==
               BitcoinTransactionType.WITNESS_V0_KEYHASH) {
             // do nothing
           } else {
-            Log.warning('Unusable utxo: ${input.utxo.txId}');
+            console.warn(`Unusable utxo: ${input.utxo.txId}`);
             return null;
           }
-          data.addAll(script);
+          data.push(...script);
         } else {
-          data.add(0);
+          data.push(0);
         }
         //  nSequence:
-        data.addAll(selectedInput.sequenceInBuffer);
+        data.push(...selectedInput.sequenceInBuffer);
       }
       // Output count
-      data.add(this._outputs.length);
-      Log.debug('this._outputs.length: ${this._outputs.length}');
+      data.push(this._outputs.length);
+      console.log(`this._outputs.length: ${this._outputs.length}`);
 
-      for (Output output in this._outputs) {
-        Log.debug(
-            'output amountInBuffer: ${hex.encode(output.amountInBuffer)}');
-        Log.debug('output script: ${hex.encode(output.script)}');
+      for (const output of this._outputs) {
+        console.log(`output amountInBuffer: ${output.amountInBuffer.toString('hex')}`);
+        console.log(`output script: ${output.script.toString('hex')}`);
 
-        data.addAll(output.amountInBuffer + output.script);
+        data.push(...output.amountInBuffer, ...output.script);
       }
       //  nLockTime:
-      data.addAll(this._lockTime);
+      data.push(...this._lockTime);
     }
-    Log.debug('data: ${hex.encode(data)}');
-    return Uint8List.fromList(data);
+    console.log(`data: ${Buffer.from(data).toString('hex')}`);
+    return Buffer.from(data);
   }
 
-  @override
-  Uint8List get serializeTransaction {
-    List<int> data = [];
+  // @override
+  get serializeTransaction() {
+    let data = [];
     //  nVersion
-    data.addAll(this._version);
+    data.push(...this._version);
 
     // Input count
-    data.add(this._inputs.length);
+    data.push(this._inputs.length);
 
     // Input
-    bool segwit = false;
-    for (Input input in this._inputs) {
-      data.addAll(input.reservedTxId + input.voutInBuffer);
+    let segwit = false;
+    for (const input of this._inputs) {
+      data.push(...input.reservedTxId, ...input.voutInBuffer);
       if (input.isSegwit(this._segwitType)) {
         segwit = true;
         if (input.utxo.type == BitcoinTransactionType.SCRIPTHASH)
-          data.addAll([input.utxo.data.length, ...input.utxo.data]);
+          data.push(input.utxo.data.length, ...input.utxo.data);
         else
-          data.add(0);
+          data.push(0);
       } else {
-        input.scriptSig != null ? data.addAll(input.scriptSig) : data.add(0);
+        input.scriptSig != null ? data.push(...input.scriptSig) : data.push(0);
       }
-      data.addAll(input.sequenceInBuffer);
+      data.push(...input.sequenceInBuffer);
     }
     // Output count
-    data.add(this._outputs.length);
+    data.push(this._outputs.length);
 
     // Output
-    for (Output output in this._outputs) {
-      data.addAll(output.amountInBuffer + output.script);
+    for (const output of this._outputs) {
+      data.push(...output.amountInBuffer, ...output.script);
     }
     // txId
-    this.txId = hex.encode(
-        Cryptor.sha256round([...data, ...this._lockTime]).reversed.toList());
+    this.txId = Cryptor.sha256round(Buffer.from([...data, ...this._lockTime])).reverse().toString('hex');
 
     //witness
     if (segwit) {
-      for (Input input in this._inputs) {
+      for (const input of this._inputs) {
         if (input.isSegwit(this._segwitType)) {
           if (input.scriptSig != null) {
-            data.addAll(input.scriptSig);
+            data.push(...input.scriptSig);
           }
         } else {
-          data.add(0);
+          data.push(0);
         }
       }
-      data.insertAll(
-          4, [ADVANCED_TRANSACTION_MARKER, ADVANCED_TRANSACTION_FLAG]);
+      data.splice(4, 0, [ADVANCED_TRANSACTION_MARKER, ADVANCED_TRANSACTION_FLAG]);
     }
 
     //  nLockTime:
-    data.addAll(this._lockTime);
+    data.push(...this._lockTime);
 
-    return Uint8List.fromList(data);
+    return Buffer.from(data);
   }
 
-  Uint8List get transactionHash {
+  get transactionHash() {
     return Cryptor.sha256round(serializeTransaction);
   }
 }
