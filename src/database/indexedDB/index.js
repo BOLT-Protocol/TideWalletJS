@@ -380,7 +380,7 @@ class AccountDao extends DAO {
     coin_type_account, // Join Account
     account_index, // Join Account
     curve_type, // Join Account
-    blockchain, // Join Blockchain
+    network, // Join Blockchain
     coin_type_blockchain, // Join Blockchain
     publish, // Join Blockchain
     chain_id, // Join Blockchain  || network_id
@@ -391,7 +391,7 @@ class AccountDao extends DAO {
     total_supply, // Join Currency
     contract, // Join Currency
     type, // Join Currency
-    icon, // Join Currency || url
+    image, // Join Currency || url
     exchange_rate, // ++ Join Currency || inUSD,
   }) {
     return {
@@ -406,7 +406,7 @@ class AccountDao extends DAO {
       accountCoinType: coin_type_account,
       accountIndex: account_index,
       curveType: curve_type,
-      blockchain,
+      network,
       blockchainCoinType: coin_type_blockchain,
       publish,
       chainId: chain_id,
@@ -417,7 +417,7 @@ class AccountDao extends DAO {
       totalSupply: total_supply,
       contract,
       type,
-      icon,
+      image,
       exchangeRate: exchange_rate,
       // tokens,
     };
@@ -456,6 +456,7 @@ class CurrencyDao extends DAO {
     name,
     symbol,
     type,
+    publish,
     blockchain_id, // ++ for token
     description, // ++ [Did not provided by Backend Service]
     // address,  // ++ [Did not provided by Backend Service]
@@ -472,7 +473,7 @@ class CurrencyDao extends DAO {
       name,
       symbol,
       type: _type,
-
+      publish,
       blockchainId: blockchain_id,
       description,
       address: contract,

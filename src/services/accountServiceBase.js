@@ -1,5 +1,6 @@
 const { ACCOUNT_EVT } = require("../models/account.model");
 const AccountService = require("./accountService");
+const BigNumber = require("bignumber.js");
 class AccountServiceBase extends AccountService {
   constructor(AccountCore) {
     super();
@@ -91,14 +92,14 @@ class AccountServiceBase extends AccountService {
           id: token["account_token_id"],
           currency_id: token["token_id"],
           name: token["name"], // Join Token
+          description: token["description"], // Join Token
           symbol: token["symbol"], // Join Token
-          type: token["type"], // Join Token
-          publish: token["publish"], // Join Token
           decimals: token["decimals"], // Join Token
           total_supply: token["total_supply"], // Join Token
           contract: token["contract"], // Join Token
-          description: token["description"], // Join Token
-          icon: currs[index].image, // Join Currency || url
+          type: token["type"], // Join Token
+          image: currs[index].image, // Join Currency || url
+          publish: token["publish"], // Join Token
           exchange_rate: currs[index].exchangeRate, // ++ Join Currency || inUSD,
           balance: token["balance"],
         });
@@ -256,9 +257,43 @@ class AccountServiceBase extends AccountService {
 
   /**
    * @override
+   * the reason why I dont use this.service.id is that AccountCurrency and AccountToken share the same accountId
+   * but they might have different deicaml. futhermore, where we call this function
+   * is able to acess account obj with asking DB, so why not?
+   * And both of them are using the same class Account(or AccountDao.enity) so they have the same inferface which
+   * has the property of decimal
    */
   getTransactionFee() {
     // Override by decorator
+  }
+
+  /**
+   * @override
+   * according to currency decimal to transform amount to currency unit
+   * @method toCurrencyUint
+   * @param {amount} string
+   * @param {decimals} interger
+   */
+  toCurrencyUint(amount, decimals) {
+    const bnAmount = new BigNumber(amount);
+    const bnBase = new BigNumber(10);
+    const bnDecimal = bnBase.exponentiatedBy(decimals);
+    const currencyUint = bnAmount.dividedBy(bnDecimal).toFixed();
+    return currencyUint;
+  }
+
+  /**
+   * @override
+   * @method toSmallestUint
+   * @param {amount} string
+   * @param {decimals} interger
+   */
+  toSmallestUint(amount, decimals) {
+    const bnAmount = new BigNumber(amount);
+    const bnBase = new BigNumber(10);
+    const bnDecimal = bnBase.exponentiatedBy(decimals);
+    const smallestUint = bnAmount.multipliedBy(bnDecimal).toFixed();
+    return smallestUint;
   }
 
   /**

@@ -79,6 +79,7 @@ class AccountCore {
         acc.contract = currency.contract;
         acc.type = currency.type;
         acc.image = currency.image;
+        acc.publish = currency.publish;
         acc.exchangeRate = currency.exchangeRate;
       }
       let chain = chains.find(
@@ -89,6 +90,7 @@ class AccountCore {
         acc.blockchainCoinType = chain.coinType;
         acc.chainId = chain.chainId;
         acc.publish = chain.publish;
+        acc.network = chain.network;
 
         await this._DBOperator.accountDao.insertAccount(acc);
 
@@ -132,7 +134,6 @@ class AccountCore {
           srvStart.push(svc.start());
         }
       }
-     
     }
 
     await this._getSupportedToken(chains);
@@ -187,17 +188,6 @@ class AccountCore {
    */
   getService(accountId) {
     return this._services.find((svc) => svc.accountId === accountId);
-  }
-
-  /**
-   * Get blockchainID by accountId
-   * @method getBlockchainID
-   * @param {string} accountId The accountId
-   * @returns {string} The blockchainID
-   */
-  getBlockchainID(accountId) {
-    const account = this._accounts[accountId][0];
-    return account.blockchainId;
   }
 
   /**
@@ -312,7 +302,7 @@ class AccountCore {
          * type
          * icon
          * exchange_rate
-         * publish --
+         * publish
          */
         const enties = res?.map((c) => this._DBOperator.currencyDao.entity(c));
         currencies = enties;
@@ -427,23 +417,25 @@ class AccountCore {
   }
 
   /**
-   * Get TransactionFee and gasLimit by accountcurrencyId
-   * @param {string} accountcurrencyId
+   * Get TransactionFee and gasLimit by id
+   * @param {string} id
    * @param {string} to [optional]
    * @param {string} amount [optional]
    * @param {string} data [optional]
    * @returns
    */
-  async getTransactionFee(accountcurrencyId, { to, amount, data } = {}) {
-    const svc = this.getService(accountcurrencyId);
-    const blockchainID = this.getBlockchainID(accountcurrencyId);
-    const fees = await svc.getTransactionFee(blockchainID); // ++ to CoinUint 0706
-    let gasLimit = 21000;
-    if (to)
-      gasLimit = await svc.estimateGasLimit(blockchainID, to, amount, data);
+  async getTransactionFee(id, to, amount, data) {
+    const svc = this.getService(id);
+    const account = this._accounts[id].find((acc) => acc.id === id);
+    const fees = await svc.getTransactionFee(
+      account.blockchainId,
+      account.decimals,
+      to,
+      amount,
+      data
+    );
     console.log("fees", fees);
-    console.log("gasLimit", gasLimit);
-    return { ...fees, gasLimit };
+    return fees;
   }
 
   /**

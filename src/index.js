@@ -135,12 +135,13 @@ class TideWallet {
     return address;
   }
 
-  async getTransactionFee(accountID, { to, amount, data } = {}) {
-    const result = await this.account.getTransactionFee(accountID, {
+  async getTransactionFee(accountID, to, amount, data) {
+    const result = await this.account.getTransactionFee(
+      accountID,
       to,
       amount,
-      data,
-    });
+      data
+    );
     return result;
   }
 
