@@ -45,6 +45,7 @@ class AccountServiceBase extends AccountService {
       const res = await this._TideWalletCommunicator.AccountDetail(
         this._accountId
       );
+      console.log(res);
       const account = await this._DBOperator.accountDao.findAccount(
         this._accountId
       );
@@ -58,7 +59,9 @@ class AccountServiceBase extends AccountService {
        * curve_type: 0
        * icon: "https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@9ab8d6934b83a4aa8ae5e8711609a70ca0ab1b2b/32/icon/eth.png"
        * purpose: 3324
-       * symbol: "ETH"
+       * symbol: "ETH",
+       * number_of_used_external_key: 0, // ++ [API not provided]
+       * number_of_used_internal_key: 0, // ++ [API not provided]
        * tokens: [
        *         {
        *          "account_token_id": "488c3047-ced5-4049-9967-8ececb41ced1",
@@ -89,6 +92,8 @@ class AccountServiceBase extends AccountService {
         }
         const entity = this._DBOperator.accountDao.entity({
           ...account,
+          number_of_used_external_key: res["number_of_used_external_key"] ?? 0,
+          number_of_used_internal_key: res["number_of_used_internal_key"] ?? 0,
           id: token["account_token_id"],
           currency_id: token["token_id"],
           name: token["name"], // Join Token

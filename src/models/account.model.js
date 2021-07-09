@@ -7,6 +7,8 @@ class Account {
     currency_id,
     balance,
     last_sync_time,
+    number_of_used_external_key,
+number_of_used_internal_key,
     purpose,
     coin_type__account,
     account_index,
@@ -32,6 +34,8 @@ class Account {
     this.currencyId = currency_id;
     this.balance = balance;
     this.lastSyncTime = last_sync_time;
+    this.numberOfUsedExternalKey=number_of_used_external_key;
+    this.numberOfUsedInternalKey=number_of_used_internal_key;
     this.purpose = purpose;
     this.accountCoinType = coin_type__account;
     this.accountIndex = account_index;

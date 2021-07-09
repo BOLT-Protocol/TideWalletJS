@@ -5,8 +5,9 @@ const EthereumService = require("../services/ethereumService");
 const BitcoinService = require("../services/bitcoinService");
 const { network_publish } = require("../constants/config");
 const TransactionBase = require("../services/transactionService");
-const ETHTransaction = require("../services/transactionServiceETH");
+const ETHTransactionSvc = require("../services/transactionServiceETH");
 const BigNumber = require("bignumber.js");
+const { Transaction } = require("../models/tranasction.model");
 
 class AccountCore {
   static instance;
@@ -266,6 +267,8 @@ class AccountCore {
             coin_type__account: 3324,
             curve_type: 0,
             chain_id: a["network_id"],
+            number_of_used_external_key: a["number_of_used_external_key"] ?? 0,
+            number_of_used_internal_key: a["number_of_used_internal_key"] ?? 0,
           })
         );
         accounts = enties;
@@ -413,7 +416,8 @@ class AccountCore {
   async getReceiveAddress(accountcurrencyId) {
     const svc = this.getService(accountcurrencyId);
     const address = await svc.getReceivingAddress(accountcurrencyId);
-    return address;
+    console.log(address)
+    return address[0];
   }
 
   /**
@@ -438,45 +442,65 @@ class AccountCore {
     return fees;
   }
 
+  async verifyAddress(id, address) {
+    const account = this._accounts[id].find((acc) => acc.id === id);
+    const txSvc = new ETHTransactionSvc(
+      new TransactionBase(account.decimals),
+      this._TideWalletCore.getSafeSigner(
+        `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'/0/${account.numberOfUsedExternalKey}`
+      )
+    );
+    // ++ TODO pulish 當初理解的意義不同, 當初理解成publish = true 就是mainnet, 反之為 testnet. publish 實際意義為該account 要不要顯示給用戶看. 會影響地址的計算
+    // 對 ETH 沒差, 對Bitcoin有差
+    return txSvc.verifyAddress(address, account.publish);
+  }
+
+  // ++ TODO 2021/07/08
+  async verifyAmount(id, amount, fee) {
+    const account = this._accounts[id].find((acc) => acc.id === id);
+    const txSvc = new ETHTransactionSvc(
+      new TransactionBase(account.decimals),
+      this._TideWalletCore.getSafeSigner(
+        `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'/0/${account.numberOfUsedExternalKey}`
+      )
+    );
+    return txSvc.verifyAmount(account.balance, amount, fee);
+  }
+
   /**
    * Send transaction
    * @method sendTransaction
-   * @param {string} accountcurrencyId The accountcurrencyId
-   * @param {object} param The transaction content
-   * @param {number} param.amount
-   * @param {string} param.to
-   * @param {number} param.gasPrice
-   * @param {number} param.gasUsed
-   * @param {string} param.gasPrice
-   * @param {number} param.keyIndex
+   * @param {string} id The account id
+   * @param {Transaction} transaction The transaction content
+   * @param {string} transaction.to
+   * @param {string} transaction.amount
+   * @param {string} transaction.feePerUnit
+   * @param {string} transaction.feeUnit
    * @returns {boolean}} success
    */
-  async sendTransaction(
-    accountCurrency,
-    { amount, to, gasPrice, gasUsed, message }
-  ) {
+  async sendTransaction(id, transaction) {
+    const account = this._accounts[id].find((acc) => acc.id === id);
     let safeSigner;
-    switch (accountCurrency.accountType) {
+    switch (account.accountType) {
       case ACCOUNT.ETH:
       case ACCOUNT.CFC:
-        safeSigner = this._TideWalletCore.getSafeSigner("m/84'/3324'/0'/0/0"); // ++ get path from accountDao
-        const svc = this.getService(accountCurrency.accountId);
-        const address = svc.getReceivingAddress(
-          accountCurrency.accountcurrencyId
+        safeSigner = this._TideWalletCore.getSafeSigner(
+          `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'/0/${account.numberOfUsedExternalKey}`
         );
-        const account = this._accounts.find(
-          (acc) => acc.accountId === svc.accountId
-        );
-
+        const svc = this.getService(account.accountId);
+        const address = svc.getReceivingAddress(id);
         const nonce = await svc.getNonce(account.blockchainId, address);
-
-        const txSvc = new ETHTransaction(new TransactionBase(), safeSigner);
+        const txSvc = new ETHTransactionSvc(
+          new TransactionBase(account.decimals),
+          safeSigner
+        );
+        console.log(transaction);
         const signedTx = txSvc.prepareTransaction({
-          amount: BigNumber(amount),
-          to,
-          gasPrice: BigNumber(gasPrice),
-          gasUsed: BigNumber(gasUsed),
-          message,
+          amount: BigNumber(transaction.amount),
+          to: transaction.to,
+          gasPrice: BigNumber(transaction.feePerUnit),
+          gasUsed: BigNumber(transaction.feeUnit),
+          message: transaction.message,
           nonce,
         });
 

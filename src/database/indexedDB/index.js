@@ -64,10 +64,6 @@ class IndexedDB {
         this._networkDao = new NetworkDao(this.db, OBJ_NETWORK);
         this._txDao = new TransactionDao(this.db, OBJ_TX);
         this._utxoDao = new UtxoDao(this.db, OBJ_UTXO);
-        this._accountcurrencyDao = new AccountCurrencyDao(
-          this.db,
-          OBJ_ACCOUNT_CURRENCY
-        );
         this._exchangeRateDao = new ExchangeRateDao(this.db, OBJ_EXCHANGE_RATE);
         this._prefDao = new PrefDao(this.db, OBJ_PREF);
 
@@ -376,6 +372,8 @@ class AccountDao extends DAO {
     currency_id, // currency_id || token_id
     balance, // Join AccountCurrency
     last_sync_time, // Join AccountCurrency
+    number_of_used_external_key,
+    number_of_used_internal_key,
     purpose, // Join Account
     coin_type_account, // Join Account
     account_index, // Join Account
@@ -402,6 +400,8 @@ class AccountDao extends DAO {
       currencyId: currency_id,
       balance,
       lastSyncTime: last_sync_time,
+      numberOfUsedExternalKey: number_of_used_external_key,
+      numberOfUsedInternalKey: number_of_used_internal_key,
       purpose,
       accountCoinType: coin_type_account,
       accountIndex: account_index,
@@ -579,54 +579,6 @@ class TransactionDao extends DAO {
     return this._writeAll(txs);
   }
 }
-
-class AccountCurrencyDao extends DAO {
-  entity({
-    // accountcurrency_id,
-    account_id,
-    currency_id,
-    balance,
-    number_of_used_external_key,
-    number_of_used_internal_key,
-    last_sync_time,
-    token_id,
-    account_token_id,
-  }) {
-    return {
-      accountcurrencyId: account_token_id ?? account_id,
-      accountId: account_id,
-      currencyId: currency_id ?? token_id,
-      balance,
-      numberOfUsedExternalKey: number_of_used_external_key,
-      numberOfUsedInternalKey: number_of_used_internal_key,
-      lastSyncTime: last_sync_time,
-    };
-  }
-  constructor(db, name) {
-    super(db, name);
-  }
-
-  findOneByAccountyId(id) {
-    return this._read(id);
-  }
-
-  findAllCurrencies() {
-    return this._readAll();
-  }
-
-  findJoinedByAccountId(accountId) {
-    return this._readAll(accountId, "accountId");
-  }
-
-  insertAccount(entity) {
-    return this._write(entity);
-  }
-
-  insertCurrencies(currencies) {
-    return this._writeAll(currencies);
-  }
-}
-
 class ExchangeRateDao extends DAO {
   entity({ currency_id, name, rate, timestamp, type }) {
     return {

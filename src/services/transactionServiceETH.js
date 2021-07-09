@@ -8,23 +8,28 @@ const {
 } = require("../helpers/ethereumUtils");
 const EthereumTransaction = require("../models/transactionETH.model");
 const { Signature } = require("../models/tranasction.model");
+const BigNumber = require("bignumber.js");
 
 class TransactionServiceETH extends TransactionDecorator {
   service = null;
   _base = ACCOUNT.ETH;
-  _currencyDecimals = 18;
 
   constructor(service, signer) {
     this.service = service;
     this.signer = signer;
+    this._currencyDecimals = this.service.currencyDecimals;
   }
 
   _signTransaction(transaction) {
     const payload = encodeToRlp(transaction);
+    console.log(payload);
+
     const rawDataHash = Buffer.from(
       Cryptor.keccak256round(payload.toString("hex"), 1),
       "hex"
     );
+    console.log(rawDataHash);
+
     const signature = this.signer.sign({ data: rawDataHash });
     console.log("ETH signature: ", signature);
 
@@ -37,6 +42,7 @@ class TransactionServiceETH extends TransactionDecorator {
       r: signature.r,
       s: signature.s,
     });
+    console.log(chainIdV);
 
     transaction.signature = signature;
     return transaction;
@@ -45,7 +51,21 @@ class TransactionServiceETH extends TransactionDecorator {
   /**
    * @override
    */
-  verifyAddress() {
+  verifyAmount(balance, amount, fee) {
+    // ++ TODO 2021/07/08
+    console.log("balance", balance);
+    console.log("amount", amount);
+    console.log("fee", fee);
+    return BigNumber(balance).isGreaterThanOrEqualTo(
+      BigNumber(amount).plus(BigNumber(fee))
+    );
+  }
+
+  /**
+   * @override
+   */
+  verifyAddress(address) {
+    console.log("address", address);
     const result = verifyEthereumAddress(address);
     return result;
   }
@@ -68,7 +88,7 @@ class TransactionServiceETH extends TransactionDecorator {
    * @param {stringm} param.message
    * @param {number} param.chainId
    * @param {number} param.nonce
-   * @returns {ETHTransaction} transaction 
+   * @returns {ETHTransaction} transaction
    */
   prepareTransaction({
     to,
@@ -86,10 +106,10 @@ class TransactionServiceETH extends TransactionDecorator {
       gasUsed,
       message,
       chainId,
-      fee: gasLimit * gasPrice,
+      fee: gasLimit.multipliedBy(gasPrice).toFixed(),
       nonce,
     });
-
+    console.log(transaction);
     return this._signTransaction(transaction, privKey);
   }
 }

@@ -113,46 +113,45 @@ class TideWallet {
 
   /**
    *
-   * @param {object} accountInfo
-   * @param {string} accountInfo.assetID
+   * @param {string} id
    */
-  async getAssetDetail({ assetID }) {
-    const asset = await this.account.getCurrencies(assetID);
-    const transactions = await this.account.getTransactions(assetID);
+  async getAssetDetail(id) {
+    const asset = await this.account.getCurrencies(id);
+    const transactions = await this.account.getTransactions(id);
 
     return { asset, transactions };
   }
 
-  async getTransactionDetail({ assetID, transactionID }) {
-    const txs = await this.account.getTransactions(assetID);
-    const tx = txs.find((r) => r.txId === transactionID);
+  async getTransactionDetail(id, transactionId) {
+    const txs = await this.account.getTransactions(id);
+    const tx = txs.find((r) => r.txId === transactionId);
     return tx;
   }
 
-  async getReceivingAddress({ accountID }) {
-    const address = await this.account.getReceiveAddress(accountID);
+  async getReceivingAddress(id) {
+    const address = await this.account.getReceiveAddress(id);
 
     return address;
   }
 
-  async getTransactionFee(accountID, to, amount, data) {
-    const result = await this.account.getTransactionFee(
-      accountID,
-      to,
-      amount,
-      data
-    );
+  async verifyAddress(id, address) {
+    const result = await this.account.verifyAddress(id, address);
     return result;
   }
 
-  // need help
-  async prepareTransaction() {}
+  async verifyAmount(id, amount, fee) {
+    const result = await this.account.verifyAmount(id, amount, fee);
+    return result;
+  }
 
-  async sendTransaction({ accountID, blockchainID, transaction }) {
-    const svc = this.account.getService(accountID);
-    const res = svc.publishTransaction(blockchainID, transaction);
+  async getTransactionFee(id, to, amount, data) {
+    const result = await this.account.getTransactionFee(id, to, amount, data);
+    return result;
+  }
 
-    return res;
+  async sendTransaction(id, transaction) {
+    const result = await this.account.sendTransaction(id, transaction);
+    return result;
   }
 
   async sync() {
@@ -218,11 +217,11 @@ if (isBrowser()) {
     console.log(
       "getTransactionFee:",
       await tw.getTransactionFee({
-        assetID: "a7255d05-eacf-4278-9139-0cfceb9abed6",
+        id: "a7255d05-eacf-4278-9139-0cfceb9abed6",
       })
     );
-    // console.log('getTransactionDetail:', await tw.getTransactionDetail({ assetID: "a7255d05-eacf-4278-9139-0cfceb9abed6", transactionID:"" }));
-    // console.log('getReceivingAddress:', await tw.getReceivingAddress({ accountID: "a7255d05-eacf-4278-9139-0cfceb9abed6" }));
+    // console.log('getTransactionDetail:', await tw.getTransactionDetail({ id: "a7255d05-eacf-4278-9139-0cfceb9abed6", transactionId:"" }));
+    // console.log('getReceivingAddress:', await tw.getReceivingAddress({ id: "a7255d05-eacf-4278-9139-0cfceb9abed6" }));
     // console.log('getWalletConfig:', await tw.getWalletConfig());
     // await tw.sync();
     // console.log('backup:', await tw.backup());
