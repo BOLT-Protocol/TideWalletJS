@@ -15,9 +15,13 @@ class TransactionServiceETH extends TransactionDecorator {
   _base = ACCOUNT.ETH;
 
   constructor(service, signer) {
+    super();
+    console.log("TransactionServiceETH")
+
     this.service = service;
     this.signer = signer;
     this._currencyDecimals = this.service.currencyDecimals;
+    console.log(this._currencyDecimals)
   }
 
   _signTransaction(transaction) {
@@ -91,6 +95,7 @@ class TransactionServiceETH extends TransactionDecorator {
    * @returns {ETHTransaction} transaction
    */
   prepareTransaction({
+    from,
     to,
     amount,
     gasPrice,
@@ -99,14 +104,27 @@ class TransactionServiceETH extends TransactionDecorator {
     chainId,
     nonce,
   }) {
+    console.log("prepareTransaction from: ", from);
+    console.log("prepareTransaction to: ", to);
+    console.log("prepareTransaction amount: ", amount);
+    console.log("prepareTransaction gasPrice: ", gasPrice);
+    console.log("prepareTransaction gasUsed: ", gasUsed);
+    console.log("prepareTransaction nonce: ", nonce);
+    console.log("prepareTransaction chainId: ", chainId);
+    console.log(EthereumTransaction.createTransaction) 
+
+    // =====================================
+    // const fee = gasLimit.multipliedBy(gasPrice)
+    console.log("prepareTransaction fee: ", fee);
     const transaction = EthereumTransaction.createTransaction({
+      from,
       to,
       amount,
       gasPrice,
       gasUsed,
       message,
       chainId,
-      fee: gasLimit.multipliedBy(gasPrice).toFixed(),
+      fee,
       nonce,
     });
     console.log(transaction);

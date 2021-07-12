@@ -34,6 +34,14 @@ class ETHTransaction extends Transaction {
     fee,
     nonce,
   }) {
+    // console.log("createTransaction ETHTransaction: ", ETHTransaction);
+    console.log("createTransaction from: ", from);
+    console.log("createTransaction to: ", to);
+    console.log("createTransaction amount: ", amount);
+    console.log("createTransaction gasPrice: ", gasPrice);
+    console.log("createTransaction gasUsed: ", gasUsed);
+    console.log("createTransaction nonce: ", nonce);
+    console.log("createTransaction chainId: ", chainId);
     return new ETHTransaction({
       amount,
       gasPrice,

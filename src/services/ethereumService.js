@@ -64,18 +64,17 @@ class EthereumService extends AccountServiceDecorator {
    * @returns {Array.<{address: String || error, code: Number}>} result
    */
   async getReceivingAddress(id) {
-    if (this._address === null) {
+    if (!this._address) {
       try {
         const response = await this._TideWalletCommunicator.AccountReceive(id);
         const address = response["address"];
         this._address = address;
       } catch (error) {
         console.log(error);
-        //TODO
-        return ["error", 0];
+        // ++ Throw exception 0712
       }
     }
-    return [this._address, null];
+    return this._address;
   }
 
   /**
@@ -105,7 +104,7 @@ class EthereumService extends AccountServiceDecorator {
   }
 
   /**
-   * getTransactionFee
+   * getGasPrice
    * @override
    * @param {blockchainId} string
    * @param {decimals} integer
@@ -151,9 +150,9 @@ class EthereumService extends AccountServiceDecorator {
    * @param {String} message
    * @returns {Boolean} result
    */
-  async estimateGasLimit(blockchainId, to, amount = "0", message = "0x") {
+  async estimateGasLimit(id, blockchainId, to, amount = "0", message = "0x") {
     if (!to) return 21000;
-    const from = await this.getReceivingAddress();
+    const from = await this.getReceivingAddress(id);
     if (message == "0x" && this._gasLimit != null) {
       return this._gasLimit;
     } else {
@@ -176,9 +175,10 @@ class EthereumService extends AccountServiceDecorator {
     }
   }
 
-  async getTransactionFee(blockchainId, decimals, to, amount, message) {
+  async getTransactionFee(id, blockchainId, decimals, to, amount, message) {
     const gasPrice = await this.getGasPrice(blockchainId, decimals);
     const gasLimit = await this.estimateGasLimit(
+      id,
       blockchainId,
       to,
       amount,
@@ -251,11 +251,15 @@ class EthereumService extends AccountServiceDecorator {
    * @returns {Number} nonce
    */
   async getNonce(blockchainId, address) {
+    console.log("blockchainId", blockchainId);
+    console.log("address", address);
+
     try {
       const response = await this._TideWalletCommunicator.GetNonce(
         blockchainId,
         address
       );
+      console.log("response", response);
       const nonce = Number(response["nonce"]);
       this._nonce = nonce;
       return nonce;

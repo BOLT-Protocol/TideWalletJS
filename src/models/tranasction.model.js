@@ -36,7 +36,9 @@ class Transaction {
 
   serializeTransaction() {}
 
-  static createTransaction() {}
+  static createTransaction() {
+    console.log('createTransaction Transaction Model')
+  }
 }
 
 const TRANSACTION_STATUS = {

@@ -4,6 +4,7 @@
 class TransactionService {
   constructor(decimal) {
     this._currencyDecimals = decimal;
+    console.log(this._currencyDecimals)
   }
 
   _base;

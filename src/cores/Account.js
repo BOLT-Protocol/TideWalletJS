@@ -248,7 +248,7 @@ class AccountCore {
          * a
          * account_id
          * purpose ++
-         * coin_type__account ++
+         * coin_type_account ++
          * account_index
          * curve_type ++
          * balance --
@@ -264,7 +264,7 @@ class AccountCore {
             id: a["account_id"],
             user_id: this._TideWalletCore.userInfo.id,
             purpose: 84,
-            coin_type__account: 3324,
+            coin_type_account: 3324,
             curve_type: 0,
             chain_id: a["network_id"],
             number_of_used_external_key: a["number_of_used_external_key"] ?? 0,
@@ -417,7 +417,7 @@ class AccountCore {
     const svc = this.getService(accountId);
     const address = await svc.getReceivingAddress(accountId);
     console.log(address)
-    return address[0];
+    return address;
   }
 
   /**
@@ -432,6 +432,7 @@ class AccountCore {
     const svc = this.getService(id);
     const account = this._accounts[id].find((acc) => acc.id === id);
     const fees = await svc.getTransactionFee(
+      account.id,
       account.blockchainId,
       account.decimals,
       to,
@@ -480,6 +481,8 @@ class AccountCore {
    */
   async sendTransaction(id, transaction) {
     const account = this._accounts[id].find((acc) => acc.id === id);
+    console.log("sendTransaction account",account)
+    console.log("sendTransaction transaction",transaction)
     let safeSigner;
     switch (account.accountType) {
       case ACCOUNT.ETH:
@@ -488,20 +491,25 @@ class AccountCore {
           `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'/0/${account.numberOfUsedExternalKey}`
         );
         const svc = this.getService(account.accountId);
-        const address = svc.getReceivingAddress(id);
-        const nonce = await svc.getNonce(account.blockchainId, address);
+        const from = await svc.getReceivingAddress(id);
+        console.log(from);
+        const nonce = await svc.getNonce(account.blockchainId, from);
+        console.log(nonce);
         const txSvc = new ETHTransactionSvc(
           new TransactionBase(account.decimals),
           safeSigner
         );
-        console.log(transaction);
+        console.log(`m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'/0/${account.numberOfUsedExternalKey}`);
+        console.log(safeSigner);
         const signedTx = txSvc.prepareTransaction({
+          from,
           amount: BigNumber(transaction.amount),
           to: transaction.to,
           gasPrice: BigNumber(transaction.feePerUnit),
           gasUsed: BigNumber(transaction.feeUnit),
           message: transaction.message,
           nonce,
+          chainId: account.chainId
         });
 
         const [success, tx] = await svc.publishTransaction(

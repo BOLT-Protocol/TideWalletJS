@@ -66,11 +66,10 @@ class BitcoinService extends AccountServiceDecorator {
       const response = await this._TideWalletCommunicator.AccountReceive(accountcurrencyId);
       const address = response["address"];
       this._numberOfUsedExternalKey = response['key_index'];
-      return [address, this._numberOfUsedExternalKey];
+      return address;
     } catch (error) {
-      console.log(error)
-      //TODO
-      return ["error", 0];
+      console.log(error);
+      // ++ Throw exception 0712
     }
   }
 

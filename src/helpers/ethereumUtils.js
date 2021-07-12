@@ -1,4 +1,5 @@
 const rlp = require("rlp");
+const Cryptor = require("./Cryptor");
 
 /**
  * Checks if the given string is an address
@@ -33,7 +34,8 @@ var isAddress = function (address) {
 var isChecksumAddress = function (address) {
   // Check each case
   address = address.replace("0x", "");
-  var addressHash = sha3(address.toLowerCase());
+  // ++ TODO  # Treat the hex address as ascii/utf-8 for keccak256 hashing
+  var addressHash = Cryptor.keccak256round(address.toLowerCase(), 1);
   for (var i = 0; i < 40; i++) {
     // the nth letter should be uppercase if the nth digit of casemap is 1
     if (
@@ -49,7 +51,7 @@ var isChecksumAddress = function (address) {
 };
 
 function verifyEthereumAddress(address) {
-  if (address.contains(":")) {
+  if (address.includes(":")) {
     address = address.split(":")[1];
   }
 

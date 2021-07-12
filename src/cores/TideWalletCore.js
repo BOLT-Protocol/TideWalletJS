@@ -258,6 +258,7 @@ class TideWalletCore {
     const safeSigner = new SafeSigner((data) => {
       return this.signBuffer({ keyPath, data });
     });
+    return safeSigner;
   }
 
   //////////////////////////////////////////////////////////////////////

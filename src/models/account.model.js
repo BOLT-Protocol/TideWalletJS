@@ -10,11 +10,11 @@ class Account {
     number_of_used_external_key,
 number_of_used_internal_key,
     purpose,
-    coin_type__account,
+    coin_type_account,
     account_index,
     curve_type,
     blockchain,
-    coin_type__blockchain,
+    coin_type_blockchain,
     publish,
     chain_id,
     name,
@@ -37,11 +37,11 @@ number_of_used_internal_key,
     this.numberOfUsedExternalKey=number_of_used_external_key;
     this.numberOfUsedInternalKey=number_of_used_internal_key;
     this.purpose = purpose;
-    this.accountCoinType = coin_type__account;
+    this.accountCoinType = coin_type_account;
     this.accountIndex = account_index;
     this.curve_type = curve_type;
     this.blockchain = blockchain;
-    this.blockchainCoinType = coin_type__blockchain;
+    this.blockchainCoinType = coin_type_blockchain;
     this.publish = publish;
     this.chainId = chain_id;
     this.name = name;
