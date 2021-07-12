@@ -190,11 +190,11 @@ class BitcoinTransaction extends Transaction {
     this._segwitType = values.segwitType;
     this._inputs = [];
     this._outputs = [];
-    this.setVersion(values.publish ? 1 : 2);
+    this.setVersion(values.isMainNet ? 1 : 2);
     this.setlockTime(values.lockTime ? values.lockTime : 0);
   }
 
-  static prepareTransaction({ publish, segwitType,
+  static prepareTransaction({ isMainNet, segwitType,
     amount, fee, note, lockTime }) {
     return new BitcoinTransaction({
       segwitType: (segwitType ? segwitType : SegwitType.nativeSegWit),
@@ -202,7 +202,7 @@ class BitcoinTransaction extends Transaction {
       fee,
       note,
       lockTime,
-      publish,
+      isMainNet,
       lockTime,
     })
   }
@@ -496,4 +496,9 @@ class BitcoinTransaction extends Transaction {
   }
 }
 
-module.exports = BitcoinTransaction;
+module.exports = {
+  BitcoinTransaction,
+  BitcoinTransactionType,
+  SegwitType,
+  HashType,
+};
