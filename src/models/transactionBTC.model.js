@@ -495,3 +495,5 @@ class BitcoinTransaction extends Transaction {
     return Cryptor.sha256round(serializeTransaction);
   }
 }
+
+module.exports = BitcoinTransaction;
