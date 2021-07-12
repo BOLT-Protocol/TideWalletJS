@@ -395,27 +395,27 @@ class AccountCore {
   }
 
   /**
-   * Get transaction list by accountcurrencyId
+   * Get transaction list by accountId
    * @method getTransactions
-   * @param {string} accountcurrencyId The accountcurrencyId
+   * @param {string} accountId The accountId
    * @returns {Array} The transaction list
    */
-  async getTransactions(accountcurrencyId) {
+  async getTransactions(accountId) {
     const txs = await this._DBOperator.transactionDao.findAllTransactionsById(
-      accountcurrencyId
+      accountId
     );
     return txs;
   }
 
   /**
-   * Get receive address by accountcurrencyId
+   * Get receive address by accountId
    * @method getReceiveAddress
    * @param {string} accountId The accountId
    * @returns {string} The address
    */
-  async getReceiveAddress(accountcurrencyId) {
-    const svc = this.getService(accountcurrencyId);
-    const address = await svc.getReceivingAddress(accountcurrencyId);
+  async getReceiveAddress(accountId) {
+    const svc = this.getService(accountId);
+    const address = await svc.getReceivingAddress(accountId);
     console.log(address)
     return address[0];
   }

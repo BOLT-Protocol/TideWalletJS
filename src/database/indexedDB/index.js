@@ -7,7 +7,6 @@ const OBJ_UTXO = "utxo";
 const OBJ_USER = "user";
 const OBJ_CURRENCY = "currency";
 const OBJ_NETWORK = "network";
-const OBJ_ACCOUNT_CURRENCY = "accountcurrency";
 const OBJ_EXCHANGE_RATE = "exchange_rate";
 
 const OBJ_PREF = "pref";
@@ -36,7 +35,6 @@ class IndexedDB {
   _currencyDao = null;
   _networkDao = null;
   _txDao = null;
-  _accountcurrencyDao = null;
   _utxoDao = null;
   _exchangeRateDao = null;
   _prefDao = null;
@@ -83,12 +81,15 @@ class IndexedDB {
       });
 
       let accountIndex = accounts.createIndex("accountId", "accountId");
-      let blockchainIndex = accounts.createIndex("blockchainId", "blockchainId");
+      let blockchainIndex = accounts.createIndex(
+        "blockchainId",
+        "blockchainId"
+      );
 
       const txs = this.db.createObjectStore(OBJ_TX, {
-        keyPath: "transactionId",
+        keyPath: "id",
       });
-      let txIndex = txs.createIndex("accountcurrencyId", "accountcurrencyId");
+      let txIndex = txs.createIndex("accountId", "accountId");
 
       const currency = this.db.createObjectStore(OBJ_CURRENCY, {
         keyPath: "currencyId",
@@ -106,6 +107,7 @@ class IndexedDB {
       const utxo = this.db.createObjectStore(OBJ_UTXO, {
         keyPath: "utxoId",
       });
+      let utxoIndex = utxo.createIndex("accountId", "accountId");
 
       const rate = this.db.createObjectStore(OBJ_EXCHANGE_RATE, {
         keyPath: "exchangeRateId",
@@ -530,29 +532,30 @@ class NetworkDao extends DAO {
 class TransactionDao extends DAO {
   /**
    * @override
+   * @param {string} accountId ,this is the id of the account, not the accountId of the account
    */
   entity({
-    accountcurrencyId,
+    accountId,
     txid,
+    status,
+    amount,
+    direction,
     confirmations,
+    timestamp,
     source_addresses,
     destination_addresses,
+    fee,
     gas_price,
     gas_used,
     note,
-    fee,
-    status,
-    timestamp,
-    direction,
-    amount,
   }) {
     return {
-      transactionId: accountcurrencyId + txid,
-      accountcurrencyId: accountcurrencyId,
-      txId: txid,
-      confirmation: confirmations,
-      sourceAddress: source_addresses,
-      destinctionAddress: destination_addresses,
+      id: accountId + txid,
+      accountId,
+      txid,
+      confirmations,
+      sourceAddresses: source_addresses,
+      destinationAddresses: destination_addresses,
       gasPrice: gas_price,
       gasUsed: gas_used,
       note,
@@ -564,8 +567,8 @@ class TransactionDao extends DAO {
     };
   }
 
-  findAllTransactionsById(acId) {
-    return this._readAll(acId, "accountcurrencyId");
+  findAllTransactionsById(accountId) {
+    return this._readAll(accountId, "accountId");
   }
 
   insertTransaction(entity) {
@@ -618,7 +621,7 @@ class UtxoDao extends DAO {
     const DEFAULT_SEQUENCE = 0xffffffff; // temp
     return {
       utxoId: `${txid}-${vout}`,
-      accountcurrencyId: accountId,
+      accountId,
       txId: txid,
       vout,
       type,

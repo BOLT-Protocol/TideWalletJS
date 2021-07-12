@@ -184,7 +184,7 @@ class AccountServiceBase extends AccountService {
       const txs = res.map((t) =>
         this._DBOperator.transactionDao.entity({
           ...t,
-          accountcurrencyId: account.id,
+          accountId: account.id,
         })
       );
 
