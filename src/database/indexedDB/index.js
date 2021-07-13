@@ -622,7 +622,7 @@ class UtxoDao extends DAO {
     return {
       utxoId: `${txid}-${vout}`,
       accountId,
-      txId: txid,
+      txid,
       vout,
       type,
       amount,

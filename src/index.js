@@ -124,7 +124,7 @@ class TideWallet {
 
   async getTransactionDetail(id, transactionId) {
     const txs = await this.account.getTransactions(id);
-    const tx = txs.find((r) => r.txId === transactionId);
+    const tx = txs.find((r) => r.txid === transactionId);
     return tx;
   }
 

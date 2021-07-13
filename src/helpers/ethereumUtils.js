@@ -1,3 +1,4 @@
+const { default: BigNumber } = require("bignumber.js");
 const rlp = require("rlp");
 const Cryptor = require("./Cryptor");
 
@@ -73,8 +74,8 @@ function encodeToRlp(transaction) {
   ].map((v) => `0x${v}`);
   console.log(list);
 
-  if (transaction.to) {
-    list.push(transaction.to);
+  if (transaction.destinationAddresses) {
+    list.push(transaction.destinationAddresses);
   } else {
     list.push("");
   }
@@ -92,8 +93,12 @@ function encodeToRlp(transaction) {
 
   if (transaction.signature) {
     list.push(transaction.signature.v);
-    list.push(transaction.signature.r.toNumber());
-    list.push(transaction.signature.s.toNumber());
+    if (BigNumber.isBigNumber(transaction.signature.r))
+      list.push(transaction.signature.r.toNumber());
+    else list.push(transaction.signature.r);
+    if (BigNumber.isBigNumber(transaction.signature.s))
+      list.push(transaction.signature.s.toNumber());
+    else list.push(transaction.signature.s);
   }
   console.log(list);
   console.log("rlp", rlp.encode(list));

@@ -484,11 +484,26 @@ class AccountCore {
         const txSvc = new ETHTransactionSvc(
           new TransactionBase(this._TideWalletCore, account)
         );
-        transaction.amount = svc.toSmallestUint(transaction.amount, account.decimals);
-        transaction.gasPrice = svc.toSmallestUint(transaction.feePerUnit, account.decimals);
+        console.log(transaction.amount);
+        console.log(svc.toSmallestUint(
+          transaction.amount,
+          account.decimals
+        ));
+        console.log(svc.toSmallestUint(
+          transaction.feePerUnit,
+          account.decimals
+        ));
 
-        const signedTx = txSvc.prepareTransaction({
+        const signedTx = await txSvc.prepareTransaction({
           ...transaction,
+          amount: svc.toSmallestUint(
+            transaction.amount,
+            account.decimals
+          ),
+          gasPrice: svc.toSmallestUint(
+            transaction.feePerUnit,
+            account.decimals
+          ),
           from,
           nonce,
           chainId: account.chainId,
@@ -503,7 +518,13 @@ class AccountCore {
         console.log(tx); //-- debug info
 
         tx.amount = svc.toCurrencyUint(transaction.amount, account.decimals);
-        tx.gasPrice = svc.toCurrencyUint(transaction.gasPrice, account.decimals);
+        tx.gasPrice = svc.toCurrencyUint(
+          transaction.gasPrice,
+          account.decimals
+        );
+        if (success) {
+          // ++ insert to Db and infrom fronted 0713 TZUHAN
+        }
         console.log(tx); //-- debug info
         return success;
       default:

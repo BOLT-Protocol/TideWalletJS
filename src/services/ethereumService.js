@@ -206,13 +206,15 @@ class EthereumService extends AccountServiceDecorator {
     try {
       const body = {
         hex:
-          "0x" + Buffer.from(transaction.serializeTransaction).toString("hex"),
+          "0x" +
+          Buffer.from(transaction.serializeTransaction()).toString("hex"),
       };
+      console.log("publishTransaction", body);
       const response = await this._TideWalletCommunicator.PublishTransaction(
         blockchainId,
         body
       );
-      transaction.txId = response["txid"];
+      transaction.txid = response["txid"];
       transaction.timestamp = Date.now();
       transaction.confirmations = 0;
       return [true, transaction];

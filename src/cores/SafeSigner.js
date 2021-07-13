@@ -3,9 +3,8 @@ class SafeSigner {
     this.signFunction = signFunction;
   }
 
-  sign(data) {
-    console.log(data)
-    return this.signFunction(data);
+  async sign(data) {
+    return await this.signFunction(data);
   }
 }
 

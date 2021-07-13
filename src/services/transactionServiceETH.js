@@ -22,7 +22,7 @@ class TransactionServiceETH extends TransactionDecorator {
     console.log(this._accountDecimals);
   }
 
-  _signTransaction(transaction) {
+  async _signTransaction(transaction) {
     console.log(transaction);
     const payload = transaction.serializeTransaction();
     console.log(payload);
@@ -36,21 +36,21 @@ class TransactionServiceETH extends TransactionDecorator {
     console.log(rawDataHash);
 
     this.signer = this.service.safeSigner(0, 0);
-    console.log(this.signer);
 
-    const signature = this.signer.sign(rawDataHash);
+    let signature = await this.signer.sign(rawDataHash);
     console.log("ETH signature: ", signature);
 
     const chainIdV =
       transaction.chainId != null
         ? signature.v - 27 + (transaction.chainId * 2 + 35)
         : signature.v;
-    signature = Signature({
+    console.log(chainIdV);
+    signature = new Signature({
       v: chainIdV,
       r: signature.r,
       s: signature.s,
     });
-    console.log(chainIdV);
+    console.log(signature);
 
     transaction.signature = signature;
     return transaction;

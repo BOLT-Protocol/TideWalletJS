@@ -7,7 +7,7 @@
  * @property {number} confirmations         The confirmations number
  * @property {string} address               The address is to or from address depending on direction
  * @property {BigNumber} fee                The fee
- * @property {string} txId                  The txId from API
+ * @property {string} txid                  The txid from API
  * @property {string} message               The transaction message
  * @property {string} sourceAddresses       The source addresses
  * @property {string} destinationAddresses  The destination addresses
@@ -23,7 +23,7 @@ class Transaction {
   confirmations;
   address;
   fee;
-  txId;
+  txid;
   message;
   sourceAddresses;
   destinationAddresses;
