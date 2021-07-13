@@ -1,4 +1,3 @@
-// import '../database/entity/utxo.dart';
 const BigNumber = require('bignumber.js');
 
 const Converter = require('../helpers/converter');
@@ -118,14 +117,14 @@ class UnspentTxOut {
       vout: utxo.vout,
       type: BitcoinTransactionType.values.find((type) => type.value == utxo.type),
       amount: Converter.toBtc(new BigNumber(utxo.amount)),
-      changeIndex = utxo.changeIndex,
-      keyIndex = utxo.keyIndex,
-      data = Buffer.from(utxo.script),
-      timestamp = utxo.timestamp,
-      locked = utxo.locked,
-      address = utxo.address,
-      decimals = utxo.decimals,
-      sequence = utxo.sequence,
+      changeIndex: utxo.changeIndex,
+      keyIndex: utxo.keyIndex,
+      data: Buffer.from(utxo.script),
+      timestamp: utxo.timestamp,
+      locked: utxo.locked,
+      address: utxo.address,
+      decimals: utxo.decimals,
+      sequence: utxo.sequence,
     });
   }
 }
