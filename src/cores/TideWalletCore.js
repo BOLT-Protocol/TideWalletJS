@@ -254,10 +254,12 @@ class TideWalletCore {
     return extPK;
   }
 
-  getSafeSigner(keyPath) {
-    const safeSigner = new SafeSigner((data) => {
+  getSafeSigner(keyRoot = "m/84'/3324'/0'") {
+    const safeSigner = new SafeSigner(({ chainIndex = 0, keyIndex = 0, data }) => {
+      const keyPath = `${keyRoot}/${chainIndex}/${keyIndex}`;
       return this.signBuffer({ keyPath, data });
     });
+    return safeSigner;
   }
 
   //////////////////////////////////////////////////////////////////////
@@ -287,6 +289,12 @@ class TideWalletCore {
     const seed = await this._getSeedByKeyStore();
     const privateKey = PaperWallet.getPriKey(Buffer.from(seed, 'hex'), chainIndex, keyIndex, options);
     return Signer._sign(data, Buffer.from(privateKey, 'hex'));
+  }
+
+  async getPubKey({ keyPath }) {
+    const {chainIndex, keyIndex, options} = Cryptor.pathParse(keyPath);
+    const seed = await this._getSeedByKeyStore();
+    return PaperWallet.getPubKey(Buffer.from(seed, 'hex'), chainIndex, keyIndex, options);
   }
 
   async signData({ keyPath, jsonData }) {

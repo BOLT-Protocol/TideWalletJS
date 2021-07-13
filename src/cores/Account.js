@@ -467,7 +467,7 @@ class AccountCore {
     switch (accountCurrency.accountType) {
       case ACCOUNT.ETH:
       case ACCOUNT.CFC:
-        safeSigner = this._TideWalletCore.getSafeSigner("m/84'/3324'/0'/0/0"); // ++ get path from accountDao
+        safeSigner = this._TideWalletCore.getSafeSigner("m/84'/3324'/0'"); // ++ get path from accountDao
         const svc = this.getService(accountCurrency.accountId);
         const address = svc.getReceivingAddress(
           accountCurrency.accountcurrencyId
