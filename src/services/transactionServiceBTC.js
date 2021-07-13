@@ -8,6 +8,7 @@ const { Signature } = require("../models/tranasction.model");
 const UnspentTxOut = require('../models/utxo.model');
 const BitcoinUtils = require("../helpers/bitcoinUtils");
 const rlp = require('../helpers/rlp');
+const Signer = require('../cores/Signer');
 
 class TransactionServiceBTC extends TransactionDecorator {
   service = null;
@@ -59,54 +60,32 @@ class TransactionServiceBTC extends TransactionDecorator {
    * @param {BitcoinTransaction} transaction 
    * @returns 
    */
-  // _signTransaction(transaction) {
-  //   console.log(`_unsignTransaction: ${transaction.serializeTransaction.toString('hex')}`);
+  _signTransaction(transaction) {
+    console.log(`_unsignTransaction: ${transaction.serializeTransaction.toString('hex')}`);
 
-  //   for (let index = 0; index < transaction.inputs.length; index++) {
-  //     const rawData = transaction.getRawDataToSign(index);
-  //     const rawDataHash = Cryptor.sha256round(rawData);
-  //     const utxo = transaction.inputs[index].utxo;
-  //     MsgSignature sig = Signer().sign(rawDataHash, utxo.privatekey);
-  //     Uint8List buffer = new Uint8List(64);
-  //     Log.btc('utxo txId: ${utxo.txId}');
-  //     Log.btc('utxo.amount: ${utxo.amount}');
+    for (let index = 0; index < transaction.inputs.length; index++) {
+      const rawData = transaction.getRawDataToSign(index);
+      const rawDataHash = Cryptor.sha256round(rawData);
+      const utxo = transaction.inputs[index].utxo;
+      const sig = this.signer.sign({
+        data: rawDataHash,
+        changeIndex: utxo.changeIndex,
+        keyIndex: utxo.keyIndex
+      });
+      const buffer = Buffer.alloc(64, 0);
+      console.log(`utxo txId: ${utxo.txId}`);
+      console.log(`utxo.amount: ${utxo.amount.toFixed()}`);
 
-  //     buffer.setRange(0, 32, encodeBigInt(sig.r));
-  //     buffer.setRange(32, 64, encodeBigInt(sig.s));
-  //     Uint8List signature = Signer()
-  //         .encodeSignature(buffer, transaction.inputs[index].hashType.value);
-  //     transaction.inputs[index].addSignature(signature);
-  //   }
-  //   Uint8List signedTransaction = transaction.serializeTransaction;
-  //   Log.btc('_signTransaction: $signedTransaction');
-  //   Log.btc('_signTransaction hex: ${hex.encode(signedTransaction)}');
-  //   return transaction;
-  //   // const payload = encodeToRlp(transaction);
-  //   // console.log(payload);
-
-  //   // const rawDataHash = Buffer.from(
-  //   //   Cryptor.keccak256round(payload.toString("hex"), 1),
-  //   //   "hex"
-  //   // );
-  //   // console.log(rawDataHash);
-
-  //   // const signature = this.signer.sign({ data: rawDataHash });
-  //   // console.log("ETH signature: ", signature);
-
-  //   // const chainIdV =
-  //   //   transaction.chainId != null
-  //   //     ? signature.v - 27 + (transaction.chainId * 2 + 35)
-  //   //     : signature.v;
-  //   // signature = Signature({
-  //   //   v: chainIdV,
-  //   //   r: signature.r,
-  //   //   s: signature.s,
-  //   // });
-  //   // console.log(chainIdV);
-
-  //   // transaction.signature = signature;
-  //   // return transaction;
-  // }
+      buffer.setRange(0, 32, encodeBigInt(sig.r));
+      buffer.setRange(32, 64, encodeBigInt(sig.s));
+      const signature = Signer
+          .encodeSignature(buffer, transaction.inputs[index].hashType.value);
+      transaction.inputs[index].addSignature(signature);
+    }
+    const signedTransaction = transaction.serializeTransaction;
+    console.log(`_signTransaction: ${signedTransaction.toString('hex')}`);
+    return transaction;
+  }
 
   /**
    * @override
@@ -340,9 +319,6 @@ class TransactionServiceBTC extends TransactionDecorator {
     fee = new BigNumber(vsize).multipliedBy(feePerByte);
     return fee; // ++ why??
   }
-
-  
-
 }
 
 module.exports = TransactionServiceBTC;
