@@ -65,31 +65,38 @@ function verifyEthereumAddress(address) {
  * @returns {Buffer} rlp
  */
 function encodeToRlp(transaction) {
+  console.log(transaction);
   const list = [
     Buffer.from(transaction.nonce.toString(16)),
     transaction.gasPrice.toString(16),
     transaction.gasUsed.toString(16),
   ].map((v) => `0x${v}`);
+  console.log(list);
 
   if (transaction.to) {
     list.push(transaction.to);
   } else {
     list.push("");
   }
+  console.log(list);
 
   list.push(`0x${transaction.amount.toString(16)}`);
+  console.log(list);
 
   if (transaction.message) {
     list.push(transaction.message);
   } else {
     list.push("");
   }
+  console.log(list);
 
   if (transaction.signature) {
     list.push(transaction.signature.v);
     list.push(transaction.signature.r.toNumber());
     list.push(transaction.signature.s.toNumber());
   }
+  console.log(list);
+  console.log("rlp", rlp.encode(list));
 
   return rlp.encode(list);
 }

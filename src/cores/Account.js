@@ -416,7 +416,7 @@ class AccountCore {
   async getReceiveAddress(accountId) {
     const svc = this.getService(accountId);
     const address = await svc.getReceivingAddress(accountId);
-    console.log(address)
+    console.log(address);
     return address;
   }
 
@@ -446,10 +446,7 @@ class AccountCore {
   async verifyAddress(id, address) {
     const account = this._accounts[id].find((acc) => acc.id === id);
     const txSvc = new ETHTransactionSvc(
-      new TransactionBase(account.decimals),
-      this._TideWalletCore.getSafeSigner(
-        `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'/0/${account.numberOfUsedExternalKey}`
-      )
+      new TransactionBase(this._TideWalletCore, account)
     );
     // ++ TODO pulish 當初理解的意義不同, 當初理解成publish = true 就是mainnet, 反之為 testnet. publish 實際意義為該account 要不要顯示給用戶看. 會影響地址的計算
     // 對 ETH 沒差, 對Bitcoin有差
@@ -460,10 +457,7 @@ class AccountCore {
   async verifyAmount(id, amount, fee) {
     const account = this._accounts[id].find((acc) => acc.id === id);
     const txSvc = new ETHTransactionSvc(
-      new TransactionBase(account.decimals),
-      this._TideWalletCore.getSafeSigner(
-        `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'/0/${account.numberOfUsedExternalKey}`
-      )
+      new TransactionBase(this._TideWalletCore, account)
     );
     return txSvc.verifyAmount(account.balance, amount, fee);
   }
@@ -481,43 +475,30 @@ class AccountCore {
    */
   async sendTransaction(id, transaction) {
     const account = this._accounts[id].find((acc) => acc.id === id);
-    console.log("sendTransaction account",account)
-    console.log("sendTransaction transaction",transaction)
+    console.log("sendTransaction account", account);
+    console.log("sendTransaction transaction", transaction);
     let safeSigner;
     switch (account.accountType) {
       case ACCOUNT.ETH:
       case ACCOUNT.CFC:
-        safeSigner = this._TideWalletCore.getSafeSigner(
-          `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'/0/${account.numberOfUsedExternalKey}`
-        );
         const svc = this.getService(account.accountId);
         const from = await svc.getReceivingAddress(id);
-        console.log(from);
         const nonce = await svc.getNonce(account.blockchainId, from);
-        console.log(nonce);
         const txSvc = new ETHTransactionSvc(
-          new TransactionBase(account.decimals),
-          safeSigner
+          new TransactionBase(this._TideWalletCore, account)
         );
-        console.log(`m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'/0/${account.numberOfUsedExternalKey}`);
-        console.log(safeSigner);
         const signedTx = txSvc.prepareTransaction({
+          ...transaction,
           from,
-          amount: BigNumber(transaction.amount),
-          to: transaction.to,
-          gasPrice: BigNumber(transaction.feePerUnit),
-          gasUsed: BigNumber(transaction.feeUnit),
-          message: transaction.message,
           nonce,
-          chainId: account.chainId
+          chainId: account.chainId,
         });
-
+        console.log(signedTx); //-- debug info
         const [success, tx] = await svc.publishTransaction(
           account.blockchainId,
           signedTx
         );
 
-        console.log(signedTx); //-- debug info
         console.log(tx); //-- debug info
         return success;
       default:

@@ -14,27 +14,25 @@ class TransactionServiceETH extends TransactionDecorator {
   service = null;
   _base = ACCOUNT.ETH;
 
-  constructor(service, signer) {
+  constructor(service) {
     super();
-    console.log("TransactionServiceETH")
-
+    console.log("TransactionServiceETH");
     this.service = service;
-    this.signer = signer;
-    this._currencyDecimals = this.service.currencyDecimals;
-    console.log(this._currencyDecimals)
+    this._accountDecimals = this.service.accountDecimals;
+    console.log(this._accountDecimals);
   }
 
   _signTransaction(transaction) {
+    console.log(transaction);
     const payload = encodeToRlp(transaction);
     console.log(payload);
 
-    const rawDataHash = Buffer.from(
-      Cryptor.keccak256round(payload.toString("hex"), 1),
-      "hex"
-    );
+    const rawDataHash = Cryptor.keccak256round(payload.toString("hex"), 1);
     console.log(rawDataHash);
 
-    const signature = this.signer.sign({ data: rawDataHash });
+    this.signer = this.service.safeSigner(0, 0);
+
+    const signature = this.signer.sign({ data: "0x" + rawDataHash });
     console.log("ETH signature: ", signature);
 
     const chainIdV =
@@ -86,10 +84,10 @@ class TransactionServiceETH extends TransactionDecorator {
    * @method prepareTransaction
    * @param {object} param
    * @param {string} param.to
-   * @param {BigNumber} param.amount
-   * @param {BigNumber} param.gasPrice
-   * @param {BigNumber} param.gasUsed
-   * @param {stringm} param.message
+   * @param {string} param.amount
+   * @param {string} param.gasPrice
+   * @param {string} param.gasUsed
+   * @param {string} param.message
    * @param {number} param.chainId
    * @param {number} param.nonce
    * @returns {ETHTransaction} transaction
@@ -98,37 +96,25 @@ class TransactionServiceETH extends TransactionDecorator {
     from,
     to,
     amount,
-    gasPrice,
-    gasUsed,
+    feePerUnit,
+    feeUnit,
+    fee,
     message,
     chainId,
     nonce,
   }) {
-    console.log("prepareTransaction from: ", from);
-    console.log("prepareTransaction to: ", to);
-    console.log("prepareTransaction amount: ", amount);
-    console.log("prepareTransaction gasPrice: ", gasPrice);
-    console.log("prepareTransaction gasUsed: ", gasUsed);
-    console.log("prepareTransaction nonce: ", nonce);
-    console.log("prepareTransaction chainId: ", chainId);
-    console.log(EthereumTransaction.createTransaction) 
-
-    // =====================================
-    // const fee = gasLimit.multipliedBy(gasPrice)
-    console.log("prepareTransaction fee: ", fee);
     const transaction = EthereumTransaction.createTransaction({
       from,
       to,
       amount,
-      gasPrice,
-      gasUsed,
+      gasPrice: feePerUnit,
+      gasUsed: feeUnit,
+      fee,
       message,
       chainId,
-      fee,
       nonce,
     });
-    console.log(transaction);
-    return this._signTransaction(transaction, privKey);
+    return this._signTransaction(transaction);
   }
 }
 

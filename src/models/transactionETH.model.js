@@ -29,32 +29,23 @@ class ETHTransaction extends Transaction {
     amount,
     gasPrice,
     gasUsed,
+    fee,
     message,
     chainId,
-    fee,
     nonce,
   }) {
-    // console.log("createTransaction ETHTransaction: ", ETHTransaction);
-    console.log("createTransaction from: ", from);
-    console.log("createTransaction to: ", to);
-    console.log("createTransaction amount: ", amount);
-    console.log("createTransaction gasPrice: ", gasPrice);
-    console.log("createTransaction gasUsed: ", gasUsed);
-    console.log("createTransaction nonce: ", nonce);
-    console.log("createTransaction chainId: ", chainId);
     return new ETHTransaction({
       amount,
       gasPrice,
       gasUsed,
+      fee,
       message,
       chainId,
       direction: TRANSACTION_DIRECTION.sent,
       status: TRANSACTION_STATUS.pending,
       destinationAddresses: to,
       sourceAddresses: from,
-      fee,
       nonce,
-      to,
       signature: new Signature({
         v: chainId,
         r: BigNumber(0),
