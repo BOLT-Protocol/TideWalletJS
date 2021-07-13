@@ -4,6 +4,7 @@ class SafeSigner {
   }
 
   sign(data) {
+    console.log(data)
     return this.signFunction(data);
   }
 }

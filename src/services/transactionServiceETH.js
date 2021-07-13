@@ -24,15 +24,21 @@ class TransactionServiceETH extends TransactionDecorator {
 
   _signTransaction(transaction) {
     console.log(transaction);
-    const payload = encodeToRlp(transaction);
+    const payload = transaction.serializeTransaction();
     console.log(payload);
+    console.log(payload.toString("hex"));
 
-    const rawDataHash = Cryptor.keccak256round(payload.toString("hex"), 1);
+    const rawDataHash = Buffer.from(
+      Cryptor.keccak256round(payload.toString("hex"), 1),
+      "hex"
+    );
+    console.log(Cryptor.keccak256round(payload.toString("hex"), 1));
     console.log(rawDataHash);
 
     this.signer = this.service.safeSigner(0, 0);
+    console.log(this.signer);
 
-    const signature = this.signer.sign({ data: "0x" + rawDataHash });
+    const signature = this.signer.sign(rawDataHash);
     console.log("ETH signature: ", signature);
 
     const chainIdV =
@@ -96,7 +102,7 @@ class TransactionServiceETH extends TransactionDecorator {
     from,
     to,
     amount,
-    feePerUnit,
+    gasPrice,
     feeUnit,
     fee,
     message,
@@ -107,7 +113,7 @@ class TransactionServiceETH extends TransactionDecorator {
       from,
       to,
       amount,
-      gasPrice: feePerUnit,
+      gasPrice,
       gasUsed: feeUnit,
       fee,
       message,

@@ -34,7 +34,6 @@ class TransactionService {
     let signer = this._TideWalletCore.getSafeSigner(
       `${this._accountPath}/${changeIndex}/${keyIndex}`
     )
-    console.log(signer)
     return signer;
   }
 

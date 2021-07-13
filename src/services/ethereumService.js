@@ -103,6 +103,14 @@ class EthereumService extends AccountServiceDecorator {
     return gwei;
   }
 
+  toCurrencyUint(amount, decimals) {
+    return this.service.toCurrencyUint(amount, decimals);
+  }
+
+  toSmallestUint(amount, decimals) {
+    return this.service.toSmallestUint(amount, decimals);
+  }
+
   /**
    * getGasPrice
    * @override

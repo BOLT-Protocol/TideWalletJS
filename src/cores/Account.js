@@ -475,9 +475,6 @@ class AccountCore {
    */
   async sendTransaction(id, transaction) {
     const account = this._accounts[id].find((acc) => acc.id === id);
-    console.log("sendTransaction account", account);
-    console.log("sendTransaction transaction", transaction);
-    let safeSigner;
     switch (account.accountType) {
       case ACCOUNT.ETH:
       case ACCOUNT.CFC:
@@ -487,6 +484,9 @@ class AccountCore {
         const txSvc = new ETHTransactionSvc(
           new TransactionBase(this._TideWalletCore, account)
         );
+        transaction.amount = svc.toSmallestUint(transaction.amount, account.decimals);
+        transaction.gasPrice = svc.toSmallestUint(transaction.feePerUnit, account.decimals);
+
         const signedTx = txSvc.prepareTransaction({
           ...transaction,
           from,
@@ -494,11 +494,16 @@ class AccountCore {
           chainId: account.chainId,
         });
         console.log(signedTx); //-- debug info
+
         const [success, tx] = await svc.publishTransaction(
           account.blockchainId,
           signedTx
         );
 
+        console.log(tx); //-- debug info
+
+        tx.amount = svc.toCurrencyUint(transaction.amount, account.decimals);
+        tx.gasPrice = svc.toCurrencyUint(transaction.gasPrice, account.decimals);
         console.log(tx); //-- debug info
         return success;
       default:
