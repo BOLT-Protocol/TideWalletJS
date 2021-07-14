@@ -269,6 +269,7 @@ class AccountCore {
             chain_id: a["network_id"],
             number_of_used_external_key: a["number_of_used_external_key"] ?? 0,
             number_of_used_internal_key: a["number_of_used_internal_key"] ?? 0,
+            last_sync_time: Date.now(),
           })
         );
         accounts = enties;
