@@ -27,7 +27,7 @@ class UnspentTxOut {
   get hash() { return data };
   get signature() { return data };
   get amountInSmallestUint() {
-    Converter.toSatoshi(this.amount);
+    return Converter.toSatoshi(this.amount);
   }
 
   constructor({
@@ -115,7 +115,7 @@ class UnspentTxOut {
       accountcurrencyId: utxo.accountcurrencyId,
       txId: utxo.txId,
       vout: utxo.vout,
-      type: BitcoinTransactionType.values.find((type) => type.value == utxo.type),
+      type: Object.values(BitcoinTransactionType).find((type) => type.value == utxo.type),
       amount: Converter.toBtc(new BigNumber(utxo.amount)),
       changeIndex: utxo.changeIndex,
       keyIndex: utxo.keyIndex,

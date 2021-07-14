@@ -12,7 +12,7 @@ const randomHex = (n) => {
 };
 
 function isUint(value, bit) {
-  return (value >= 0 && value <= pow(2, bit) - 1);
+  return (value >= 0 && value <= Math.pow(2, bit) - 1);
 }
 
 /**

@@ -49,7 +49,7 @@ var isChecksumAddress = function (address) {
 };
 
 function verifyEthereumAddress(address) {
-  if (address.contains(":")) {
+  if (address.includes(":")) {
     address = address.split(":")[1];
   }
 
