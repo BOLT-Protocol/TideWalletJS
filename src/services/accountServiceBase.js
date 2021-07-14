@@ -54,7 +54,7 @@ class AccountServiceBase extends AccountService {
       account.numberOfUsedInternalKey = res["number_of_used_internal_key"] ?? 0;
       account.lastSyncTime = timestamp;
 
-      let tokens = acc["tokens"];
+      let tokens = res["tokens"];
       const currs = await this._DBOperator.currencyDao.findAllCurrencies();
       const newTokens = [];
 
