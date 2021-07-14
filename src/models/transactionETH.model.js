@@ -9,14 +9,15 @@ const BigNumber = require('bignumber.js');
 
 class ETHTransaction extends Transaction {
   nonce;
-  to;
   signature;
+  chainId
 
   constructor(values) {
     super(values);
+    console.log("ETHTRANSACTION", values)
     this.nonce = values.nonce;
-    this.to = values.to;
     this.signature = values.signature;
+    this.chainId = values.chainId;
   }
 
   serializeTransaction() {
@@ -34,6 +35,10 @@ class ETHTransaction extends Transaction {
     chainId,
     nonce,
   }) {
+    console.log("createTransaction", amount)
+    console.log("createTransaction", gasPrice)
+    console.log("createTransaction", gasUsed)
+    console.log("createTransaction", fee)
     return new ETHTransaction({
       amount: BigNumber(amount),
       gasPrice: BigNumber(gasPrice),

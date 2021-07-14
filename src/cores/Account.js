@@ -485,26 +485,20 @@ class AccountCore {
         const txSvc = new ETHTransactionSvc(
           new TransactionBase(this._TideWalletCore, account)
         );
-        console.log(transaction.amount);
-        console.log(svc.toSmallestUint(
+        console.log(transaction);
+       
+        transaction.amount = svc.toSmallestUint(
           transaction.amount,
           account.decimals
-        ));
-        console.log(svc.toSmallestUint(
+        );
+        transaction.gasPrice = svc.toSmallestUint(
           transaction.feePerUnit,
           account.decimals
-        ));
+        );
+        console.log(transaction);
 
         const signedTx = await txSvc.prepareTransaction({
-          ...transaction,
-          amount: svc.toSmallestUint(
-            transaction.amount,
-            account.decimals
-          ),
-          gasPrice: svc.toSmallestUint(
-            transaction.feePerUnit,
-            account.decimals
-          ),
+          transaction,
           from,
           nonce,
           chainId: account.chainId,

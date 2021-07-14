@@ -90,37 +90,33 @@ class TransactionServiceETH extends TransactionDecorator {
    * @method prepareTransaction
    * @param {object} param
    * @param {string} param.to
-   * @param {string} param.amount
-   * @param {string} param.gasPrice
-   * @param {string} param.gasUsed
+   * @param {string} param.amount inSmallestUnit
+   * @param {string} param.gasPrice inSmallestUnit
+   * @param {string} param.fee inCurrencyUnit
+   * @param {number} param.gasUsed
    * @param {string} param.message
    * @param {number} param.chainId
    * @param {number} param.nonce
    * @returns {ETHTransaction} transaction
    */
-  prepareTransaction({
-    from,
-    to,
-    amount,
-    gasPrice,
-    feeUnit,
-    fee,
-    message,
-    chainId,
-    nonce,
-  }) {
-    const transaction = EthereumTransaction.createTransaction({
+  prepareTransaction({ transaction, from, chainId, nonce }) {
+    console.log("prepareTransaction",transaction)
+    console.log("prepareTransaction",transaction.amount)
+    console.log("prepareTransaction",transaction.gasPrice)
+    console.log("prepareTransaction",transaction.feeUnit)
+    console.log("prepareTransaction",transaction.fee)
+    const _transaction = EthereumTransaction.createTransaction({
+      to: transaction.to,
+      amount: transaction.amount,
+      gasPrice: transaction.gasPrice,
+      gasUsed: transaction.feeUnit,
+      fee: transaction.fee,
+      message: transaction.message,
       from,
-      to,
-      amount,
-      gasPrice,
-      gasUsed: feeUnit,
-      fee,
-      message,
       chainId,
       nonce,
     });
-    return this._signTransaction(transaction);
+    return this._signTransaction(_transaction);
   }
 }
 
