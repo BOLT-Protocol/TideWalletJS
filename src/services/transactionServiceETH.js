@@ -100,11 +100,6 @@ class TransactionServiceETH extends TransactionDecorator {
    * @returns {ETHTransaction} transaction
    */
   prepareTransaction({ transaction, from, chainId, nonce }) {
-    console.log("prepareTransaction",transaction)
-    console.log("prepareTransaction",transaction.amount)
-    console.log("prepareTransaction",transaction.gasPrice)
-    console.log("prepareTransaction",transaction.feeUnit)
-    console.log("prepareTransaction",transaction.fee)
     const _transaction = EthereumTransaction.createTransaction({
       to: transaction.to,
       amount: transaction.amount,

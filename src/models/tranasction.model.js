@@ -16,25 +16,22 @@
  */
 class Transaction {
   id;
+  direction;
+  amount;
+  status;
   confirmations;
   address;
+  fee;
   txid;
-  timestamp;
+  message;
+  sourceAddresses;
+  destinationAddresses;
+  gasPrice;
+  gasUsed;
 
   constructor(values) {
-    this.direction = values.direction;
-    this.amount = values.amount;
-    this.status = values.status;
-    this.fee = values.fee;
-    this.message = values.message;
-    this.sourceAddresses = values.sourceAddresses;
-    this.destinationAddresses = values.destinationAddresses;
-    this.gasPrice = values.gasPrice;
-    this.gasUsed = values.gasUsed;
-    console.log("Transaction", this.amount)
-    console.log("Transaction", this.gasPrice)
-    console.log("Transaction", this.gasUsed)
-    console.log("Transaction", this.fee)
+    Object.assign(this, values);
+    console.log("Transaction", this);
   }
 
   serializeTransaction() {}

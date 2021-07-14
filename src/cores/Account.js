@@ -486,7 +486,7 @@ class AccountCore {
           new TransactionBase(this._TideWalletCore, account)
         );
         console.log(transaction);
-       
+
         transaction.amount = svc.toSmallestUint(
           transaction.amount,
           account.decimals
@@ -511,16 +511,16 @@ class AccountCore {
         );
 
         console.log(tx); //-- debug info
-
-        tx.amount = svc.toCurrencyUint(transaction.amount, account.decimals);
-        tx.gasPrice = svc.toCurrencyUint(
+        const _tx = { ...tx };
+        _tx.amount = svc.toCurrencyUint(transaction.amount, account.decimals);
+        _tx.gasPrice = svc.toCurrencyUint(
           transaction.gasPrice,
           account.decimals
         );
         if (success) {
           // ++ insert to Db and infrom fronted 0713 TZUHAN
         }
-        console.log(tx); //-- debug info
+        console.log(_tx); //-- debug info
         return success;
       default:
         return null;
