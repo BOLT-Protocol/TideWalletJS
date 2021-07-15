@@ -486,7 +486,7 @@ class BitcoinTransaction extends Transaction {
           data.push(0);
         }
       }
-      data.splice(4, 0, [BitcoinTransaction.ADVANCED_TRANSACTION_MARKER, BitcoinTransaction.ADVANCED_TRANSACTION_FLAG]);
+      data.splice(4, 0, BitcoinTransaction.ADVANCED_TRANSACTION_MARKER, BitcoinTransaction.ADVANCED_TRANSACTION_FLAG);
     }
 
     //  nLockTime:
