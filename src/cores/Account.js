@@ -6,8 +6,8 @@ const BitcoinService = require("../services/bitcoinService");
 const { network_publish } = require("../constants/config");
 const TransactionBase = require("../services/transactionService");
 const ETHTransactionSvc = require("../services/transactionServiceETH");
-const BigNumber = require("bignumber.js");
 const { Transaction } = require("../models/tranasction.model");
+const { substract } = require("../helpers/helper");
 
 class AccountCore {
   static instance;
@@ -405,7 +405,8 @@ class AccountCore {
     const txs = await this._DBOperator.transactionDao.findAllTransactionsById(
       accountId
     );
-    return txs;
+    // https://dmitripavlutin.com/javascript-array-sort-numbers/
+    return txs.sort((a, b) => (a.timestamp <= b.timestamp ? 1 : -1)); //(a, b) => a.timestamp - b.timestamp
   }
 
   /**
@@ -463,6 +464,33 @@ class AccountCore {
     return txSvc.verifyAmount(account.balance, amount, fee);
   }
 
+  async sendETHBasedTx(account, svc, transaction) {
+    const nonce = await svc.getNonce(account.blockchainId, transaction.from);
+    const txSvc = new ETHTransactionSvc(
+      new TransactionBase(this._TideWalletCore, account)
+    );
+    transaction.amount = svc.toSmallestUint(
+      transaction.amount,
+      account.decimals
+    );
+    transaction.gasPrice = svc.toSmallestUint(
+      transaction.feePerUnit,
+      account.decimals
+    );
+    const signedTx = await txSvc.prepareTransaction({
+      transaction,
+      nonce,
+      chainId: account.chainId,
+    });
+    console.log(signedTx); //-- debug info
+
+    const response = await svc.publishTransaction(
+      account.blockchainId,
+      signedTx
+    );
+    return response;
+  }
+
   /**
    * Send transaction
    * @method sendTransaction
@@ -476,55 +504,41 @@ class AccountCore {
    */
   async sendTransaction(id, transaction) {
     const account = this._accounts[id].find((acc) => acc.id === id);
+    const svc = this.getService(account.accountId);
+    const from = await svc.getReceivingAddress(id);
+    transaction.from = from;
+    let success, tx;
     switch (account.accountType) {
       case ACCOUNT.ETH:
       case ACCOUNT.CFC:
-        const svc = this.getService(account.accountId);
-        const from = await svc.getReceivingAddress(id);
-        const nonce = await svc.getNonce(account.blockchainId, from);
-        const txSvc = new ETHTransactionSvc(
-          new TransactionBase(this._TideWalletCore, account)
-        );
-        console.log(transaction);
-
-        transaction.amount = svc.toSmallestUint(
-          transaction.amount,
-          account.decimals
-        );
-        transaction.gasPrice = svc.toSmallestUint(
-          transaction.feePerUnit,
-          account.decimals
-        );
-        console.log(transaction);
-
-        const signedTx = await txSvc.prepareTransaction({
-          transaction,
-          from,
-          nonce,
-          chainId: account.chainId,
-        });
-        console.log(signedTx); //-- debug info
-
-        const [success, tx] = await svc.publishTransaction(
-          account.blockchainId,
-          signedTx
-        );
-
-        console.log(tx); //-- debug info
-        const _tx = { ...tx };
-        _tx.amount = svc.toCurrencyUint(transaction.amount, account.decimals);
-        _tx.gasPrice = svc.toCurrencyUint(
-          transaction.gasPrice,
-          account.decimals
-        );
+        [success, tx] = await this.sendETHBasedTx(account, svc, transaction);
         if (success) {
-          // ++ insert to Db and infrom fronted 0713 TZUHAN
+          console.log("sendTransaction tx", tx); //-- debug info
+          tx.amount = svc.toCurrencyUint(transaction.amount, account.decimals);
+          tx.gasPrice = svc.toCurrencyUint(
+            transaction.gasPrice,
+            account.decimals
+          );
+          tx.accountId = account.id;
+          tx.id = account.id + tx.txid;
+          console.log("sendTransaction tx", tx); //-- debug info
         }
-        console.log(_tx); //-- debug info
-        return success;
+        break;
+      case ACCOUNT.BTC:
+        break;
       default:
-        return null;
+        break;
     }
+    if (success) {
+      account.balance = substract(
+        substract(account.balance, tx.amount),
+        tx.fee
+      );
+      console.log("_txEsendTransaction account.balance", account.balance); //-- debug info
+      await this._DBOperator.accountDao.insertAccount(account);
+      await this._DBOperator.transactionDao.insertTransaction(tx);
+    }
+    return success;
   }
 }
 

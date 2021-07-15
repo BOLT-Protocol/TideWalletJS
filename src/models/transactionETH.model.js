@@ -37,7 +37,7 @@ class ETHTransaction extends Transaction {
       gasPrice: BigNumber(gasPrice),
       gasUsed,
       fee,
-      message,
+      note: message,
       chainId,
       direction: TRANSACTION_DIRECTION.sent,
       status: TRANSACTION_STATUS.pending,

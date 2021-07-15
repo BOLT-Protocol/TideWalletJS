@@ -203,6 +203,8 @@ class EthereumService extends AccountServiceDecorator {
    * @returns {Array.<{success: Boolean, transaction: String}>} result
    */
   async publishTransaction(blockchainId, transaction) {
+    const _transaction = { ...transaction };
+    console.log(_transaction); //-- debug info
     try {
       const body = {
         hex:
@@ -214,13 +216,13 @@ class EthereumService extends AccountServiceDecorator {
         blockchainId,
         body
       );
-      transaction.txid = response["txid"];
-      transaction.timestamp = Date.now();
-      transaction.confirmations = 0;
-      return [true, transaction];
+      _transaction.txid = response["txid"];
+      _transaction.timestamp = Math.floor(Date.now()/1000);
+      _transaction.confirmations = 0;
+      return [true, _transaction];
     } catch (error) {
       console.log(error);
-      return [false, transaction];
+      return [false, _transaction];
     }
   }
 

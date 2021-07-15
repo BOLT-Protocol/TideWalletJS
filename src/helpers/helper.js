@@ -1,3 +1,5 @@
+const BigNumber = require("bignumber.js");
+
 const randomHex = (n) => {
   var ID = "";
   var text = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -11,6 +13,20 @@ const randomHex = (n) => {
   return ID;
 };
 
+/**
+ *
+ * @param {string} x
+ * @param {string} y
+ */
+const substract = (x, y, precision = 8) => {
+  const _x = new BigNumber(x);
+  const _y = new BigNumber(y);
+  const result = _x.minus(_y);
+  // return result.precision(precision).toFixed();
+  return result.toFixed();
+};
+
 module.exports = {
   randomHex,
+  substract,
 };

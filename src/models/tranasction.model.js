@@ -8,7 +8,7 @@
  * @property {string} address               The address is to or from address depending on direction
  * @property {string} fee                The fee
  * @property {string} txid                  The txid from API
- * @property {string} message               The transaction message
+ * @property {string} note               The transaction note
  * @property {string} sourceAddresses       The source addresses
  * @property {string} destinationAddresses  The destination addresses
  * @property {BigNumber} gasPrice           The gas price
@@ -16,6 +16,7 @@
  */
 class Transaction {
   id;
+  accountId;
   direction;
   amount;
   status;
@@ -23,7 +24,7 @@ class Transaction {
   address;
   fee;
   txid;
-  message;
+  note;
   sourceAddresses;
   destinationAddresses;
   gasPrice;

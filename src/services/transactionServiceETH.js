@@ -33,24 +33,25 @@ class TransactionServiceETH extends TransactionDecorator {
       "hex"
     );
     console.log(Cryptor.keccak256round(payload.toString("hex"), 1));
-    console.log(rawDataHash);
+    console.log(rawDataHash); // -- debug info
 
     this.signer = this.service.safeSigner(0, 0);
 
     let signature = await this.signer.sign(rawDataHash);
-    console.log("ETH signature: ", signature);
+    console.log("ETH signature.v: ", signature.v); // -- debug info
+    console.log("ETH signature transaction.chainId : ", transaction.chainId ); // -- debug info
 
     const chainIdV =
       transaction.chainId != null
         ? signature.v - 27 + (transaction.chainId * 2 + 35)
         : signature.v;
-    console.log(chainIdV);
+    console.log("ETH signature chainIdV : ", chainIdV); // -- debug info
     signature = new Signature({
       v: chainIdV,
       r: signature.r,
       s: signature.s,
     });
-    console.log(signature);
+    console.log(signature); // -- debug info
 
     transaction.signature = signature;
     return transaction;
@@ -99,7 +100,7 @@ class TransactionServiceETH extends TransactionDecorator {
    * @param {number} param.nonce
    * @returns {ETHTransaction} transaction
    */
-  prepareTransaction({ transaction, from, chainId, nonce }) {
+  prepareTransaction({ transaction, chainId, nonce }) {
     const _transaction = EthereumTransaction.createTransaction({
       to: transaction.to,
       amount: transaction.amount,
@@ -107,7 +108,7 @@ class TransactionServiceETH extends TransactionDecorator {
       gasUsed: transaction.feeUnit,
       fee: transaction.fee,
       message: transaction.message,
-      from,
+      from: transaction.from,
       chainId,
       nonce,
     });
