@@ -645,8 +645,8 @@ class UtxoDao extends DAO {
     return this._writeAll(utxos);
   }
 
-  async findAllUtxos() {
-    return this._readAll();
+  async findAllUtxos(accountId) {
+    return this._readAll(accountId, 'accountId');
   }
 }
 

@@ -1,4 +1,4 @@
-const { randomHex } = require("./helper");
+const { randomHex } = require("./utils");
 const { Keccak } = require("sha3");
 const hash = new Keccak(256);
 const crypto = require('crypto');

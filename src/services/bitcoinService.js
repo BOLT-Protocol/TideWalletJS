@@ -1,5 +1,6 @@
 const AccountServiceDecorator = require("./accountServiceDecorator");
 const { ACCOUNT, ACCOUNT_EVT } = require("../models/account.model");
+const UnspentTxOut = require('../models/utxo.model')
 
 class BitcoinService extends AccountServiceDecorator {
   constructor(service, TideWalletCommunicator, DBOperator) {
@@ -191,6 +192,12 @@ class BitcoinService extends AccountServiceDecorator {
     } else {
       // TODO
     }
+  }
+
+  async getUnspentTxOut(accountId) {
+    const utxos =
+        await this._DBOperator.utxoDao.findAllUtxos(accountId);
+    return utxos.map((utxo) => UnspentTxOut.fromUtxoEntity(utxo));
   }
 
   /**

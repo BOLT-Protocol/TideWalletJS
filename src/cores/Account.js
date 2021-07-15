@@ -7,11 +7,7 @@ const { network_publish } = require("../constants/config");
 const TransactionBase = require("../services/transactionService");
 const ETHTransactionSvc = require("../services/transactionServiceETH");
 const { Transaction } = require("../models/tranasction.model");
-const {
-  substract,
-  plus,
-  isGreaterThanOrEqualTo,
-} = require("../helpers/helper");
+const { substract, plus, isGreaterThanOrEqualTo } = require("../helpers/utils");
 
 class AccountCore {
   static instance;
@@ -451,13 +447,15 @@ class AccountCore {
 
   async verifyAddress(id, address) {
     const account = this._accounts[id].find((acc) => acc.id === id);
+    const safeSigner = this._TideWalletCore.getSafeSigner(
+      `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'`
+    );
     let txSvc;
     switch (account.accountType) {
       case ACCOUNT.ETH:
       case ACCOUNT.CFC:
-        txSvc = new ETHTransactionSvc(
-          new TransactionBase(this._TideWalletCore, account)
-        );
+        txSvc = new ETHTransactionSvc(new TransactionBase(), safeSigner);
+
         break;
       case ACCOUNT.BTC:
         break;
@@ -483,9 +481,10 @@ class AccountCore {
 
   async sendETHBasedTx(account, svc, transaction) {
     const nonce = await svc.getNonce(account.blockchainId, transaction.from);
-    const txSvc = new ETHTransactionSvc(
-      new TransactionBase(this._TideWalletCore, account)
+    const safeSigner = this._TideWalletCore.getSafeSigner(
+      `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'`
     );
+    const txSvc = new ETHTransactionSvc(new TransactionBase(), safeSigner);
     transaction.amount = svc.toSmallestUint(
       transaction.amount,
       account.decimals

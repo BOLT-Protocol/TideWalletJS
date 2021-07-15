@@ -14,12 +14,10 @@ class TransactionServiceETH extends TransactionDecorator {
   service = null;
   _base = ACCOUNT.ETH;
 
-  constructor(service) {
+  constructor(service, signer) {
     super();
-    console.log("TransactionServiceETH");
     this.service = service;
-    this._accountDecimals = this.service.accountDecimals;
-    console.log(this._accountDecimals);
+    this.signer = signer;
   }
 
   async _signTransaction(transaction) {
@@ -35,11 +33,9 @@ class TransactionServiceETH extends TransactionDecorator {
     console.log(Cryptor.keccak256round(payload.toString("hex"), 1));
     console.log(rawDataHash); // -- debug info
 
-    this.signer = this.service.safeSigner(0, 0);
-
-    let signature = await this.signer.sign(rawDataHash);
+    let signature = await this.signer.sign({ data: rawDataHash });
     console.log("ETH signature.v: ", signature.v); // -- debug info
-    console.log("ETH signature transaction.chainId : ", transaction.chainId ); // -- debug info
+    console.log("ETH signature transaction.chainId : ", transaction.chainId); // -- debug info
 
     const chainIdV =
       transaction.chainId != null
@@ -56,7 +52,6 @@ class TransactionServiceETH extends TransactionDecorator {
     transaction.signature = signature;
     return transaction;
   }
-
 
   /**
    * @override
