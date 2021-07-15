@@ -58,10 +58,10 @@ function bip66encode(r, s) {
   signature[1] = signature.length - 2;
   signature[2] = 0x02;
   signature[3] = r.length;
-  signature.copy(r, 4);
+  r.copy(signature, 4);
   signature[4 + lenR] = 0x02;
   signature[5 + lenR] = s.length;
-  signature.copy(s, 5 + lenR);
+  s.copy(signature, 5 + lenR);
   return signature;
 }
 

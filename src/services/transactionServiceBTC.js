@@ -80,8 +80,8 @@ class TransactionServiceBTC extends TransactionDecorator {
       console.log(`utxo txId: ${utxo.txId}`);
       console.log(`utxo.amount: ${utxo.amount.toFixed()}`);
 
-      buffer.copy(sig.r, 0, 0, 32);
-      buffer.copy(sig.s, 32, 0, 32);
+      sig.r.copy(buffer, 0, 0, 32);
+      sig.s.copy(buffer, 32, 0, 32);
       const signature = Signer
           .encodeSignature(buffer, transaction.inputs[index].hashType.value);
       transaction.inputs[index].addSignature(signature);

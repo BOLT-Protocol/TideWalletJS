@@ -35,6 +35,12 @@ class Input {
   /* used output's index in the previous transaction */
   // int vout;
   /* the signature produced to check validity */
+  utxo;
+  scriptSig = null;
+  sequence;
+  publicKey;
+  address;
+  hashType;
 
   constructor(utxo, hashType) {
     this.utxo = utxo,
@@ -102,14 +108,13 @@ class Input {
    * @param {Buffer} signature 
    */
   addSignature(signature) {
-    let scriptSig;
     if (signature == null)
-      scriptSig = null;
+    this.scriptSig = null;
     else {
       const utxoType = this.utxo.type;
       switch (utxoType) {
         case BitcoinTransactionType.PUBKEYHASH:
-          scriptSig = Buffer.from([
+          this.scriptSig = Buffer.from([
             signature.length,
             ...signature,
             this.publicKey.length,
@@ -117,7 +122,7 @@ class Input {
           ]);
           break;
         case BitcoinTransactionType.SCRIPTHASH:
-          scriptSig = Buffer.from([
+          this.scriptSig = Buffer.from([
             0x00,
             signature.length,
             ...signature,
@@ -126,7 +131,7 @@ class Input {
           ]);
           break;
         case BitcoinTransactionType.WITNESS_V0_KEYHASH:
-          scriptSig = Buffer.from([
+          this.scriptSig = Buffer.from([
             0x02,
             signature.length,
             ...signature,
@@ -135,13 +140,14 @@ class Input {
           ]);
           break;
         case BitcoinTransactionType.PUBKEY:
-          scriptSig = Buffer.from([
+          this.scriptSig = Buffer.from([
             signature.length,
             ...signature,
           ]);
           break;
       }
     }
+    console.log('addSignature this.scriptSig:', this.scriptSig)
   }
 }
 
@@ -158,7 +164,7 @@ class Output {
   }
 
   get amountInBuffer() {
-    const amount = this.amount.toFixed().padStart(8, '0');
+    const amount = this.amount.toString(16).padStart(16, '0');
     return Buffer.from(amount, 'hex').reverse();
   }
 }

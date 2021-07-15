@@ -33,7 +33,7 @@ class Cryptor {
     const chainIndex = arr[4];
     const keyIndex = arr[5];
     const options = {
-      path: `${arr[0]}/${arr[1]}/${arr[2]}`,
+      path: `${arr[0]}/${arr[1]}/${arr[2]}/${arr[3]}`,
     };
     return { chainIndex, keyIndex, options };
   }

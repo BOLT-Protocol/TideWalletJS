@@ -231,7 +231,7 @@ class bitcoinUtils{
     const _address = SegwitCodec.decode(address);
     const scriptPubKey = _address.scriptPubKey;
     // Log.debug('scriptPubKey: $scriptPubKey');
-    return scriptPubKey;
+    return Buffer.from(scriptPubKey, 'hex');
   }
   
   /**
