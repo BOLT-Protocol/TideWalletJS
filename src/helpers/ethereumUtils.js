@@ -1,6 +1,27 @@
 const { default: BigNumber } = require("bignumber.js");
 const rlp = require("rlp");
 const Cryptor = require("./Cryptor");
+const createKeccakHash = require('keccak')
+
+function toChecksumAddress (address) {
+  // ++ 兩個keccak256不一樣 Cryptor.keccak256round 同 TideBitWallet[Flutter] 
+  // var addressHash = Cryptor.keccak256round(address, 1);
+  // console.log(addressHash)
+  address = address.toLowerCase().replace('0x', '')
+  var hash = createKeccakHash('keccak256').update(address).digest('hex')
+  var ret = '0x'
+  // console.log(hash)
+
+  for (var i = 0; i < address.length; i++) {
+    if (parseInt(hash[i], 16) >= 8) {
+      ret += address[i].toUpperCase()
+    } else {
+      ret += address[i]
+    }
+  }
+
+  return ret
+}
 
 /**
  * Checks if the given string is an address
@@ -32,26 +53,14 @@ var isAddress = function (address) {
  * @param {String} address the given HEX adress
  * @return {Boolean}
  */
-var isChecksumAddress = function (address) {
+const isChecksumAddress = function (address) {
   // Check each case
-  address = address.replace("0x", "");
-  // ++ TODO  # Treat the hex address as ascii/utf-8 for keccak256 hashing
-  var addressHash = Cryptor.keccak256round(address.toLowerCase(), 1);
-  for (var i = 0; i < 40; i++) {
-    // the nth letter should be uppercase if the nth digit of casemap is 1
-    if (
-      (parseInt(addressHash[i], 16) > 7 &&
-        address[i].toUpperCase() !== address[i]) ||
-      (parseInt(addressHash[i], 16) <= 7 &&
-        address[i].toLowerCase() !== address[i])
-    ) {
-      return false;
-    }
-  }
-  return true;
+  const checksumAddress = toChecksumAddress(address);
+  return address === checksumAddress;
 };
 
 function verifyEthereumAddress(address) {
+  isChecksumAddress(address);
   if (address.includes(":")) {
     address = address.split(":")[1];
   }
@@ -67,7 +76,7 @@ function verifyEthereumAddress(address) {
  */
 function encodeToRlp(transaction) {
   console.log(transaction);
- 
+
   const list = [
     transaction.nonce,
     transaction.gasPrice.toNumber(),

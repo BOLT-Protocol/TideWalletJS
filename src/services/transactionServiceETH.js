@@ -57,25 +57,15 @@ class TransactionServiceETH extends TransactionDecorator {
     return transaction;
   }
 
-  /**
-   * @override
-   */
-  verifyAmount(balance, amount, fee) {
-    // ++ TODO 2021/07/08
-    console.log("balance", balance);
-    console.log("amount", amount);
-    console.log("fee", fee);
-    return BigNumber(balance).isGreaterThanOrEqualTo(
-      BigNumber(amount).plus(BigNumber(fee))
-    );
-  }
 
   /**
    * @override
    */
-  verifyAddress(address) {
+  verifyAddress(address, isMainnet) {
     console.log("address", address);
+    console.log("isMainnet", isMainnet);
     const result = verifyEthereumAddress(address);
+    console.log("result", result);
     return result;
   }
 

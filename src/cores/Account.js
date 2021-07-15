@@ -7,7 +7,11 @@ const { network_publish } = require("../constants/config");
 const TransactionBase = require("../services/transactionService");
 const ETHTransactionSvc = require("../services/transactionServiceETH");
 const { Transaction } = require("../models/tranasction.model");
-const { substract } = require("../helpers/helper");
+const {
+  substract,
+  plus,
+  isGreaterThanOrEqualTo,
+} = require("../helpers/helper");
 
 class AccountCore {
   static instance;
@@ -447,21 +451,34 @@ class AccountCore {
 
   async verifyAddress(id, address) {
     const account = this._accounts[id].find((acc) => acc.id === id);
-    const txSvc = new ETHTransactionSvc(
-      new TransactionBase(this._TideWalletCore, account)
+    let txSvc;
+    switch (account.accountType) {
+      case ACCOUNT.ETH:
+      case ACCOUNT.CFC:
+        txSvc = new ETHTransactionSvc(
+          new TransactionBase(this._TideWalletCore, account)
+        );
+        break;
+      case ACCOUNT.BTC:
+        break;
+      default:
+        break;
+    }
+    return txSvc.verifyAddress(
+      address,
+      account.blockchainCoinType === 1 ? false : true
     );
-    // ++ TODO pulish 當初理解的意義不同, 當初理解成publish = true 就是mainnet, 反之為 testnet. publish 實際意義為該account 要不要顯示給用戶看. 會影響地址的計算
-    // 對 ETH 沒差, 對Bitcoin有差
-    return txSvc.verifyAddress(address, account.publish);
   }
 
-  // ++ TODO 2021/07/08
   async verifyAmount(id, amount, fee) {
     const account = this._accounts[id].find((acc) => acc.id === id);
-    const txSvc = new ETHTransactionSvc(
-      new TransactionBase(this._TideWalletCore, account)
-    );
-    return txSvc.verifyAmount(account.balance, amount, fee);
+    const amountPlusFee = plus(amount, fee);
+    const result = isGreaterThanOrEqualTo(account.balance, amountPlusFee);
+    console.log(account.balance);
+    console.log(amount);
+    console.log(fee);
+    console.log(result);
+    return result;
   }
 
   async sendETHBasedTx(account, svc, transaction) {
