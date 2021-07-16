@@ -240,7 +240,7 @@ class BitcoinService extends AccountServiceDecorator {
    **/
   async synchro(force = false) {
     this.service.synchro(force);
-    await this._syncUTXO(force);
+    this._syncUTXO(force);
   }
 }
 

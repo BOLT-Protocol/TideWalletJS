@@ -112,8 +112,8 @@ class UnspentTxOut {
   static fromUtxoEntity(utxo) {
     return new UnspentTxOut({
       id: utxo.utxoId,
-      accountcurrencyId: utxo.accountcurrencyId,
-      txId: utxo.txId,
+      accountcurrencyId: utxo.accountId,
+      txId: utxo.txid,
       vout: utxo.vout,
       type: Object.values(BitcoinTransactionType).find((type) => type.value == utxo.type),
       amount: Converter.toBtc(new BigNumber(utxo.amount)),
