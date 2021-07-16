@@ -11,7 +11,7 @@
  * @property {string} note               The transaction note
  * @property {string} sourceAddresses       The source addresses
  * @property {string} destinationAddresses  The destination addresses
- * @property {BigNumber} gasPrice           The gas price
+ * @property {BigNumber} feePerUnit            The gas price
  * @property {number} gasUsed            The gase used/limit
  */
 class Transaction {
@@ -27,7 +27,7 @@ class Transaction {
   note;
   sourceAddresses;
   destinationAddresses;
-  gasPrice;
+  feePerUnit;
   gasUsed;
 
   constructor(values) {

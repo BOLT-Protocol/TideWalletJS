@@ -480,27 +480,15 @@ class AccountCore {
     return result;
   }
 
-  async sendETHBasedTx(account, svc, transaction) {
+  async sendETHBasedTx(account, svc, safeSigner, transaction) {
     const nonce = await svc.getNonce(account.blockchainId, transaction.from);
-    const safeSigner = this._TideWalletCore.getSafeSigner(
-      `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'`
-    );
     const txSvc = new ETHTransactionSvc(new TransactionBase(), safeSigner);
-    transaction.amount = svc.toSmallestUint(
-      transaction.amount,
-      account.decimals
-    );
-    transaction.gasPrice = svc.toSmallestUint(
-      transaction.feePerUnit,
-      account.decimals
-    );
     const signedTx = await txSvc.prepareTransaction({
       transaction,
       nonce,
       chainId: account.chainId,
     });
     console.log(signedTx); //-- debug info
-
     const response = await svc.publishTransaction(
       account.blockchainId,
       signedTx
@@ -508,28 +496,17 @@ class AccountCore {
     return response;
   }
 
-  async sendBTCBasedTx(account, svc, transaction) {
-    transaction.amount = svc.toSmallestUint(
-      transaction.amount,
-      account.decimals
-    );
-    transaction.fee = svc.toSmallestUint(
-      transaction.feePerUnit,
-      account.decimals
-    );
-    const safeSigner = this._TideWalletCore.getSafeSigner(
-      `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'`
-    );
+  async sendBTCBasedTx(account, svc, safeSigner, transaction) {
     const txSvc = new BTCTransactionSvc(new TransactionBase(), safeSigner);
     const utxos = await svc.getUnspentTxOut(id);
     const changeInfo = await svc.getChangingAddress(id);
     const signedTx = await txSvc.prepareTransaction({
       isMainNet: account.blockchainCoinType === 1 ? false : true,
       to: transaction.to,
-      amount: transaction.amount,
+      amount: transaction.amount, //String in satoshi
       message: transaction.message,
       accountId: account.id,
-      fee: transaction.fee,
+      fee: transaction.fee, //String in satoshi
       unspentTxOuts: utxos,
       keyIndex: changeInfo[1],
       changeAddress: changeInfo[0],
@@ -557,34 +534,52 @@ class AccountCore {
     const account = this._accounts[id].find((acc) => acc.id === id);
     const svc = this.getService(account.accountId);
     const from = await svc.getReceivingAddress(id);
+    const safeSigner = this._TideWalletCore.getSafeSigner(
+      `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'`
+    );
     transaction.from = from;
+    transaction.amount = svc.toSmallestUint(
+      transaction.amount,
+      account.decimals
+    );
+    transaction.feePerUnit = svc.toSmallestUint(
+      transaction.feePerUnit,
+      account.decimals
+    );
+    transaction.fee = svc.toSmallestUint(transaction.fee, account.decimals);
     let success, tx;
     switch (account.accountType) {
       case ACCOUNT.ETH:
       case ACCOUNT.CFC:
-        [success, tx] = await this.sendETHBasedTx(account, svc, transaction);
-        if (success) {
-          console.log("sendTransaction tx", tx); //-- debug info
-          tx.amount = svc.toCurrencyUint(transaction.amount, account.decimals);
-          tx.gasPrice = svc.toCurrencyUint(
-            transaction.gasPrice,
-            account.decimals
-          );
-          tx.accountId = account.id;
-          tx.id = account.id + tx.txid;
-          console.log("sendTransaction tx", tx); //-- debug info
-        }
+        [success, tx] = await this.sendETHBasedTx(
+          account,
+          svc,
+          safeSigner,
+          transaction
+        );
         break;
       case ACCOUNT.BTC:
-        [success, tx] = await this.sendBTCBasedTx(account, svc, transaction);
-        if (success) {
-          console.log("sendTransaction tx", tx); //-- debug info
-        }
+        [success, tx] = await this.sendBTCBasedTx(
+          account,
+          svc,
+          safeSigner,
+          transaction
+        );
         break;
       default:
         break;
     }
     if (success) {
+      console.log("sendTransaction tx", tx); //-- debug info
+      tx.amount = svc.toCurrencyUint(transaction.amount, account.decimals);
+      tx.feePerUnit = svc.toCurrencyUint(
+        transaction.feePerUnit,
+        account.decimals
+      );
+      tx.fee = svc.toCurrencyUint(transaction.fee, account.decimals);
+      tx.accountId = account.id;
+      tx.id = account.id + tx.txid;
+      console.log("sendTransaction tx", tx); //-- debug info
       account.balance = substract(
         substract(account.balance, tx.amount),
         tx.fee

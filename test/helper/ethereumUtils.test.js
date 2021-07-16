@@ -11,7 +11,7 @@ test("encodeToRlp without message", () => {
     to: "0x3464fb42962bff99da312bd2f5ce9673e51b7d04",
     amount: BigNumber(1000000000000000000),
     gasUsed: BigNumber(21000),
-    gasPrice: BigNumber(1000000000),
+    feePerUnit: BigNumber(1000000000),
     chainId: 8017,
   });
 

@@ -25,7 +25,7 @@ class ETHTransaction extends Transaction {
     from,
     to,
     amount,
-    gasPrice,
+    feePerUnit,
     gasUsed,
     fee,
     message,
@@ -34,7 +34,7 @@ class ETHTransaction extends Transaction {
   }) {
     return new ETHTransaction({
       amount: BigNumber(amount),
-      gasPrice: BigNumber(gasPrice),
+      feePerUnit: BigNumber(feePerUnit),
       gasUsed,
       fee,
       note: message,

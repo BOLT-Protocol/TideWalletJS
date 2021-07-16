@@ -79,7 +79,7 @@ function encodeToRlp(transaction) {
 
   const list = [
     transaction.nonce,
-    transaction.gasPrice.toNumber(),
+    transaction.feePerUnit.toNumber(),
     transaction.gasUsed,
   ];
   console.log(list);

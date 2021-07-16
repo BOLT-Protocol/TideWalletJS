@@ -77,7 +77,7 @@ class TransactionServiceETH extends TransactionDecorator {
    * @param {object} param
    * @param {string} param.to
    * @param {string} param.amount inSmallestUnit
-   * @param {string} param.gasPrice inSmallestUnit
+   * @param {string} param.feePerUnit inSmallestUnit
    * @param {string} param.fee inCurrencyUnit
    * @param {number} param.gasUsed
    * @param {string} param.message
@@ -89,7 +89,7 @@ class TransactionServiceETH extends TransactionDecorator {
     const _transaction = EthereumTransaction.createTransaction({
       to: transaction.to,
       amount: transaction.amount,
-      gasPrice: transaction.gasPrice,
+      feePerUnit: transaction.feePerUnit,
       gasUsed: transaction.feeUnit,
       fee: transaction.fee,
       message: transaction.message,
