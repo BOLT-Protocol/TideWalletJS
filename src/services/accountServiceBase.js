@@ -80,7 +80,7 @@ class AccountServiceBase extends AccountService {
           account_index: account.accountIndex,
           curve_type: account.curveType,
           network: account.network,
-          coin_type_blockchain:account.blockchainCoinType,
+          coin_type_blockchain: account.blockchainCoinType,
           publish: token["publish"], // Join Token
           chain_id: account.chainId,
           name: token["name"], // Join Token
@@ -192,7 +192,11 @@ class AccountServiceBase extends AccountService {
       await this._DBOperator.transactionDao.findAllTransactionsById(accountId);
 
     const txNull = transactions.filter((t) => t.timestamp === null);
-    const txReady = transactions.filter((t) => t.timestamp !== null);
+    const txReady = transactions
+      .filter((t) => t.timestamp !== null)
+      .sort((a, b) => (a.timestamp <= b.timestamp ? 1 : -1));
+    console.log("_loadTransactions txNull", txNull);
+    console.log("_loadTransactions txReady", txReady);
 
     return [...txNull, ...txReady];
   }
