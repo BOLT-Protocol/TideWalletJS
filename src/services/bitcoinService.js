@@ -191,6 +191,14 @@ class BitcoinService extends AccountServiceDecorator {
     return { feePerUnit: { ...feePerUnit }, unit: vsize };
   }
 
+  toCurrencyUint(amount, decimals) {
+    return this.service.toCurrencyUint(amount, decimals);
+  }
+
+  toSmallestUint(amount, decimals) {
+    return this.service.toSmallestUint(amount, decimals);
+  }
+
   /**
    * publishTransaction
    * @override
