@@ -508,6 +508,40 @@ class AccountCore {
     return response;
   }
 
+  async sendBTCBasedTx(account, svc, transaction) {
+    transaction.amount = svc.toSmallestUint(
+      transaction.amount,
+      account.decimals
+    );
+    transaction.fee = svc.toSmallestUint(
+      transaction.feePerUnit,
+      account.decimals
+    );
+    const safeSigner = this._TideWalletCore.getSafeSigner(
+      `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'`
+    );
+    const txSvc = new BTCTransactionSvc(new TransactionBase(), safeSigner);
+    const utxos = await svc.getUnspentTxOut(id);
+    const changeInfo = await svc.getChangingAddress(id);
+    const signedTx = await txSvc.prepareTransaction({
+      isMainNet: account.blockchainCoinType === 1 ? false : true,
+      to: transaction.to,
+      amount: transaction.amount,
+      message: transaction.message,
+      accountId: account.id,
+      fee: transaction.fee,
+      unspentTxOuts: utxos,
+      keyIndex: changeInfo[1],
+      changeAddress: changeInfo[0],
+    });
+    console.log(signedTx); //-- debug info
+    const response = await svc.publishTransaction(
+      account.blockchainId,
+      signedTx
+    );
+    return response;
+  }
+
   /**
    * Send transaction
    * @method sendTransaction
@@ -542,6 +576,10 @@ class AccountCore {
         }
         break;
       case ACCOUNT.BTC:
+        [success, tx] = await this.sendBTCBasedTx(account, svc, transaction);
+        if (success) {
+          console.log("sendTransaction tx", tx); //-- debug info
+        }
         break;
       default:
         break;
