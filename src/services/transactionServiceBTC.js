@@ -94,15 +94,15 @@ class TransactionServiceBTC extends TransactionDecorator {
   /**
    * @override
    */
-  verifyAmount(balance, amount, fee) {
+// --  verifyAmount(balance, amount, fee) {
     // ++ TODO 2021/07/08
-    console.log("balance", balance);
-    console.log("amount", amount);
-    console.log("fee", fee);
-    return BigNumber(balance).isGreaterThanOrEqualTo(
-      BigNumber(amount).plus(BigNumber(fee))
-    );
-  }
+// --   console.log("balance", balance);
+// --   console.log("amount", amount);
+// --   console.log("fee", fee);
+// --   return BigNumber(balance).isGreaterThanOrEqualTo(
+// --     BigNumber(amount).plus(BigNumber(fee))
+// --   );
+// -- }
 
   /**
    * @override
