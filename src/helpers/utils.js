@@ -25,11 +25,11 @@ function toDER(x) {
   let input = Buffer.from([...x]);
   const ZERO = Buffer.alloc(1, 0);
   let i = 0;
-  while (input[i] == 0) ++i;
+  while (input[i] == 0) i++;
   if (i == input.length) return ZERO;
   input = input.slice(i);
   const combine = [...ZERO, ...input];
-  if (x[0] & 0x80 != 0) return Buffer.from(combine);
+  if ((input[0] & 0x80) != 0) return Buffer.from(combine);
   return input;
 }
 
@@ -46,11 +46,11 @@ function bip66encode(r, s) {
   if (lenS == 0) throw new Error('S length is zero');
   if (lenR > 33) throw new Error('R length is too long');
   if (lenS > 33) throw new Error('S length is too long');
-  if (r[0] & 0x80 != 0) throw new Error('R value is negative');
-  if (s[0] & 0x80 != 0) throw new Error('S value is negative');
-  if (lenR > 1 && (r[0] == 0x00) && r[1] & 0x80 == 0)
+  if ((r[0] & 0x80) != 0) throw new Error('R value is negative');
+  if ((s[0] & 0x80) != 0) throw new Error('S value is negative');
+  if (lenR > 1 && (r[0] == 0x00) && (r[1] & 0x80) == 0)
     throw new Error('R value excessively padded');
-  if (lenS > 1 && (s[0] == 0x00) && s[1] & 0x80 == 0)
+  if (lenS > 1 && (s[0] == 0x00) && (s[1] & 0x80) == 0)
     throw new Error('S value excessively padded');
 
   var signature = Buffer.alloc(6 + lenR + lenS);
@@ -63,7 +63,7 @@ function bip66encode(r, s) {
   r.copy(signature, 4);
   signature[4 + lenR] = 0x02;
   signature[5 + lenR] = s.length;
-  s.copy(signature, 5 + lenR);
+  s.copy(signature, 6 + lenR);
   return signature;
 }
 

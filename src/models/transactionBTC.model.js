@@ -69,7 +69,7 @@ class Input {
   }
 
   get amountInBuffer() {
-    const amount = this.utxo.amountInSmallestUint.toString(16).padStart(8, '0');
+    const amount = this.utxo.amountInSmallestUint.toString(16).padStart(16, '0');
     return Buffer.from(amount, 'hex').reverse();
   }
 
