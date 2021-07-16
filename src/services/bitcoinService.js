@@ -1,6 +1,8 @@
 const AccountServiceDecorator = require("./accountServiceDecorator");
 const { ACCOUNT, ACCOUNT_EVT } = require("../models/account.model");
-const UnspentTxOut = require('../models/utxo.model')
+const UnspentTxOut = require("../models/utxo.model");
+const BigNumber = require("bignumber.js");
+const { SegwitType } = require("../models/transactionBTC.model");
 
 class BitcoinService extends AccountServiceDecorator {
   constructor(service, TideWalletCommunicator, DBOperator) {
@@ -64,9 +66,11 @@ class BitcoinService extends AccountServiceDecorator {
    */
   async getReceivingAddress(accountcurrencyId) {
     try {
-      const response = await this._TideWalletCommunicator.AccountReceive(accountcurrencyId);
+      const response = await this._TideWalletCommunicator.AccountReceive(
+        accountcurrencyId
+      );
       const address = response["address"];
-      this._numberOfUsedExternalKey = response['key_index'];
+      this._numberOfUsedExternalKey = response["key_index"];
       return address;
     } catch (error) {
       console.log(error);
@@ -82,19 +86,69 @@ class BitcoinService extends AccountServiceDecorator {
    */
   async getChangingAddress(accountcurrencyId) {
     try {
-      const response = await this._TideWalletCommunicator.AccountChange(accountcurrencyId);
+      const response = await this._TideWalletCommunicator.AccountChange(
+        accountcurrencyId
+      );
       const address = response["address"];
-      this._numberOfUsedInternalKey = response['key_index'];
+      this._numberOfUsedInternalKey = response["key_index"];
       return [address, this._numberOfUsedInternalKey];
     } catch (error) {
-      console.log(error)
+      console.log(error);
       //TODO
       return ["error", 0];
     }
   }
 
   /**
-   * getTransactionFee
+   *
+   * @param {object} param
+   * @param {Array<UnspentTxOut>} param.unspentTxOuts
+   * @param {BigNumber} param.feePerByte
+   * @param {BigNumber} param.amount
+   * @param {Buffer} param.message
+   */
+  calculateTransactionVSize({ unspentTxOuts, amount, message }) {
+    let unspentAmount = new BigNumber(0);
+    let headerWeight;
+    let inputWeight;
+    let outputWeight;
+    let fee;
+    if (this.segwitType == SegwitType.nativeSegWit) {
+      headerWeight = 3 * 10 + 12;
+      inputWeight = 3 * 41 + 151;
+      outputWeight = 3 * 31 + 31;
+    } else if (this.segwitType == SegwitType.segWit) {
+      headerWeight = 3 * 10 + 12;
+      inputWeight = 3 * 76 + 210;
+      outputWeight = 3 * 32 + 32;
+    } else {
+      headerWeight = 3 * 10 + 10;
+      inputWeight = 3 * 148 + 148;
+      outputWeight = 3 * 34 + 34;
+    }
+    let numberOfTxIn = 0;
+    let numberOfTxOut = message != null ? 2 : 1;
+    let vsize = 0; // 3 * base_size(excluding witnesses) + total_size(including witnesses)
+    for (const utxo of unspentTxOuts) {
+      if (utxo.locked) continue;
+      numberOfTxIn += 1;
+      unspentAmount = unspentAmount.plus(utxo.amount);
+      vsize = Math.ceil(
+        (headerWeight +
+          inputWeight * numberOfTxIn +
+          outputWeight * numberOfTxOut +
+          3) /
+          4
+      );
+      // fee = new BigNumber(vsize).multipliedBy(feePerByte);
+      if (unspentAmount.gte(amount.plus(fee))) break;
+    }
+    // fee = new BigNumber(vsize).multipliedBy(feePerByte);
+    return vsize; // ++ what[Tzuhan] why[Wayne]??
+  }
+
+  /**
+   * getFeePerUnit
    * @override
    * @param {String} blockchainId
    * @returns {Object} result
@@ -102,13 +156,15 @@ class BitcoinService extends AccountServiceDecorator {
    * @returns {string} result.standard
    * @returns {string} result.fast
    */
-  async getTransactionFee(blockchainId) {
+  async getFeePerUnit(blockchainId) {
     if (
       this._fee == null ||
       Date.now() - this._feeTimestamp > this.AVERAGE_FETCH_FEE_TIME
     ) {
       try {
-        const response = await this._TideWalletCommunicator.GetFee(blockchainId);
+        const response = await this._TideWalletCommunicator.GetFee(
+          blockchainId
+        );
         const { slow, standard, fast } = response;
         this._fee = {
           slow,
@@ -117,11 +173,22 @@ class BitcoinService extends AccountServiceDecorator {
         };
         this._feeTimestamp = Date.now();
       } catch (error) {
-        console.log(error)
+        console.log(error);
         // TODO fee = null 前面會出錯
       }
     }
     return this._fee;
+  }
+
+  async getTransactionFee(id, blockchainId, decimals, to, amount, message) {
+    const feePerUnit = await this.getFeePerUnit(blockchainId, decimals);
+    console.log("getTransactionFee", feePerUnit);
+    const utxos = await this.getUnspentTxOut(id);
+    console.log("getTransactionFee", utxos);
+    const vsize = utxos.length
+      ? this.calculateTransactionVSize(utxos, amount, message)
+      : 1;
+    return { feePerUnit: { ...feePerUnit }, unit: vsize };
   }
 
   /**
@@ -165,7 +232,6 @@ class BitcoinService extends AccountServiceDecorator {
     //   }
     //   // backend will parse transaction and insert changeUtxo to backend DB
     // }
-
     // return [success, _transaction]; // TODO return transaction
   }
 
@@ -173,18 +239,19 @@ class BitcoinService extends AccountServiceDecorator {
     const now = Date.now();
 
     if (now - this.service.lastSyncTimestamp > this._syncInterval || force) {
-      console.log('_syncUTXO');
+      console.log("_syncUTXO");
       const accountId = this.service.accountId;
-      console.log('_syncUTXO currencyId:', accountId);
+      console.log("_syncUTXO currencyId:", accountId);
 
       try {
         const response = await this._TideWalletCommunicator.GetUTXO(accountId);
         const datas = response;
-        const utxos = datas.map(
-          (data) => this._DBOperator.utxoDao.entity({
-            ...data, accountId
+        const utxos = datas.map((data) =>
+          this._DBOperator.utxoDao.entity({
+            ...data,
+            accountId,
           })
-        )
+        );
         await this._DBOperator.utxoDao.insertUtxos(utxos);
       } catch (error) {
         console.trace(error);
@@ -195,8 +262,7 @@ class BitcoinService extends AccountServiceDecorator {
   }
 
   async getUnspentTxOut(accountId) {
-    const utxos =
-        await this._DBOperator.utxoDao.findAllUtxos(accountId);
+    const utxos = await this._DBOperator.utxoDao.findAllUtxos(accountId);
     return utxos.map((utxo) => UnspentTxOut.fromUtxoEntity(utxo));
   }
 

@@ -273,56 +273,7 @@ class TransactionServiceBTC extends TransactionDecorator {
     return script;
   }
 
-  /**
-   * 
-   * @param {object} param
-   * @param {Array<UnspentTxOut>} param.unspentTxOuts
-   * @param {BigNumber} param.feePerByte
-   * @param {BigNumber} param.amount
-   * @param {Buffer} param.message
-   */
-  calculateTransactionVSize({
-    unspentTxOuts,
-    feePerByte,
-    amount,
-    message,
-  }) {
-    let unspentAmount = new BigNumber(0);
-    let headerWeight;
-    let inputWeight;
-    let outputWeight;
-    let fee;
-    if (this.segwitType == SegwitType.nativeSegWit) {
-      headerWeight = 3 * 10 + 12;
-      inputWeight = 3 * 41 + 151;
-      outputWeight = 3 * 31 + 31;
-    } else if (this.segwitType == SegwitType.segWit) {
-      headerWeight = 3 * 10 + 12;
-      inputWeight = 3 * 76 + 210;
-      outputWeight = 3 * 32 + 32;
-    } else {
-      headerWeight = 3 * 10 + 10;
-      inputWeight = 3 * 148 + 148;
-      outputWeight = 3 * 34 + 34;
-    }
-    let numberOfTxIn = 0;
-    let numberOfTxOut = message != null ? 2 : 1;
-    let vsize =
-        0; // 3 * base_size(excluding witnesses) + total_size(including witnesses)
-    for (const utxo of unspentTxOuts) {
-      if (utxo.locked) continue;
-      numberOfTxIn += 1;
-      unspentAmount = unspentAmount.plus(utxo.amount);
-      vsize = Math.ceil((headerWeight +
-        (inputWeight * numberOfTxIn) +
-        (outputWeight * numberOfTxOut) +
-        3) / 4);
-      fee = new BigNumber(vsize).multipliedBy(feePerByte);
-      if (unspentAmount.gte(amount.plus(fee))) break;
-    }
-    fee = new BigNumber(vsize).multipliedBy(feePerByte);
-    return fee; // ++ why??
-  }
+  // -- move to BitcoinService for getTransactionFee
 }
 
 module.exports = TransactionServiceBTC;

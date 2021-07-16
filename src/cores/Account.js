@@ -8,6 +8,7 @@ const TransactionBase = require("../services/transactionService");
 const ETHTransactionSvc = require("../services/transactionServiceETH");
 const { Transaction } = require("../models/tranasction.model");
 const { substract, plus, isGreaterThanOrEqualTo } = require("../helpers/utils");
+const BTCTransactionSvc = require("../services/transactionServiceBTC");
 
 class AccountCore {
   static instance;
@@ -455,9 +456,9 @@ class AccountCore {
       case ACCOUNT.ETH:
       case ACCOUNT.CFC:
         txSvc = new ETHTransactionSvc(new TransactionBase(), safeSigner);
-
         break;
       case ACCOUNT.BTC:
+        txSvc = new BTCTransactionSvc(new TransactionBase(), safeSigner);
         break;
       default:
         break;
