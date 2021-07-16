@@ -55,7 +55,7 @@ class TransactionServiceBTC extends TransactionDecorator {
       BitcoinUtils.isSegWitAddress(
         address,
         isMainNet ? this.bech32HrpMainnet : this.bech32HrpTestnet,
-        bech32Separator); // TODO BitcoinCash Address condition
+        this.bech32Separator); // TODO BitcoinCash Address condition
     return verified;
   }
 
