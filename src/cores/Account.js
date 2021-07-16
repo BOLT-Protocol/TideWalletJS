@@ -498,8 +498,8 @@ class AccountCore {
 
   async sendBTCBasedTx(account, svc, safeSigner, transaction) {
     const txSvc = new BTCTransactionSvc(new TransactionBase(), safeSigner);
-    const utxos = await svc.getUnspentTxOut(id);
-    const changeInfo = await svc.getChangingAddress(id);
+    const utxos = await svc.getUnspentTxOut(account.id);
+    const changeInfo = await svc.getChangingAddress(account.id);
     const signedTx = await txSvc.prepareTransaction({
       isMainNet: account.blockchainCoinType === 1 ? false : true,
       to: transaction.to,
