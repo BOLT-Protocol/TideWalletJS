@@ -2,6 +2,8 @@ const BN = require("bn.js");
 const cryptography = require("ethereum-cryptography/secp256k1");
 const { ecdsaSign } = cryptography;
 
+const { isUint, toDER, bip66encode } = require('../helpers/utils');
+
 const ZERO32 = Buffer.alloc(32, 0);
 const EC_GROUP_ORDER = Buffer.from(
   "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141",
@@ -181,6 +183,28 @@ class Signer {
 
     const sig = ecsign(hashData, privateKey);
     return sig;
+  }
+
+  /**
+   * 
+   * @param {Buffer} signature 
+   * @param {Number} hashType 
+   * @returns 
+   */
+  static encodeSignature(signature, hashType) {
+    if (!isUint(hashType, 8)) throw new Error("Invalid hasType $hashType");
+    if (signature.length != 64) throw new Error("Invalid signature");
+    const hashTypeMod = hashType & ~0x80;
+    if (hashTypeMod <= 0 || hashTypeMod >= 4)
+      throw new new Error('Invalid hashType $hashType');
+
+    const hashTypeBuffer = Buffer.alloc(1);
+    hashTypeBuffer.writeInt8(hashType, 0);
+    const r = toDER(signature.slice(0, 32));
+    const s = toDER(signature.slice(32, 64));
+    let combine = bip66encode(r, s);
+    combine = Buffer.concat([combine, hashTypeBuffer]);
+    return combine;
   }
 
   async sign({ keyPath, data }) {

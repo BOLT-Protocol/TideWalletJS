@@ -1,5 +1,6 @@
 const AccountServiceDecorator = require("./accountServiceDecorator");
 const { ACCOUNT, ACCOUNT_EVT } = require("../models/account.model");
+const BigNumber = require("bignumber.js");
 
 class EthereumService extends AccountServiceDecorator {
   constructor(service, TideWalletCommunicator, DBOperator) {
@@ -63,18 +64,17 @@ class EthereumService extends AccountServiceDecorator {
    * @returns {Array.<{address: String || error, code: Number}>} result
    */
   async getReceivingAddress(id) {
-    if (this._address === null) {
+    if (!this._address) {
       try {
         const response = await this._TideWalletCommunicator.AccountReceive(id);
         const address = response["address"];
         this._address = address;
       } catch (error) {
-        console.log(error)
-        //TODO
-        return ["error", 0];
+        console.log(error);
+        // ++ Throw exception 0712
       }
     }
-    return [this._address, null];
+    return this._address;
   }
 
   /**
@@ -87,35 +87,112 @@ class EthereumService extends AccountServiceDecorator {
     return await this.getReceivingAddress(id);
   }
 
+  _GWeiToWei(amount) {
+    const bnAmount = new BigNumber(amount);
+    const bnBase = new BigNumber(10);
+    const bnDecimal = bnBase.exponentiatedBy(9);
+    const wei = bnAmount.multipliedBy(bnDecimal).toFixed();
+    return wei;
+  }
+
+  _WeiToGWei(amount) {
+    const bnAmount = new BigNumber(amount);
+    const bnBase = new BigNumber(10);
+    const bnDecimal = bnBase.exponentiatedBy(9);
+    const gwei = bnAmount.dividedBy(bnDecimal).toFixed();
+    return gwei;
+  }
+
+  toCurrencyUint(amount, decimals) {
+    return this.service.toCurrencyUint(amount, decimals);
+  }
+
+  toSmallestUint(amount, decimals) {
+    return this.service.toSmallestUint(amount, decimals);
+  }
+
   /**
-   * getTransactionFee
+   * getGasPrice
    * @override
-   * @param {String} blockchainId
+   * @param {blockchainId} string
+   * @param {decimals} integer
    * @returns {Object} result
    * @returns {string} result.slow
    * @returns {string} result.standard
    * @returns {string} result.fast
    */
-  async getTransactionFee(blockchainId) {
+  async getGasPrice(blockchainId, decimals) {
     if (
       this._fee == null ||
       Date.now() - this._feeTimestamp > this.AVERAGE_FETCH_FEE_TIME
     ) {
       try {
-        const response = await this._TideWalletCommunicator.GetFee(blockchainId);
+        const response = await this._TideWalletCommunicator.GetFee(
+          blockchainId
+        );
         const { slow, standard, fast } = response;
         this._fee = {
-          slow,
-          standard,
-          fast,
+          slow: this.service.toCurrencyUint(this._GWeiToWei(slow), decimals),
+          standard: this.service.toCurrencyUint(
+            this._GWeiToWei(standard),
+            decimals
+          ),
+          fast: this.service.toCurrencyUint(this._GWeiToWei(fast), decimals),
         };
         this._feeTimestamp = Date.now();
       } catch (error) {
-        console.log(error)
+        console.log(error);
         // TODO fee = null 前面會出錯
       }
     }
     return this._fee;
+  }
+
+  /**
+   * estimateGasLimit
+   * @override
+   * @param {String} blockchainId
+   * @param {String} from
+   * @param {String} to
+   * @param {String} amount
+   * @param {String} message
+   * @returns {Boolean} result
+   */
+  async estimateGasLimit(id, blockchainId, to, amount = "0", message = "0x") {
+    if (!to) return 21000;
+    const from = await this.getReceivingAddress(id);
+    if (message == "0x" && this._gasLimit != null) {
+      return this._gasLimit;
+    } else {
+      const payload = {
+        fromAddress: from,
+        toAddress: to,
+        value: amount,
+        data: message,
+      };
+      try {
+        const response = await this._TideWalletCommunicator.GetGasLimit(
+          blockchainId,
+          payload
+        );
+        this._gasLimit = Number(response.gasLimit);
+      } catch (error) {
+        throw error;
+      }
+      return this._gasLimit;
+    }
+  }
+
+  async getTransactionFee(id, blockchainId, decimals, to, amount, message) {
+    const gasPrice = await this.getGasPrice(blockchainId, decimals);
+    const gasLimit = await this.estimateGasLimit(
+      id,
+      blockchainId,
+      to,
+      amount,
+      message
+    );
+    return { feePerUnit: { ...gasPrice }, unit: gasLimit };
   }
 
   /**
@@ -126,19 +203,26 @@ class EthereumService extends AccountServiceDecorator {
    * @returns {Array.<{success: Boolean, transaction: String}>} result
    */
   async publishTransaction(blockchainId, transaction) {
+    const _transaction = { ...transaction };
+    console.log(_transaction); //-- debug info
     try {
       const body = {
         hex:
-          "0x" + Buffer.from(transaction.serializeTransaction).toString("hex"),
-      }
-      const response = await this._TideWalletCommunicator.PublishTransaction(blockchainId, body);
-      transaction.txId = response["txid"];
-      transaction.timestamp = Date.now();
-      transaction.confirmations = 0;
-      return [true, transaction];
+          "0x" +
+          Buffer.from(transaction.serializeTransaction()).toString("hex"),
+      };
+      console.log("publishTransaction", body);
+      const response = await this._TideWalletCommunicator.PublishTransaction(
+        blockchainId,
+        body
+      );
+      _transaction.txid = response["txid"];
+      _transaction.timestamp = Math.floor(Date.now()/1000);
+      _transaction.confirmations = 0;
+      return [true, _transaction];
     } catch (error) {
       console.log(error);
-      return [false, transaction];
+      return [false, _transaction];
     }
   }
 
@@ -172,38 +256,6 @@ class EthereumService extends AccountServiceDecorator {
   }
 
   /**
-   * estimateGasLimit
-   * @override
-   * @param {String} blockchainId
-   * @param {String} from
-   * @param {String} to
-   * @param {String} amount
-   * @param {String} message
-   * @returns {Boolean} result
-   */
-  async estimateGasLimit(blockchainId, from, to, amount, message) {
-    if (message == "0x" && this._gasLimit != null) {
-      return this._gasLimit;
-    } else {
-      const payload = {
-        fromAddress: from,
-        toAddress: to,
-        value: amount,
-        data: message,
-      };
-      try {
-        const response = await this._TideWalletCommunicator.GetGasLimit(blockchainId, payload);
-        this._gasLimit = Number(response.gasLimit);
-      } catch (error) {
-        // TODO
-        // _gasLimit = 21000;
-        throw error;
-      }
-      return this._gasLimit;
-    }
-  }
-
-  /**
    * getNonce
    * @override
    * @param {String} blockchainId
@@ -211,8 +263,15 @@ class EthereumService extends AccountServiceDecorator {
    * @returns {Number} nonce
    */
   async getNonce(blockchainId, address) {
+    console.log("blockchainId", blockchainId);
+    console.log("address", address);
+
     try {
-      const response = await this._TideWalletCommunicator.GetNonce(blockchainId, address);
+      const response = await this._TideWalletCommunicator.GetNonce(
+        blockchainId,
+        address
+      );
+      console.log("response", response);
       const nonce = Number(response["nonce"]);
       this._nonce = nonce;
       return nonce;

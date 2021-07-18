@@ -1,4 +1,27 @@
+const { default: BigNumber } = require("bignumber.js");
 const rlp = require("rlp");
+const Cryptor = require("./Cryptor");
+const createKeccakHash = require('keccak')
+
+function toChecksumAddress (address) {
+  // ++ 兩個keccak256不一樣 Cryptor.keccak256round 同 TideBitWallet[Flutter] 
+  // var addressHash = Cryptor.keccak256round(address, 1);
+  // console.log(addressHash)
+  address = address.toLowerCase().replace('0x', '')
+  var hash = createKeccakHash('keccak256').update(address).digest('hex')
+  var ret = '0x'
+  // console.log(hash)
+
+  for (var i = 0; i < address.length; i++) {
+    if (parseInt(hash[i], 16) >= 8) {
+      ret += address[i].toUpperCase()
+    } else {
+      ret += address[i]
+    }
+  }
+
+  return ret
+}
 
 /**
  * Checks if the given string is an address
@@ -30,26 +53,15 @@ var isAddress = function (address) {
  * @param {String} address the given HEX adress
  * @return {Boolean}
  */
-var isChecksumAddress = function (address) {
+const isChecksumAddress = function (address) {
   // Check each case
-  address = address.replace("0x", "");
-  var addressHash = sha3(address.toLowerCase());
-  for (var i = 0; i < 40; i++) {
-    // the nth letter should be uppercase if the nth digit of casemap is 1
-    if (
-      (parseInt(addressHash[i], 16) > 7 &&
-        address[i].toUpperCase() !== address[i]) ||
-      (parseInt(addressHash[i], 16) <= 7 &&
-        address[i].toLowerCase() !== address[i])
-    ) {
-      return false;
-    }
-  }
-  return true;
+  const checksumAddress = toChecksumAddress(address);
+  return address === checksumAddress;
 };
 
 function verifyEthereumAddress(address) {
-  if (address.contains(":")) {
+  isChecksumAddress(address);
+  if (address.includes(":")) {
     address = address.split(":")[1];
   }
 
@@ -63,31 +75,42 @@ function verifyEthereumAddress(address) {
  * @returns {Buffer} rlp
  */
 function encodeToRlp(transaction) {
-  const list = [
-    Buffer.from(transaction.nonce.toString(16)),
-    transaction.gasPrice.toString(16),
-    transaction.gasUsed.toString(16),
-  ].map((v) => `0x${v}`);
+  console.log(transaction);
 
-  if (transaction.to) {
-    list.push(transaction.to);
+  const list = [
+    transaction.nonce,
+    transaction.feePerUnit.toNumber(),
+    transaction.gasUsed,
+  ];
+  console.log(list);
+
+  if (transaction.destinationAddresses) {
+    list.push(transaction.destinationAddresses);
   } else {
     list.push("");
   }
+  console.log(list);
 
-  list.push(`0x${transaction.amount.toString(16)}`);
+  list.push(transaction.amount.toNumber());
+  console.log(list);
 
   if (transaction.message) {
     list.push(transaction.message);
   } else {
     list.push("");
   }
+  console.log(list);
 
   if (transaction.signature) {
     list.push(transaction.signature.v);
-    list.push(transaction.signature.r.toNumber());
-    list.push(transaction.signature.s.toNumber());
+    if (BigNumber.isBigNumber(transaction.signature.r))
+      list.push(transaction.signature.r.toNumber());
+    else list.push(transaction.signature.r);
+    if (BigNumber.isBigNumber(transaction.signature.s))
+      list.push(transaction.signature.s.toNumber());
+    else list.push(transaction.signature.s);
   }
+  console.log(list);
 
   return rlp.encode(list);
 }

@@ -1,5 +1,6 @@
 const { ACCOUNT_EVT } = require("../models/account.model");
 const AccountService = require("./accountService");
+const BigNumber = require("bignumber.js");
 class AccountServiceBase extends AccountService {
   constructor(AccountCore) {
     super();
@@ -47,35 +48,13 @@ class AccountServiceBase extends AccountService {
       const account = await this._DBOperator.accountDao.findAccount(
         this._accountId
       );
-      /**
-       * res
-       * account_id: "8d047ea8-0420-4324-aed5-64352a602a30"
-       * account_index: "0"
-       * balance: "0"
-       * blockchain_id: "8000003C"
-       * currency_id: "5b755dacd5dd99000b3d92b2"
-       * curve_type: 0
-       * icon: "https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@9ab8d6934b83a4aa8ae5e8711609a70ca0ab1b2b/32/icon/eth.png"
-       * purpose: 3324
-       * symbol: "ETH"
-       * tokens: [
-       *         {
-       *          "account_token_id": "488c3047-ced5-4049-9967-8ececb41ced1",
-                  "token_id": "5b1ea92e584bf50020130617",
-                  "blockchain_id": "80000060",
-                  "name": "Tether",
-                  "symbol": "USDT",
-                  "type": 2,
-                  "publish": true,
-                  "decimals": 2,
-                  "total_supply": "26,310,299,179",
-                  "contract": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-                  "balance": "0"
-       *     }
-       *  ]
-       */
-      const acc = res;
-      let tokens = acc["tokens"];
+      const timestamp = Date.now();
+      account.balance = res["balance"];
+      account.numberOfUsedExternalKey = res["number_of_used_external_key"] ?? 0;
+      account.numberOfUsedInternalKey = res["number_of_used_internal_key"] ?? 0;
+      account.lastSyncTime = timestamp;
+
+      let tokens = res["tokens"];
       const currs = await this._DBOperator.currencyDao.findAllCurrencies();
       const newTokens = [];
 
@@ -87,20 +66,32 @@ class AccountServiceBase extends AccountService {
           newTokens.push(cur);
         }
         const entity = this._DBOperator.accountDao.entity({
-          ...account,
           id: token["account_token_id"],
+          account_id: account.accountId,
+          user_id: account.userId,
+          blockchain_id: account.blockchainId,
           currency_id: token["token_id"],
-          name: token["name"], // Join Token
-          symbol: token["symbol"], // Join Token
-          type: token["type"], // Join Token
+          balance: token["balance"],
+          last_sync_time: account.lastSyncTime,
+          number_of_used_external_key: account.numberOfUsedExternalKey,
+          number_of_used_internal_key: account.numberOfUsedInternalKey,
+          purpose: account.purpose,
+          coin_type_account: account.accountCoinType,
+          account_index: account.accountIndex,
+          curve_type: account.curveType,
+          network: account.network,
+          coin_type_blockchain: account.blockchainCoinType,
           publish: token["publish"], // Join Token
+          chain_id: account.chainId,
+          name: token["name"], // Join Token
+          description: token["description"], // Join Token
+          symbol: token["symbol"], // Join Token
           decimals: token["decimals"], // Join Token
           total_supply: token["total_supply"], // Join Token
           contract: token["contract"], // Join Token
-          description: token["description"], // Join Token
-          icon: currs[index].image, // Join Currency || url
+          type: token["type"], // Join Token
+          image: currs[index].image, // Join Currency || url
           exchange_rate: currs[index].exchangeRate, // ++ Join Currency || inUSD,
-          balance: token["balance"],
         });
         return entity;
       });
@@ -123,7 +114,7 @@ class AccountServiceBase extends AccountService {
         );
       }
 
-      return [acc, ...tokens];
+      return [account, ...tokens];
     } catch (error) {
       console.log(error);
       return [];
@@ -178,7 +169,7 @@ class AccountServiceBase extends AccountService {
       const txs = res.map((t) =>
         this._DBOperator.transactionDao.entity({
           ...t,
-          accountcurrencyId: account.id,
+          accountId: account.id,
         })
       );
 
@@ -201,7 +192,11 @@ class AccountServiceBase extends AccountService {
       await this._DBOperator.transactionDao.findAllTransactionsById(accountId);
 
     const txNull = transactions.filter((t) => t.timestamp === null);
-    const txReady = transactions.filter((t) => t.timestamp !== null);
+    const txReady = transactions
+      .filter((t) => t.timestamp !== null)
+      .sort((a, b) => (a.timestamp <= b.timestamp ? 1 : -1));
+    console.log("_loadTransactions txNull", txNull);
+    console.log("_loadTransactions txReady", txReady);
 
     return [...txNull, ...txReady];
   }
@@ -256,9 +251,43 @@ class AccountServiceBase extends AccountService {
 
   /**
    * @override
+   * the reason why I dont use this.service.id is that AccountCurrency and AccountToken share the same accountId
+   * but they might have different deicaml. futhermore, where we call this function
+   * is able to acess account obj with asking DB, so why not?
+   * And both of them are using the same class Account(or AccountDao.enity) so they have the same inferface which
+   * has the property of decimal
    */
   getTransactionFee() {
     // Override by decorator
+  }
+
+  /**
+   * @override
+   * according to currency decimal to transform amount to currency unit
+   * @method toCurrencyUint
+   * @param {amount} string
+   * @param {decimals} interger
+   */
+  toCurrencyUint(amount, decimals) {
+    const bnAmount = new BigNumber(amount);
+    const bnBase = new BigNumber(10);
+    const bnDecimal = bnBase.exponentiatedBy(decimals);
+    const currencyUint = bnAmount.dividedBy(bnDecimal).toFixed();
+    return currencyUint;
+  }
+
+  /**
+   * @override
+   * @method toSmallestUint
+   * @param {amount} string
+   * @param {decimals} interger
+   */
+  toSmallestUint(amount, decimals) {
+    const bnAmount = new BigNumber(amount);
+    const bnBase = new BigNumber(10);
+    const bnDecimal = bnBase.exponentiatedBy(decimals);
+    const smallestUint = bnAmount.multipliedBy(bnDecimal).toFixed();
+    return smallestUint;
   }
 
   /**
@@ -324,13 +353,8 @@ class AccountServiceBase extends AccountService {
 
     if (now - this._lastSyncTimestamp > this._syncInterval || force) {
       const accounts = await this._getData();
-      const v = accounts.map((acc) =>
-        this._DBOperator.accountDao.entity({
-          ...acc,
-          last_sync_time: now,
-        })
-      );
-      await this._DBOperator.accountDao.insertAccounts(v);
+      console.log(accounts);
+      await this._DBOperator.accountDao.insertAccounts(accounts);
       this._lastSyncTimestamp = now;
     }
 

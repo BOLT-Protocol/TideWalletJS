@@ -5,8 +5,10 @@ const EthereumService = require("../services/ethereumService");
 const BitcoinService = require("../services/bitcoinService");
 const { network_publish } = require("../constants/config");
 const TransactionBase = require("../services/transactionService");
-const ETHTransaction = require("../services/transactionServiceETH");
-const BigNumber = require("bignumber.js");
+const ETHTransactionSvc = require("../services/transactionServiceETH");
+const { Transaction } = require("../models/tranasction.model");
+const { substract, plus, isGreaterThanOrEqualTo } = require("../helpers/utils");
+const BTCTransactionSvc = require("../services/transactionServiceBTC");
 
 class AccountCore {
   static instance;
@@ -79,6 +81,7 @@ class AccountCore {
         acc.contract = currency.contract;
         acc.type = currency.type;
         acc.image = currency.image;
+        acc.publish = currency.publish;
         acc.exchangeRate = currency.exchangeRate;
       }
       let chain = chains.find(
@@ -89,6 +92,7 @@ class AccountCore {
         acc.blockchainCoinType = chain.coinType;
         acc.chainId = chain.chainId;
         acc.publish = chain.publish;
+        acc.network = chain.network;
 
         await this._DBOperator.accountDao.insertAccount(acc);
 
@@ -132,7 +136,6 @@ class AccountCore {
           srvStart.push(svc.start());
         }
       }
-     
     }
 
     await this._getSupportedToken(chains);
@@ -187,17 +190,6 @@ class AccountCore {
    */
   getService(accountId) {
     return this._services.find((svc) => svc.accountId === accountId);
-  }
-
-  /**
-   * Get blockchainID by accountId
-   * @method getBlockchainID
-   * @param {string} accountId The accountId
-   * @returns {string} The blockchainID
-   */
-  getBlockchainID(accountId) {
-    const account = this._accounts[accountId][0];
-    return account.blockchainId;
   }
 
   /**
@@ -257,7 +249,7 @@ class AccountCore {
          * a
          * account_id
          * purpose ++
-         * coin_type__account ++
+         * coin_type_account ++
          * account_index
          * curve_type ++
          * balance --
@@ -273,9 +265,12 @@ class AccountCore {
             id: a["account_id"],
             user_id: this._TideWalletCore.userInfo.id,
             purpose: 84,
-            coin_type__account: 3324,
+            coin_type_account: 3324,
             curve_type: 0,
             chain_id: a["network_id"],
+            number_of_used_external_key: a["number_of_used_external_key"] ?? 0,
+            number_of_used_internal_key: a["number_of_used_internal_key"] ?? 0,
+            last_sync_time: Date.now(),
           })
         );
         accounts = enties;
@@ -312,7 +307,7 @@ class AccountCore {
          * type
          * icon
          * exchange_rate
-         * publish --
+         * publish
          */
         const enties = res?.map((c) => this._DBOperator.currencyDao.entity(c));
         currencies = enties;
@@ -402,103 +397,198 @@ class AccountCore {
   }
 
   /**
-   * Get transaction list by accountcurrencyId
+   * Get transaction list by accountId
    * @method getTransactions
-   * @param {string} accountcurrencyId The accountcurrencyId
+   * @param {string} accountId The accountId
    * @returns {Array} The transaction list
    */
-  async getTransactions(accountcurrencyId) {
+  async getTransactions(accountId) {
     const txs = await this._DBOperator.transactionDao.findAllTransactionsById(
-      accountcurrencyId
+      accountId
     );
-    return txs;
+    // https://dmitripavlutin.com/javascript-array-sort-numbers/
+    return txs.sort((a, b) => (a.timestamp <= b.timestamp ? 1 : -1)); //(a, b) => a.timestamp - b.timestamp
   }
 
   /**
-   * Get receive address by accountcurrencyId
+   * Get receive address by accountId
    * @method getReceiveAddress
    * @param {string} accountId The accountId
    * @returns {string} The address
    */
-  async getReceiveAddress(accountcurrencyId) {
-    const svc = this.getService(accountcurrencyId);
-    const address = await svc.getReceivingAddress(accountcurrencyId);
+  async getReceiveAddress(accountId) {
+    const svc = this.getService(accountId);
+    const address = await svc.getReceivingAddress(accountId);
+    console.log(address);
     return address;
   }
 
   /**
-   * Get TransactionFee and gasLimit by accountcurrencyId
-   * @param {string} accountcurrencyId
+   * Get TransactionFee and gasLimit by id
+   * @param {string} id
    * @param {string} to [optional]
    * @param {string} amount [optional]
    * @param {string} data [optional]
    * @returns
    */
-  async getTransactionFee(accountcurrencyId, { to, amount, data } = {}) {
-    const svc = this.getService(accountcurrencyId);
-    const blockchainID = this.getBlockchainID(accountcurrencyId);
-    const fees = await svc.getTransactionFee(blockchainID); // ++ to CoinUint 0706
-    let gasLimit = 21000;
-    if (to)
-      gasLimit = await svc.estimateGasLimit(blockchainID, to, amount, data);
+  async getTransactionFee(id, to, amount, data) {
+    const svc = this.getService(id);
+    const account = this._accounts[id].find((acc) => acc.id === id);
+    const fees = await svc.getTransactionFee(
+      account.id,
+      account.blockchainId,
+      account.decimals,
+      to,
+      amount,
+      data
+    );
     console.log("fees", fees);
-    console.log("gasLimit", gasLimit);
-    return { ...fees, gasLimit };
+    return fees;
+  }
+
+  async verifyAddress(id, address) {
+    const account = this._accounts[id].find((acc) => acc.id === id);
+    const safeSigner = this._TideWalletCore.getSafeSigner(
+      `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'`
+    );
+    let txSvc;
+    switch (account.accountType) {
+      case ACCOUNT.ETH:
+      case ACCOUNT.CFC:
+        txSvc = new ETHTransactionSvc(new TransactionBase(), safeSigner);
+        break;
+      case ACCOUNT.BTC:
+        txSvc = new BTCTransactionSvc(new TransactionBase(), safeSigner);
+        break;
+      default:
+        break;
+    }
+    return txSvc.verifyAddress(
+      address,
+      account.blockchainCoinType === 1 ? false : true
+    );
+  }
+
+  async verifyAmount(id, amount, fee) {
+    const account = this._accounts[id].find((acc) => acc.id === id);
+    const amountPlusFee = plus(amount, fee);
+    const result = isGreaterThanOrEqualTo(account.balance, amountPlusFee);
+    console.log(account.balance);
+    console.log(amount);
+    console.log(fee);
+    console.log(result);
+    return result;
+  }
+
+  async sendETHBasedTx(account, svc, safeSigner, transaction) {
+    const nonce = await svc.getNonce(account.blockchainId, transaction.from);
+    const txSvc = new ETHTransactionSvc(new TransactionBase(), safeSigner);
+    const signedTx = await txSvc.prepareTransaction({
+      transaction,
+      nonce,
+      chainId: account.chainId,
+    });
+    console.log(signedTx); //-- debug info
+    const response = await svc.publishTransaction(
+      account.blockchainId,
+      signedTx
+    );
+    return response;
+  }
+
+  async sendBTCBasedTx(account, svc, safeSigner, transaction) {
+    const txSvc = new BTCTransactionSvc(new TransactionBase(), safeSigner);
+    const utxos = await svc.getUnspentTxOut(account.id);
+    const changeInfo = await svc.getChangingAddress(account.id);
+    const signedTx = await txSvc.prepareTransaction({
+      isMainNet: account.blockchainCoinType === 1 ? false : true,
+      to: transaction.to,
+      amount: transaction.amount, //String in satoshi
+      message: transaction.message,
+      accountId: account.id,
+      fee: transaction.fee, //String in satoshi
+      unspentTxOuts: utxos,
+      keyIndex: changeInfo[1],
+      changeAddress: changeInfo[0],
+    });
+    console.log(signedTx); //-- debug info
+    const response = await svc.publishTransaction(
+      account.blockchainId,
+      signedTx
+    );
+    return response;
   }
 
   /**
    * Send transaction
    * @method sendTransaction
-   * @param {string} accountcurrencyId The accountcurrencyId
-   * @param {object} param The transaction content
-   * @param {number} param.amount
-   * @param {string} param.to
-   * @param {number} param.gasPrice
-   * @param {number} param.gasUsed
-   * @param {string} param.gasPrice
-   * @param {number} param.keyIndex
+   * @param {string} id The account id
+   * @param {Transaction} transaction The transaction content
+   * @param {string} transaction.to
+   * @param {string} transaction.amount
+   * @param {string} transaction.feePerUnit
+   * @param {string} transaction.feeUnit
    * @returns {boolean}} success
    */
-  async sendTransaction(
-    accountCurrency,
-    { amount, to, gasPrice, gasUsed, message }
-  ) {
-    let safeSigner;
-    switch (accountCurrency.accountType) {
+  async sendTransaction(id, transaction) {
+    const account = this._accounts[id].find((acc) => acc.id === id);
+    const svc = this.getService(account.accountId);
+    const from = await svc.getReceivingAddress(id);
+    const safeSigner = this._TideWalletCore.getSafeSigner(
+      `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'`
+    );
+    transaction.from = from;
+    transaction.amount = svc.toSmallestUint(
+      transaction.amount,
+      account.decimals
+    );
+    transaction.feePerUnit = svc.toSmallestUint(
+      transaction.feePerUnit,
+      account.decimals
+    );
+    transaction.fee = svc.toSmallestUint(transaction.fee, account.decimals);
+    let success, tx;
+    switch (account.accountType) {
       case ACCOUNT.ETH:
       case ACCOUNT.CFC:
-        safeSigner = this._TideWalletCore.getSafeSigner("m/84'/3324'/0'/0/0"); // ++ get path from accountDao
-        const svc = this.getService(accountCurrency.accountId);
-        const address = svc.getReceivingAddress(
-          accountCurrency.accountcurrencyId
+        [success, tx] = await this.sendETHBasedTx(
+          account,
+          svc,
+          safeSigner,
+          transaction
         );
-        const account = this._accounts.find(
-          (acc) => acc.accountId === svc.accountId
+        break;
+      case ACCOUNT.BTC:
+        [success, tx] = await this.sendBTCBasedTx(
+          account,
+          svc,
+          safeSigner,
+          transaction
         );
-
-        const nonce = await svc.getNonce(account.blockchainId, address);
-
-        const txSvc = new ETHTransaction(new TransactionBase(), safeSigner);
-        const signedTx = txSvc.prepareTransaction({
-          amount: BigNumber(amount),
-          to,
-          gasPrice: BigNumber(gasPrice),
-          gasUsed: BigNumber(gasUsed),
-          message,
-          nonce,
-        });
-
-        const [success, tx] = await svc.publishTransaction(
-          account.blockchainId,
-          signedTx
-        );
-
-        console.log(signedTx); //-- debug info
-        console.log(tx); //-- debug info
-        return success;
+        break;
       default:
-        return null;
+        break;
     }
+    if (success) {
+      console.log("sendTransaction tx", tx); //-- debug info
+      tx.amount = svc.toCurrencyUint(transaction.amount, account.decimals);
+      tx.feePerUnit = svc.toCurrencyUint(
+        transaction.feePerUnit,
+        account.decimals
+      );
+      tx.fee = svc.toCurrencyUint(transaction.fee, account.decimals);
+      tx.accountId = account.id;
+      tx.id = account.id + tx.txid;
+      console.log("sendTransaction tx", tx); //-- debug info
+      account.balance = substract(
+        substract(account.balance, tx.amount),
+        tx.fee
+      );
+      console.log("_txEsendTransaction account.balance", account.balance); //-- debug info
+      await this._DBOperator.accountDao.insertAccount(account);
+      await this._DBOperator.transactionDao.insertTransaction(tx);
+    }
+    return success;
   }
 }
 

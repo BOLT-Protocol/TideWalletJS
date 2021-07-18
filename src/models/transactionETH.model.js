@@ -5,17 +5,15 @@ const {
   Signature,
 } = require("./tranasction.model");
 const { encodeToRlp } = require("../helpers/ethereumUtils");
-const BigNumber = require('bignumber.js');
+const BigNumber = require("bignumber.js");
 
 class ETHTransaction extends Transaction {
   nonce;
-  to;
   signature;
 
   constructor(values) {
     super(values);
     this.nonce = values.nonce;
-    this.to = values.to;
     this.signature = values.signature;
   }
 
@@ -27,26 +25,25 @@ class ETHTransaction extends Transaction {
     from,
     to,
     amount,
-    gasPrice,
+    feePerUnit,
     gasUsed,
+    fee,
     message,
     chainId,
-    fee,
     nonce,
   }) {
     return new ETHTransaction({
-      amount,
-      gasPrice,
+      amount: BigNumber(amount),
+      feePerUnit: BigNumber(feePerUnit),
       gasUsed,
-      message,
+      fee,
+      note: message,
       chainId,
       direction: TRANSACTION_DIRECTION.sent,
       status: TRANSACTION_STATUS.pending,
       destinationAddresses: to,
       sourceAddresses: from,
-      fee,
       nonce,
-      to,
       signature: new Signature({
         v: chainId,
         r: BigNumber(0),

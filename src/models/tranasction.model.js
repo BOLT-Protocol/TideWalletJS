@@ -6,37 +6,40 @@
  * @property {string} status                The transaction status
  * @property {number} confirmations         The confirmations number
  * @property {string} address               The address is to or from address depending on direction
- * @property {BigNumber} fee                The fee
- * @property {string} txId                  The txId from API
- * @property {string} message               The transaction message
+ * @property {string} fee                The fee
+ * @property {string} txid                  The txid from API
+ * @property {string} note               The transaction note
  * @property {string} sourceAddresses       The source addresses
  * @property {string} destinationAddresses  The destination addresses
- * @property {BigNumber} gasPrice           The gas price
- * @property {BigNumber} gasUsed            The gase used/limit
+ * @property {BigNumber} feePerUnit            The gas price
+ * @property {number} gasUsed            The gase used/limit
  */
 class Transaction {
   id;
+  accountId;
   direction;
   amount;
   status;
-  timestamp;
   confirmations;
   address;
   fee;
-  txId;
-  message;
+  txid;
+  note;
   sourceAddresses;
   destinationAddresses;
-  gasPrice;
+  feePerUnit;
   gasUsed;
 
   constructor(values) {
     Object.assign(this, values);
+    console.log("Transaction", this);
   }
 
   serializeTransaction() {}
 
-  static createTransaction() {}
+  static createTransaction() {
+    console.log("createTransaction Transaction Model");
+  }
 }
 
 const TRANSACTION_STATUS = {

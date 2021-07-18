@@ -1,7 +1,7 @@
-const PaperWallet = require('./PaperWallet');
-const Signer = require('./Signer');
-const SafeSigner = require('./SafeSigner');
-const Cryptor = require('../helpers/Cryptor');
+const PaperWallet = require("./PaperWallet");
+const Signer = require("./Signer");
+const SafeSigner = require("./SafeSigner");
+const Cryptor = require("../helpers/Cryptor");
 const rlp = require("./../helpers/rlp");
 
 class TideWalletCore {
@@ -24,11 +24,11 @@ class TideWalletCore {
    * @param {String} userInfo.installId
    * @param {Number} userInfo.timestamp
    * @param {string} userInfo.keystore
-   * @returns 
+   * @returns
    */
-   setUserInfo(userInfo) {
+  setUserInfo(userInfo) {
     this.userInfo = userInfo;
-    console.log(userInfo)
+    console.log(userInfo);
   }
 
   /**
@@ -36,7 +36,7 @@ class TideWalletCore {
    * @param {String} userIdentifier
    * @returns {String}
    */
-   _getNonce(userIdentifier) {
+  _getNonce(userIdentifier) {
     const cafeca = 0xcafeca;
     let nonce = cafeca;
 
@@ -55,7 +55,7 @@ class TideWalletCore {
       nonce = Number(nonce) + 1;
     }
 
-    return rlp.toBuffer(nonce).toString('hex');
+    return rlp.toBuffer(nonce).toString("hex");
   }
 
   /**
@@ -67,37 +67,33 @@ class TideWalletCore {
    * @param {Number} userInfo.timestamp
    * @returns {String} password
    */
-   _getPassword({ userIdentifier, userId, installId, timestamp }) {
-    const userIdentifierBuff = Buffer.from(userIdentifier || this.userInfo.thirdPartyId, "utf8").toString(
-      "hex"
-    );
-    const installIdBuff = Buffer.from(installId  || this.userInfo.installId).toString("hex");
+  _getPassword({ userIdentifier, userId, installId, timestamp }) {
+    const userIdentifierBuff = Buffer.from(
+      userIdentifier || this.userInfo.thirdPartyId,
+      "utf8"
+    ).toString("hex");
+    const installIdBuff = Buffer.from(
+      installId || this.userInfo.installId
+    ).toString("hex");
     const pwseed = Cryptor.keccak256round(
       Cryptor.keccak256round(
-          Cryptor.keccak256round(userIdentifierBuff, 1) + 
-          Cryptor.keccak256round(userId || this.userInfo.id, 1),
+        Cryptor.keccak256round(userIdentifierBuff, 1) +
+          Cryptor.keccak256round(userId || this.userInfo.id, 1)
       ) +
-      Cryptor.keccak256round(
         Cryptor.keccak256round(
-          rlp
-            .toBuffer(
-              rlp.toBuffer(timestamp).toString("hex").slice(3, 6)
-            )
-            .toString("hex"),
-          1
-        ) +
-        Cryptor.keccak256round(installIdBuff, 1)
-      )
+          Cryptor.keccak256round(
+            rlp
+              .toBuffer(rlp.toBuffer(timestamp).toString("hex").slice(3, 6))
+              .toString("hex"),
+            1
+          ) + Cryptor.keccak256round(installIdBuff, 1)
+        )
     );
     const password = Cryptor.keccak256round(pwseed);
     return password;
   }
 
-  _generateUserSeed({
-    userIdentifier,
-    userId,
-    userSecret,
-  }) {
+  _generateUserSeed({ userIdentifier, userId, userSecret }) {
     const nonce = this._getNonce(userIdentifier);
 
     const userIdentifierBuff = Buffer.from(userIdentifier, "utf8").toString(
@@ -109,15 +105,14 @@ class TideWalletCore {
 
     const seed = Cryptor.keccak256round(
       Cryptor.keccak256round(
-        Cryptor.keccak256round(_main, 1) +
-        Cryptor.keccak256round(_extend, 1)
+        Cryptor.keccak256round(_main, 1) + Cryptor.keccak256round(_extend, 1)
       ) +
-      Cryptor.keccak256round(
-        Cryptor.keccak256round(userId, 1) +
-        Cryptor.keccak256round(userSecret, 1)
-      )
+        Cryptor.keccak256round(
+          Cryptor.keccak256round(userId, 1) +
+            Cryptor.keccak256round(userSecret, 1)
+        )
     );
-    return {seed, _extend};
+    return { seed, _extend };
   }
 
   /**
@@ -140,7 +135,11 @@ class TideWalletCore {
     installId,
     timestamp,
   }) {
-    const {seed, _extend} = this._generateUserSeed({ userIdentifier, userId, userSecret });
+    const { seed, _extend } = this._generateUserSeed({
+      userIdentifier,
+      userId,
+      userSecret,
+    });
 
     const key = Cryptor.keccak256round(seed);
     const password = this._getPassword({
@@ -188,9 +187,9 @@ class TideWalletCore {
       credentialData.password
     );
     const seed = await PaperWallet.magicSeed(privateKey);
-    const _seed = Buffer.from(seed, 'hex');
+    const _seed = Buffer.from(seed, "hex");
     const extendPublicKey = PaperWallet.getExtendedPublicKey(_seed);
-    return { wallet, extendPublicKey }
+    return { wallet, extendPublicKey };
   }
 
   /**
@@ -218,13 +217,10 @@ class TideWalletCore {
       installId,
       timestamp,
     });
-    const wallet = await PaperWallet.createWallet(
-      seed,
-      password
-    );
-    const _seed = Buffer.from(seed, 'hex');
+    const wallet = await PaperWallet.createWallet(seed, password);
+    const _seed = Buffer.from(seed, "hex");
     const extendPublicKey = PaperWallet.getExtendedPublicKey(_seed);
-    return { wallet, extendPublicKey }
+    return { wallet, extendPublicKey };
   }
 
   /**
@@ -236,57 +232,76 @@ class TideWalletCore {
       userIdentifier: this.userInfo.thirdPartyId,
       userId: this.userInfo.id,
       installId: this.userInfo.installId,
-      timestamp: this.userInfo.timestamp
-    })
+      timestamp: this.userInfo.timestamp,
+    });
     const keystore = this.userInfo.keystore;
     const pk = PaperWallet.recoverFromJson(keystore, password);
     const seed = PaperWallet.magicSeed(pk);
     return seed;
   }
-  
+
   /**
    * getExtendedPublicKey
    * @returns {string} extPK
    */
   async getExtendedPublicKey() {
     const seed = await this._getSeedByKeyStore();
-    const extPK = PaperWallet.getExtendedPublicKey(Buffer.from(seed, 'hex'));
+    const extPK = PaperWallet.getExtendedPublicKey(Buffer.from(seed, "hex"));
     return extPK;
   }
 
-  getSafeSigner(keyPath) {
-    const safeSigner = new SafeSigner((data) => {
+  getSafeSigner(keyRoot = "m/84'/3324'/0'") {
+    const safeSigner = new SafeSigner(({ chainIndex = 0, keyIndex = 0, data }) => {
+      const keyPath = `${keyRoot}/${chainIndex}/${keyIndex}`;
       return this.signBuffer({ keyPath, data });
     });
+    return safeSigner;
   }
 
   //////////////////////////////////////////////////////////////////////
 
   // /**
-  //  * 
+  //  *
   //  * @param {object} param
   //  * @param {object} param.keyPath
   //  * @param {number} param.keyPath.chainIndex
   //  * @param {number} param.keyPath.keyIndex
   //  * @param {Buffer} param.buffer -  hash data buffer
-  //  * @returns 
+  //  * @returns
   //  */
   // async sign({ keyPath, buffer }) {
   //   return this._signer.sign(buffer, keyPath.chainIndex, keyPath.keyIndex);
   // }
 
   /**
-   * 
+   *
    * @param {object} param
    * @param {string} param.keyPath
    * @param {Buffer} param.data -  hash data buffer
-   * @returns 
+   * @returns
    */
   async signBuffer({ keyPath, data }) {
+    console.log(`keyPath: ${keyPath}`); // --
+    console.log("data", data); // --
+    const { chainIndex, keyIndex, options } = Cryptor.pathParse(keyPath);
+    const seed = await this._getSeedByKeyStore();
+    const privateKey = PaperWallet.getPriKey(
+      Buffer.from(seed, "hex"),
+      chainIndex,
+      keyIndex,
+      options
+    );
+    console.log("dataHex", data.toString("hex")); // --
+    console.log("privateKey", privateKey); // --
+    const signed = Signer._sign(data, Buffer.from(privateKey, "hex"));
+    console.log("signed", signed); // --
+    return signed;
+  }
+
+  async getPubKey({ keyPath }) {
     const {chainIndex, keyIndex, options} = Cryptor.pathParse(keyPath);
     const seed = await this._getSeedByKeyStore();
-    const privateKey = PaperWallet.getPriKey(Buffer.from(seed, 'hex'), chainIndex, keyIndex, options);
-    return Signer._sign(data, Buffer.from(privateKey, 'hex'));
+    return PaperWallet.getPubKey(Buffer.from(seed, 'hex'), chainIndex, keyIndex, options);
   }
 
   async signData({ keyPath, jsonData }) {

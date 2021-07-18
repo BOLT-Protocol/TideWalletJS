@@ -2,23 +2,24 @@
  @abstract
 **/
 class TransactionService {
+  constructor() {}
+
   _base;
-  _currencyDecimals = 18;
 
   set base(base) {
     this._base = base;
   }
 
   get base() {
-      return this._base;
+    return this._base;
   }
 
-  set currencyDecimals(decimal) {
-      this._currencyDecimals = decimal;
+  set accountDecimals(decimals) {
+    this._accountDecimals = decimals;
   }
 
-  get currencyDecimals() {
-      return this._currencyDecimals;
+  get accountDecimals() {
+    return this._accountDecimals;
   }
 
   verifyAddress(address, publish = true) {}

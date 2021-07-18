@@ -1,4 +1,4 @@
-const { randomHex } = require("./helper");
+const { randomHex } = require("./utils");
 const { Keccak } = require("sha3");
 const hash = new Keccak(256);
 const crypto = require('crypto');
@@ -33,7 +33,7 @@ class Cryptor {
     const chainIndex = arr[4];
     const keyIndex = arr[5];
     const options = {
-      path: `${arr[0]}/${arr[1]}/${arr[2]}`,
+      path: `${arr[0]}/${arr[1]}/${arr[2]}/${arr[3]}`,
     };
     return { chainIndex, keyIndex, options };
   }

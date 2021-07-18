@@ -79,7 +79,7 @@ class bitcoinUtils{
    * @returns {Buffer}
    */
   static toPubKeyHash(pubKey) {
-    const publicKey = pubKey.length > 33 ? compressedPubKey(pubKey) : pubKey;
+    const publicKey = pubKey.length > 33 ? bitcoinUtils.compressedPubKey(pubKey) : pubKey;
     const pubKeyHash = Cryptor.hash160(publicKey);
     return pubKeyHash;
   }
@@ -119,7 +119,7 @@ class bitcoinUtils{
    * @returns {Buffer}
    */
   static toP2pkScript(pubKey) {
-    const publicKey = pubKey.length > 33 ? compressedPubKey(pubKey) : pubKey;
+    const publicKey = pubKey.length > 33 ? bitcoinUtils.compressedPubKey(pubKey) : pubKey;
     let data = [];
     data.push(publicKey.length);
     data.psuh(...publicKey);
@@ -132,7 +132,7 @@ class bitcoinUtils{
    * @returns {Buffer}
    */
   static pubkeyToBIP49RedeemScript(pubKey) {
-    const pubKeyHash = toPubKeyHash(pubKey);
+    const pubKeyHash = bitcoinUtils.toPubKeyHash(pubKey);
     let rs = [OP_0, pubKeyHash.length];
     rs.push(...pubKeyHash);
     return Buffer.from(rs);
@@ -145,7 +145,7 @@ class bitcoinUtils{
    * @returns {string}
    */
   static pubKeyToP2pkhAddress(pubKey, p2pkhAddressPrefix) {
-    const fingerprint = toPubKeyHash(pubKey);
+    const fingerprint = bitcoinUtils.toPubKeyHash(pubKey);
     const hashPubKey =
         Buffer.from([p2pkhAddressPrefix, ...fingerprint]);
     const address = bs58check.encode(hashPubKey);
@@ -159,7 +159,7 @@ class bitcoinUtils{
    */
   static pubKeyToP2pkhCashAddress(pubKey, p2pkhAddressPrefix) {
     // Compressed Public Key to P2PKH Cash Address
-    const lagacyAddress = pubKeyToP2pkhAddress(pubKey, p2pkhAddressPrefix);
+    const lagacyAddress = bitcoinUtils.pubKeyToP2pkhAddress(pubKey, p2pkhAddressPrefix);
     const address = bchaddr.toCashAddress(lagacyAddress);
     return address;
   }
@@ -195,7 +195,7 @@ class bitcoinUtils{
    * @returns 
    */
   static pubKeyToP2wpkhNestedInP2shAddress(pubKey, p2shAddressPrefix) {
-    const redeemScript = pubkeyToBIP49RedeemScript(pubKey);
+    const redeemScript = bitcoinUtils.pubkeyToBIP49RedeemScript(pubKey);
     const fingerprint = Cryptor.hash160(redeemScript);
     // List<int> checksum = sha256(sha256(fingerprint)).sublist(0, 4);
     // bs58check library 會幫加checksum
@@ -210,7 +210,7 @@ class bitcoinUtils{
    * @returns {Buffer}
    */
   static decodeAddress(address) {
-    if (address.contains(':')) {
+    if (address.includes(':')) {
       address = address.split(':')[1];
     }
     let decodedData;
@@ -231,7 +231,7 @@ class bitcoinUtils{
     const _address = SegwitCodec.decode(address);
     const scriptPubKey = _address.scriptPubKey;
     // Log.debug('scriptPubKey: $scriptPubKey');
-    return scriptPubKey;
+    return Buffer.from(scriptPubKey, 'hex');
   }
   
   /**
@@ -241,7 +241,7 @@ class bitcoinUtils{
    */
   static isP2pkhAddress(address, p2pkhAddressPrefix) {
     // Log.debug('p2pkhAddressPrefix: $p2pkhAddressPrefix');
-    let decodedData = decodeAddress(address);
+    let decodedData = bitcoinUtils.decodeAddress(address);
     if (decodedData.length != 21) return false;
     const isP2pkhAddress = decodedData.readUInt8(0) == p2pkhAddressPrefix;
   
@@ -254,7 +254,7 @@ class bitcoinUtils{
    * @returns {boolean}
    */
   static isP2shAddress(address, p2shAddressPrefix) {
-    const decodedData = decodeAddress(address);
+    const decodedData = bitcoinUtils.decodeAddress(address);
     if (decodedData.length != 21) return false;
     const isP2pkhAddress = decodedData.readUInt8(0) == p2shAddressPrefix;
   
@@ -268,7 +268,7 @@ class bitcoinUtils{
    * @returns {boolean}
    */
   static isSegWitAddress(address, bech32HRP, bech32Separator) {
-    if (address.contains(':')) {
+    if (address.includes(':')) {
       address = address.split(':')[1];
     }
     let hrp = "";
@@ -283,7 +283,7 @@ class bitcoinUtils{
       );
       if (bech32.hrp != hrp) return false;
       const version = bech32.data[0];
-      const program = convertBits(bech32.data.sublist(1), 5, 8, false);
+      const program = convertBits(bech32.data.slice(1), 5, 8, false);
       if (version == 0 && program.length == 20) {
         // P2WPKH
         return true;

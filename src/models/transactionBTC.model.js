@@ -35,6 +35,12 @@ class Input {
   /* used output's index in the previous transaction */
   // int vout;
   /* the signature produced to check validity */
+  utxo;
+  scriptSig = null;
+  sequence;
+  publicKey;
+  address;
+  hashType;
 
   constructor(utxo, hashType) {
     this.utxo = utxo,
@@ -51,25 +57,26 @@ class Input {
 
   get voutInBuffer() {
     const buf = Buffer.allocUnsafe(4);
-    buf.writeInt32LE(this.utxo.vout, 0);
+    buf.writeUInt32LE(this.utxo.vout, 0);
     return buf;
   }
 
   get sequenceInBuffer() {
     const buf = Buffer.allocUnsafe(4);
     const sequence = this.utxo.sequence ? this.utxo.sequence : BitcoinTransaction.DEFAULT_SEQUENCE
-    buf.writeInt32LE(sequence, 0);
+    buf.writeUInt32LE(sequence, 0);
     return buf;
   }
 
   get amountInBuffer() {
-    const amount = this.utxo.amountInSmallestUint.toString(16).padStart(8, '0');
+    const amount = this.utxo.amountInSmallestUint.toString(16).padStart(16, '0');
     return Buffer.from(amount, 'hex').reverse();
   }
 
   get hashTypeInBuffer() {
     const buf = Buffer.allocUnsafe(4);
-    buf.writeInt32LE(this.hashType.value, 0);
+    buf.writeUInt32LE(this.hashType.value, 0);
+    return buf;
   }
 
   /**
@@ -101,14 +108,13 @@ class Input {
    * @param {Buffer} signature 
    */
   addSignature(signature) {
-    let scriptSig;
     if (signature == null)
-      scriptSig = null;
+    this.scriptSig = null;
     else {
       const utxoType = this.utxo.type;
       switch (utxoType) {
         case BitcoinTransactionType.PUBKEYHASH:
-          scriptSig = Buffer.from([
+          this.scriptSig = Buffer.from([
             signature.length,
             ...signature,
             this.publicKey.length,
@@ -116,7 +122,7 @@ class Input {
           ]);
           break;
         case BitcoinTransactionType.SCRIPTHASH:
-          scriptSig = Buffer.from([
+          this.scriptSig = Buffer.from([
             0x00,
             signature.length,
             ...signature,
@@ -125,7 +131,7 @@ class Input {
           ]);
           break;
         case BitcoinTransactionType.WITNESS_V0_KEYHASH:
-          scriptSig = Buffer.from([
+          this.scriptSig = Buffer.from([
             0x02,
             signature.length,
             ...signature,
@@ -134,13 +140,14 @@ class Input {
           ]);
           break;
         case BitcoinTransactionType.PUBKEY:
-          scriptSig = Buffer.from([
+          this.scriptSig = Buffer.from([
             signature.length,
             ...signature,
           ]);
           break;
       }
     }
+    console.log('addSignature this.scriptSig:', this.scriptSig)
   }
 }
 
@@ -157,7 +164,7 @@ class Output {
   }
 
   get amountInBuffer() {
-    const amount = this.utxo.amountInSmallestUint.toString(16).padStart(8, '0');
+    const amount = this.amount.toString(16).padStart(16, '0');
     return Buffer.from(amount, 'hex').reverse();
   }
 }
@@ -168,7 +175,6 @@ class BitcoinTransaction extends Transaction {
   static DEFAULT_SEQUENCE = 0xffffffff;
 
   currencyId;
-  note;
 
   _inputs;
   _outputs;
@@ -185,36 +191,40 @@ class BitcoinTransaction extends Transaction {
   constructor(values) {
     super(values);
     this.currencyId = values.currencyId;
-    this.note = note ? note : Buffer.from('0', 'hex');
+    this.message = values.message ? values.message : Buffer.from('0', 'hex');
 
     this._segwitType = values.segwitType;
     this._inputs = [];
     this._outputs = [];
-    this.setVersion(values.publish ? 1 : 2);
+    this.setVersion(values.isMainNet ? 1 : 2);
     this.setlockTime(values.lockTime ? values.lockTime : 0);
   }
 
-  static prepareTransaction({ publish, segwitType,
-    amount, fee, note, lockTime }) {
+  static createTransaction({ isMainNet, segwitType,
+    amount, fee, message, lockTime }) {
     return new BitcoinTransaction({
       segwitType: (segwitType ? segwitType : SegwitType.nativeSegWit),
       amount,
       fee,
-      note,
+      message,
+      direction: TRANSACTION_DIRECTION.sent,
+      status: TRANSACTION_STATUS.pending,
+      destinationAddresses: '',
+      sourceAddresses: '',
       lockTime,
-      publish,
+      isMainNet,
       lockTime,
-    })
+    });
   }
 
   setVersion(version) {
     this._version = Buffer.allocUnsafe(4);
-    this._version.writeInt32LE(version, 0);
+    this._version.writeUInt32LE(version, 0);
   }
 
   setlockTime(locktime) {
     this._lockTime = Buffer.allocUnsafe(4);
-    this._lockTime.writeInt32LE(locktime, 0);
+    this._lockTime.writeUInt32LE(locktime, 0);
   }
 
   /**
@@ -251,7 +261,7 @@ class BitcoinTransaction extends Transaction {
       scriptLength = [script.length];
     } else if (script.length <= 0xFFFF) {
       const scriptLengthData = Buffer.allocUnsafe(2);
-      scriptLengthData.writeInt32LE(script.length, 0);
+      scriptLengthData.writeUInt32LE(script.length, 0);
       scriptLength = [0xFD, ...scriptLengthData];
     } else {
       Log.warning(' unsupported script length');
@@ -343,7 +353,7 @@ class BitcoinTransaction extends Transaction {
       Otherwise, hashSequence is a uint256 of 0x0000......0000.
        */
       if (selectedInput.hashType == HashType.SIGHASH_ALL) {
-        data.addAll(hashSequence);
+        data.push(...hashSequence);
       } else {
         const buf = Buffer.alloc(32, 0);
         data.push(...buf);
@@ -363,7 +373,7 @@ class BitcoinTransaction extends Transaction {
         BitcoinUtils.toP2pkhScript(BitcoinUtils.toPubKeyHash(selectedInput.publicKey));
       console.log('prevOutScript:', Buffer.from([scriptCode.length, ...scriptCode]).toString('hex'));
 
-      data.push(...scriptCode.length, ...scriptCode);
+      data.push(scriptCode.length, ...scriptCode);
 
       //  amount:
       data.push(...selectedInput.amountInBuffer);
@@ -482,7 +492,7 @@ class BitcoinTransaction extends Transaction {
           data.push(0);
         }
       }
-      data.splice(4, 0, [ADVANCED_TRANSACTION_MARKER, ADVANCED_TRANSACTION_FLAG]);
+      data.splice(4, 0, BitcoinTransaction.ADVANCED_TRANSACTION_MARKER, BitcoinTransaction.ADVANCED_TRANSACTION_FLAG);
     }
 
     //  nLockTime:
@@ -492,8 +502,13 @@ class BitcoinTransaction extends Transaction {
   }
 
   get transactionHash() {
-    return Cryptor.sha256round(serializeTransaction);
+    return Cryptor.sha256round(this.serializeTransaction);
   }
 }
 
-module.exports = BitcoinTransaction;
+module.exports = {
+  BitcoinTransaction,
+  BitcoinTransactionType,
+  SegwitType,
+  HashType,
+};

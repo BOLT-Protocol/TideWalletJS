@@ -11,6 +11,7 @@ test('_sign', () => {
   const expV = 28;
 
   const hashData = Cryptor.keccak256round(rawTransaction, 1);
+  console.log("hashData", hashData)
 
   const signature = Signer._sign(Buffer.from(hashData, 'hex'), Buffer.from(privKey, 'hex'));
   const resR = signature.r.toString('hex');

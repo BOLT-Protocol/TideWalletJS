@@ -7,7 +7,6 @@ const OBJ_UTXO = "utxo";
 const OBJ_USER = "user";
 const OBJ_CURRENCY = "currency";
 const OBJ_NETWORK = "network";
-const OBJ_ACCOUNT_CURRENCY = "accountcurrency";
 const OBJ_EXCHANGE_RATE = "exchange_rate";
 
 const OBJ_PREF = "pref";
@@ -36,7 +35,6 @@ class IndexedDB {
   _currencyDao = null;
   _networkDao = null;
   _txDao = null;
-  _accountcurrencyDao = null;
   _utxoDao = null;
   _exchangeRateDao = null;
   _prefDao = null;
@@ -64,10 +62,6 @@ class IndexedDB {
         this._networkDao = new NetworkDao(this.db, OBJ_NETWORK);
         this._txDao = new TransactionDao(this.db, OBJ_TX);
         this._utxoDao = new UtxoDao(this.db, OBJ_UTXO);
-        this._accountcurrencyDao = new AccountCurrencyDao(
-          this.db,
-          OBJ_ACCOUNT_CURRENCY
-        );
         this._exchangeRateDao = new ExchangeRateDao(this.db, OBJ_EXCHANGE_RATE);
         this._prefDao = new PrefDao(this.db, OBJ_PREF);
 
@@ -87,12 +81,15 @@ class IndexedDB {
       });
 
       let accountIndex = accounts.createIndex("accountId", "accountId");
-      let blockchainIndex = accounts.createIndex("blockchainId", "blockchainId");
+      let blockchainIndex = accounts.createIndex(
+        "blockchainId",
+        "blockchainId"
+      );
 
       const txs = this.db.createObjectStore(OBJ_TX, {
-        keyPath: "transactionId",
+        keyPath: "id",
       });
-      let txIndex = txs.createIndex("accountcurrencyId", "accountcurrencyId");
+      let txIndex = txs.createIndex("accountId", "accountId");
 
       const currency = this.db.createObjectStore(OBJ_CURRENCY, {
         keyPath: "currencyId",
@@ -110,6 +107,7 @@ class IndexedDB {
       const utxo = this.db.createObjectStore(OBJ_UTXO, {
         keyPath: "utxoId",
       });
+      let utxoIndex = utxo.createIndex("accountId", "accountId");
 
       const rate = this.db.createObjectStore(OBJ_EXCHANGE_RATE, {
         keyPath: "exchangeRateId",
@@ -376,11 +374,13 @@ class AccountDao extends DAO {
     currency_id, // currency_id || token_id
     balance, // Join AccountCurrency
     last_sync_time, // Join AccountCurrency
+    number_of_used_external_key,
+    number_of_used_internal_key,
     purpose, // Join Account
     coin_type_account, // Join Account
     account_index, // Join Account
     curve_type, // Join Account
-    blockchain, // Join Blockchain
+    network, // Join Blockchain
     coin_type_blockchain, // Join Blockchain
     publish, // Join Blockchain
     chain_id, // Join Blockchain  || network_id
@@ -391,7 +391,7 @@ class AccountDao extends DAO {
     total_supply, // Join Currency
     contract, // Join Currency
     type, // Join Currency
-    icon, // Join Currency || url
+    image, // Join Currency || url
     exchange_rate, // ++ Join Currency || inUSD,
   }) {
     return {
@@ -402,11 +402,13 @@ class AccountDao extends DAO {
       currencyId: currency_id,
       balance,
       lastSyncTime: last_sync_time,
+      numberOfUsedExternalKey: number_of_used_external_key,
+      numberOfUsedInternalKey: number_of_used_internal_key,
       purpose,
       accountCoinType: coin_type_account,
       accountIndex: account_index,
       curveType: curve_type,
-      blockchain,
+      network,
       blockchainCoinType: coin_type_blockchain,
       publish,
       chainId: chain_id,
@@ -417,7 +419,7 @@ class AccountDao extends DAO {
       totalSupply: total_supply,
       contract,
       type,
-      icon,
+      image,
       exchangeRate: exchange_rate,
       // tokens,
     };
@@ -456,6 +458,7 @@ class CurrencyDao extends DAO {
     name,
     symbol,
     type,
+    publish,
     blockchain_id, // ++ for token
     description, // ++ [Did not provided by Backend Service]
     // address,  // ++ [Did not provided by Backend Service]
@@ -472,7 +475,7 @@ class CurrencyDao extends DAO {
       name,
       symbol,
       type: _type,
-
+      publish,
       blockchainId: blockchain_id,
       description,
       address: contract,
@@ -529,29 +532,30 @@ class NetworkDao extends DAO {
 class TransactionDao extends DAO {
   /**
    * @override
+   * @param {string} accountId ,this is the id of the account, not the accountId of the account
    */
   entity({
-    accountcurrencyId,
+    accountId,
     txid,
+    status,
+    amount,
+    direction,
     confirmations,
+    timestamp,
     source_addresses,
     destination_addresses,
+    fee,
     gas_price,
     gas_used,
     note,
-    fee,
-    status,
-    timestamp,
-    direction,
-    amount,
   }) {
     return {
-      transactionId: accountcurrencyId + txid,
-      accountcurrencyId: accountcurrencyId,
-      txId: txid,
-      confirmation: confirmations,
-      sourceAddress: source_addresses,
-      destinctionAddress: destination_addresses,
+      id: accountId + txid,
+      accountId,
+      txid,
+      confirmations,
+      sourceAddresses: source_addresses,
+      destinationAddresses: destination_addresses,
       gasPrice: gas_price,
       gasUsed: gas_used,
       note,
@@ -563,8 +567,8 @@ class TransactionDao extends DAO {
     };
   }
 
-  findAllTransactionsById(acId) {
-    return this._readAll(acId, "accountcurrencyId");
+  findAllTransactionsById(accountId) {
+    return this._readAll(accountId, "accountId");
   }
 
   insertTransaction(entity) {
@@ -578,54 +582,6 @@ class TransactionDao extends DAO {
     return this._writeAll(txs);
   }
 }
-
-class AccountCurrencyDao extends DAO {
-  entity({
-    // accountcurrency_id,
-    account_id,
-    currency_id,
-    balance,
-    number_of_used_external_key,
-    number_of_used_internal_key,
-    last_sync_time,
-    token_id,
-    account_token_id,
-  }) {
-    return {
-      accountcurrencyId: account_token_id ?? account_id,
-      accountId: account_id,
-      currencyId: currency_id ?? token_id,
-      balance,
-      numberOfUsedExternalKey: number_of_used_external_key,
-      numberOfUsedInternalKey: number_of_used_internal_key,
-      lastSyncTime: last_sync_time,
-    };
-  }
-  constructor(db, name) {
-    super(db, name);
-  }
-
-  findOneByAccountyId(id) {
-    return this._read(id);
-  }
-
-  findAllCurrencies() {
-    return this._readAll();
-  }
-
-  findJoinedByAccountId(accountId) {
-    return this._readAll(accountId, "accountId");
-  }
-
-  insertAccount(entity) {
-    return this._write(entity);
-  }
-
-  insertCurrencies(currencies) {
-    return this._writeAll(currencies);
-  }
-}
-
 class ExchangeRateDao extends DAO {
   entity({ currency_id, name, rate, timestamp, type }) {
     return {
@@ -665,8 +621,8 @@ class UtxoDao extends DAO {
     const DEFAULT_SEQUENCE = 0xffffffff; // temp
     return {
       utxoId: `${txid}-${vout}`,
-      accountcurrencyId: accountId,
-      txId: txid,
+      accountId,
+      txid,
       vout,
       type,
       amount,
@@ -689,8 +645,8 @@ class UtxoDao extends DAO {
     return this._writeAll(utxos);
   }
 
-  async findAllUtxos() {
-    return this._readAll();
+  async findAllUtxos(accountId) {
+    return this._readAll(accountId, 'accountId');
   }
 }
 
