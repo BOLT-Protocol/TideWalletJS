@@ -85,6 +85,9 @@ class AccountCore {
         acc.publish = currency.publish;
         acc.exchangeRate = currency.exchangeRate;
       }
+
+      await this._DBOperator.accountDao.insertAccount(acc);
+
       let chain = chains.find(
         (chain) => chain.blockchainId === acc.blockchainId
       );
@@ -94,8 +97,6 @@ class AccountCore {
         acc.chainId = chain.chainId;
         acc.publish = chain.publish;
         acc.network = chain.network;
-
-        await this._DBOperator.accountDao.insertAccount(acc);
 
         let svc;
         let _ACCOUNT;
