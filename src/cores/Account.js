@@ -56,7 +56,7 @@ class AccountCore {
     this._messenger = new Subject();
   }
 
-  async init({ debugMode = false, networkPublish = network_publish }) {
+  async init({ debugMode, networkPublish }) {
     this._debugMode = debugMode;
     this._networkPublish = networkPublish;
     this._isInit = true;
