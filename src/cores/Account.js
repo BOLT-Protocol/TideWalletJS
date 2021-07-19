@@ -65,7 +65,8 @@ class AccountCore {
   }
 
   async _initAccounts() {
-    const chains = await this._getNetworks(this._networkPublish);
+    this.accounts = {};
+    const chains = await this._getNetworks();
     const accounts = await this._getAccounts();
     const currencies = await this._getSupportedCurrencies();
     const srvStart = [];
@@ -198,7 +199,7 @@ class AccountCore {
    * @returns NetworkDao entity
    */
   // get supported blockchain from DB
-  async _getNetworks(publish = true) {
+  async _getNetworks() {
     let networks = await this._DBOperator.networkDao.findAllNetworks();
 
     // if DB is empty get supported blockchain from backend service
@@ -221,13 +222,12 @@ class AccountCore {
       }
     }
 
-    if (this._debugMode || !publish) {
+    if (this._debugMode) {
       return networks;
     }
 
-    if (publish) {
-      return networks.filter((n) => n.publish);
-    }
+    if (this._networkPublish) return networks.filter((n) => n.publish);
+    else return networks.filter((n) => !n.publish);
   }
 
   /**
