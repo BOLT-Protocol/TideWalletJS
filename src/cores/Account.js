@@ -65,7 +65,7 @@ class AccountCore {
   }
 
   async _initAccounts() {
-    this.accounts = {};
+    this.close();
     const chains = await this._getNetworks();
     const accounts = await this._getAccounts();
     const currencies = await this._getSupportedCurrencies();
@@ -174,10 +174,7 @@ class AccountCore {
     this._services = [];
 
     delete this.accounts;
-    this.accounts = [];
-
-    delete this.currencies;
-    this.currencies = {};
+    this.accounts = {};
 
     delete this._settingOptions;
     this._settingOptions = [];
