@@ -1,4 +1,4 @@
-const BigNumber = require('bignumber.js');
+const SafeMath = require('../helpers/SafeMath');
 
 class Trader {
   static syncInterval = 24 * 60 * 60 * 1000;
@@ -48,13 +48,13 @@ class Trader {
           .map((r) => ({
             currencyId: r.currency_id,
             name: r.name,
-            exchangeRate: new BigNumber(r.rate),
+            exchangeRate: r.rate,
           }));
         this._cryptos = cryptos
           .map((r) => ({
             currencyId: r.currency_id,
             name: r.name,
-            exchangeRate: new BigNumber(r.rate),
+            exchangeRate: r.rate,
           }));
       } catch (error) {
         console.log(error);
@@ -65,14 +65,14 @@ class Trader {
         .map((r) => ({
           currencyId: r.exchangeRateId,
           name: r.name,
-          exchangeRate: new BigNumber(r.rate),
+          exchangeRate: r.rate,
         }));
       this._cryptos = local
         .filter((rate) => rate.type === 'currency')
         .map((r) => ({
           currencyId: r.exchangeRateId,
           name: r.name,
-          exchangeRate: new BigNumber(r.rate),
+          exchangeRate: r.rate,
         }));
     }
 
@@ -101,48 +101,42 @@ class Trader {
    * calculateToUSD
    * @param {object} _currency
    * @param {string} _currency.currencyId
-   * @param {BigNumber} _currency.amount
-   * @returns {BigNumber} 
+   * @param {string} _currency.amount
+   * @returns {string} 
    */
   calculateToUSD(_currency) {
     const crypto = this._cryptos.find((c) => c.currencyId === _currency.currencyId);
-    if (!crypto) return new BigNumber(0);
+    if (!crypto) return '0';
 
-    const bnAmount = _currency.amount;
-    const bnExCh = new BigNumber(crypto.exchangeRate);
-    return bnAmount.multipliedBy(bnExCh);
+    return SafeMath.mult(_currency.amount, crypto.exchangeRate);
   }
 
   /**
    * calculateUSDToCurrency
    * @param {object} _currency
    * @param {string} _currency.currencyId
-   * @param {BigNumber} amountInUSD 
-   * @returns {BigNumber}
+   * @param {string} amountInUSD 
+   * @returns {string}
    */
   calculateUSDToCurrency(_currency, amountInUSD) {
     const crypto = this._cryptos.find((c) => c.currencyId === _currency.currencyId);
-    if (!crypto) return new BigNumber(0);
+    if (!crypto) return new '0';
 
-    const bnAmountInUSD = amountInUSD;
-    const bnExCh = new BigNumber(crypto.exchangeRate);
-    return bnAmountInUSD.dividedBy(bnExCh);
+    return SafeMath.div(amountInUSD, crypto.exchangeRate)
   }
 
   /**
    * calculateAmountToUSD
    * @param {object} _currency
    * @param {string} _currency.currencyId
-   * @param {BigNumber} amount 
-   * @returns {BigNumber}
+   * @param {string} amount 
+   * @returns {string}
    */
   calculateAmountToUSD(_currency, amount) {
     const crypto = this._cryptos.find((c) => c.currencyId === _currency.currencyId);
-    if (!crypto) return new BigNumber(0);
+    if (!crypto) return '0';
 
-    const bnAmount = amount;
-    const bnExCh = new BigNumber(crypto.exchangeRate);
-    return bnAmount.multipliedBy(bnExCh);
+    return SafeMath.mult(amount, crypto.exchangeRate)
   }
 
   /**
@@ -151,10 +145,10 @@ class Trader {
    * @param {string} sellCurrency.currencyId
    * @param {object} buyCurrency
    * @param {string} buyCurrency.currencyId
-   * @param {BigNumber} sellAmount 
+   * @param {string} sellAmount 
    * @returns {object} result
-   * @returns {BigNumber} result.buyAmount
-   * @returns {BigNumber} result.exchangeRate
+   * @returns {string} result.buyAmount
+   * @returns {string} result.exchangeRate
    */
   getSwapRateAndAmount(sellCurrency, buyCurrency, sellAmount) {
     // const sellCryptos = this._cryptos.find((c) => c.currencyId == sellCurrency.currencyId);
@@ -164,10 +158,10 @@ class Trader {
     // console.log(
     //     `buyCryptos ${buyCryptos.name} [${buyCryptos.currencyId}]: ${buyCryptos.exchangeRate}`);
 
-    const exchangeRate = this.calculateUSDToCurrency(buyCurrency, this.calculateAmountToUSD(sellCurrency, new BigNumber(1)));
-    const buyAmount = this.calculateUSDToCurrency(buyCurrency, sellAmount.multipliedBy(exchangeRate));
-    console.log('buyAmount.toFixed():', buyAmount.toFixed())
-    console.log('exchangeRate.toFixed():', exchangeRate.toFixed())
+    const exchangeRate = this.calculateUSDToCurrency(buyCurrency, this.calculateAmountToUSD(sellCurrency, '1'));
+    const buyAmount = this.calculateUSDToCurrency(buyCurrency, SafeMath.mult(sellAmount, exchangeRate));
+    console.log('buyAmount:', buyAmount)
+    console.log('exchangeRate:', exchangeRate);
     return {buyAmount, exchangeRate};
   }
 }
