@@ -9,6 +9,7 @@ const ETHTransactionSvc = require("../services/transactionServiceETH");
 const { Transaction } = require("../models/tranasction.model");
 const { substract, plus, isGreaterThanOrEqualTo } = require("../helpers/utils");
 const BTCTransactionSvc = require("../services/transactionServiceBTC");
+const SafeMath = require("../helpers/SafeMath");
 
 class AccountCore {
   static instance;
@@ -538,15 +539,15 @@ class AccountCore {
       `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'`
     );
     transaction.from = from;
-    transaction.amount = svc.toSmallestUint(
+    transaction.amount = SafeMath.toSmallestUint(
       transaction.amount,
       account.decimals
     );
-    transaction.feePerUnit = svc.toSmallestUint(
+    transaction.feePerUnit = SafeMath.toSmallestUint(
       transaction.feePerUnit,
       account.decimals
     );
-    transaction.fee = svc.toSmallestUint(transaction.fee, account.decimals);
+    transaction.fee = SafeMath.toSmallestUint(transaction.fee, account.decimals);
     let success, tx;
     switch (account.accountType) {
       case ACCOUNT.ETH:
@@ -571,12 +572,12 @@ class AccountCore {
     }
     if (success) {
       console.log("sendTransaction tx", tx); //-- debug info
-      tx.amount = svc.toCurrencyUint(transaction.amount, account.decimals);
-      tx.feePerUnit = svc.toCurrencyUint(
+      tx.amount = SafeMath.toCurrencyUint(transaction.amount, account.decimals);
+      tx.feePerUnit = SafeMath.toCurrencyUint(
         transaction.feePerUnit,
         account.decimals
       );
-      tx.fee = svc.toCurrencyUint(transaction.fee, account.decimals);
+      tx.fee = SafeMath.toCurrencyUint(transaction.fee, account.decimals);
       tx.accountId = account.id;
       tx.id = account.id + tx.txid;
       console.log("sendTransaction tx", tx); //-- debug info

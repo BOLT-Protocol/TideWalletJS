@@ -1,6 +1,7 @@
 const AccountServiceDecorator = require("./accountServiceDecorator");
 const { ACCOUNT, ACCOUNT_EVT } = require("../models/account.model");
 const BigNumber = require("bignumber.js");
+const SafeMath = require("../helpers/SafeMath");
 
 class EthereumService extends AccountServiceDecorator {
   constructor(service, TideWalletCommunicator, DBOperator) {
@@ -103,14 +104,6 @@ class EthereumService extends AccountServiceDecorator {
     return gwei;
   }
 
-  toCurrencyUint(amount, decimals) {
-    return this.service.toCurrencyUint(amount, decimals);
-  }
-
-  toSmallestUint(amount, decimals) {
-    return this.service.toSmallestUint(amount, decimals);
-  }
-
   /**
    * getGasPrice
    * @override
@@ -132,12 +125,12 @@ class EthereumService extends AccountServiceDecorator {
         );
         const { slow, standard, fast } = response;
         this._fee = {
-          slow: this.service.toCurrencyUint(this._GWeiToWei(slow), decimals),
-          standard: this.service.toCurrencyUint(
+          slow: SafeMath.toCurrencyUint(this._GWeiToWei(slow), decimals),
+          standard: SafeMath.toCurrencyUint(
             this._GWeiToWei(standard),
             decimals
           ),
-          fast: this.service.toCurrencyUint(this._GWeiToWei(fast), decimals),
+          fast: SafeMath.toCurrencyUint(this._GWeiToWei(fast), decimals),
         };
         this._feeTimestamp = Date.now();
       } catch (error) {

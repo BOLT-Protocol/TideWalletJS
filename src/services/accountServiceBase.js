@@ -263,35 +263,6 @@ class AccountServiceBase extends AccountService {
 
   /**
    * @override
-   * according to currency decimal to transform amount to currency unit
-   * @method toCurrencyUint
-   * @param {amount} string
-   * @param {decimals} interger
-   */
-  toCurrencyUint(amount, decimals) {
-    const bnAmount = new BigNumber(amount);
-    const bnBase = new BigNumber(10);
-    const bnDecimal = bnBase.exponentiatedBy(decimals);
-    const currencyUint = bnAmount.dividedBy(bnDecimal).toFixed();
-    return currencyUint;
-  }
-
-  /**
-   * @override
-   * @method toSmallestUint
-   * @param {amount} string
-   * @param {decimals} interger
-   */
-  toSmallestUint(amount, decimals) {
-    const bnAmount = new BigNumber(amount);
-    const bnBase = new BigNumber(10);
-    const bnDecimal = bnBase.exponentiatedBy(decimals);
-    const smallestUint = bnAmount.multipliedBy(bnDecimal).toFixed();
-    return smallestUint;
-  }
-
-  /**
-   * @override
    */
   publishTransaction() {
     // Override by decorator
