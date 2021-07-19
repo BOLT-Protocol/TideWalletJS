@@ -68,10 +68,22 @@ class SafeMath {
    * @param {string | number} b 
    * @returns {string}
    */
-   static div(a, b) {
+  static div(a, b) {
     const bnA = SafeMath.toBn(a);
     const bnB = SafeMath.toBn(b);
     return bnA.dividedBy(bnB).toFixed();
+  }
+
+  /**
+   * a % b
+   * @param {string | number} a 
+   * @param {string | number} b 
+   * @returns {string}
+   */
+  static mod(a, b) {
+    const bnA = SafeMath.toBn(a);
+    const bnB = SafeMath.toBn(b);
+    return bnA.mod(bnB).toFixed();
   }
 
   /**
@@ -163,6 +175,22 @@ class SafeMath {
     const bnDecimal = bnBase.exponentiatedBy(decimals);
     const smallestUint = bnAmount.multipliedBy(bnDecimal).toFixed();
     return smallestUint;
+  }
+
+  /**
+   * compressedPubKey check number
+   * @param {string} x 
+   * @param {string} y 
+   * @returns {boolean}
+   */
+  static compressedPubKeyCheck(x, y) {
+    const bnP = SafeMath.toBn('fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f');
+  
+    const bnX = SafeMath.toBn(x);
+    const bnY = SafeMath.toBn(y);
+  
+    const check = bnX.pow(new BigNumber(3)).plus(new BigNumber(7)).minus((bnY.pow(new BigNumber(2)))).mod(bnP);
+    return check.isZero();
   }
 }
 
