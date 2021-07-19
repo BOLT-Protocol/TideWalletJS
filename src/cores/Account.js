@@ -98,6 +98,8 @@ class AccountCore {
         acc.publish = chain.publish;
         acc.network = chain.network;
 
+        await this._DBOperator.accountDao.insertAccount(acc);
+
         let svc;
         let _ACCOUNT;
         switch (chain.coinType) {
