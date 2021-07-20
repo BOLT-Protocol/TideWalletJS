@@ -56,7 +56,7 @@ class AccountCore {
     this._messenger = new Subject();
   }
 
-  async init({ debugMode = false, networkPublish = network_publish }) {
+  async init({ debugMode, networkPublish }) {
     this._debugMode = debugMode;
     this._networkPublish = networkPublish;
     this._isInit = true;
@@ -65,7 +65,8 @@ class AccountCore {
   }
 
   async _initAccounts() {
-    const chains = await this._getNetworks(this._networkPublish);
+    this.close();
+    const chains = await this._getNetworks();
     const accounts = await this._getAccounts();
     const currencies = await this._getSupportedCurrencies();
     const srvStart = [];
@@ -84,6 +85,9 @@ class AccountCore {
         acc.publish = currency.publish;
         acc.exchangeRate = currency.exchangeRate;
       }
+
+      await this._DBOperator.accountDao.insertAccount(acc);
+
       let chain = chains.find(
         (chain) => chain.blockchainId === acc.blockchainId
       );
@@ -173,10 +177,7 @@ class AccountCore {
     this._services = [];
 
     delete this.accounts;
-    this.accounts = [];
-
-    delete this.currencies;
-    this.currencies = {};
+    this.accounts = {};
 
     delete this._settingOptions;
     this._settingOptions = [];
@@ -198,7 +199,7 @@ class AccountCore {
    * @returns NetworkDao entity
    */
   // get supported blockchain from DB
-  async _getNetworks(publish = true) {
+  async _getNetworks() {
     let networks = await this._DBOperator.networkDao.findAllNetworks();
 
     // if DB is empty get supported blockchain from backend service
@@ -221,13 +222,12 @@ class AccountCore {
       }
     }
 
-    if (this._debugMode || !publish) {
+    if (this._debugMode) {
       return networks;
     }
 
-    if (publish) {
-      return networks.filter((n) => n.publish);
-    }
+    if (this._networkPublish) return networks.filter((n) => n.publish);
+    else return networks.filter((n) => !n.publish);
   }
 
   /**
