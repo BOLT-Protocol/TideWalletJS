@@ -1,8 +1,8 @@
 const AccountServiceDecorator = require("./accountServiceDecorator");
 const { ACCOUNT, ACCOUNT_EVT } = require("../models/account.model");
 const UnspentTxOut = require("../models/utxo.model");
-const BigNumber = require("bignumber.js");
 const { SegwitType } = require("../models/transactionBTC.model");
+const SafeMath = require("../helpers/SafeMath");
 
 class BitcoinService extends AccountServiceDecorator {
   constructor(service, TideWalletCommunicator, DBOperator) {
@@ -103,12 +103,11 @@ class BitcoinService extends AccountServiceDecorator {
    *
    * @param {object} param
    * @param {Array<UnspentTxOut>} param.unspentTxOuts
-   * @param {BigNumber} param.feePerByte
-   * @param {BigNumber} param.amount
+   * @param {string} param.amount
    * @param {Buffer} param.message
    */
   calculateTransactionVSize({ unspentTxOuts, amount, message }) {
-    let unspentAmount = new BigNumber(0);
+    let unspentAmount = '0';
     let headerWeight;
     let inputWeight;
     let outputWeight;
@@ -132,7 +131,7 @@ class BitcoinService extends AccountServiceDecorator {
     for (const utxo of unspentTxOuts) {
       if (utxo.locked) continue;
       numberOfTxIn += 1;
-      unspentAmount = unspentAmount.plus(utxo.amount);
+      unspentAmount = SafeMath.plus(unspentAmount, utxo.amount);
       vsize = Math.ceil(
         (headerWeight +
           inputWeight * numberOfTxIn +
@@ -140,10 +139,10 @@ class BitcoinService extends AccountServiceDecorator {
           3) /
           4
       );
-      // fee = new BigNumber(vsize).multipliedBy(feePerByte);
+      // fee = SafeMath.mult(vsize, feePerByte);
       if (unspentAmount.gte(amount.plus(fee))) break;
     }
-    // fee = new BigNumber(vsize).multipliedBy(feePerByte);
+    // fee = SafeMath.mult(vsize, feePerByte);
     return vsize; // ++ what[Tzuhan] why[Wayne]??
   }
 
@@ -186,7 +185,7 @@ class BitcoinService extends AccountServiceDecorator {
     const utxos = await this.getUnspentTxOut(id);
     console.log("getTransactionFee", utxos);
     const vsize = utxos.length
-      ? this.calculateTransactionVSize(utxos, amount, message)
+      ? this.calculateTransactionVSize({ unspentTxOuts: utxos, amount, message })
       : 1;
     return { feePerUnit: { ...feePerUnit }, unit: vsize };
   }
