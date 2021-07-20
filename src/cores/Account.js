@@ -7,7 +7,6 @@ const { network_publish } = require("../constants/config");
 const TransactionBase = require("../services/transactionService");
 const ETHTransactionSvc = require("../services/transactionServiceETH");
 const { Transaction } = require("../models/tranasction.model");
-const { substract, plus, isGreaterThanOrEqualTo } = require("../helpers/utils");
 const BTCTransactionSvc = require("../services/transactionServiceBTC");
 const SafeMath = require("../helpers/SafeMath");
 
@@ -472,8 +471,8 @@ class AccountCore {
 
   async verifyAmount(id, amount, fee) {
     const account = this._accounts[id].find((acc) => acc.id === id);
-    const amountPlusFee = plus(amount, fee);
-    const result = isGreaterThanOrEqualTo(account.balance, amountPlusFee);
+    const amountPlusFee = SafeMath.plus(amount, fee);
+    const result = SafeMath.gte(account.balance, amountPlusFee);
     console.log(account.balance);
     console.log(amount);
     console.log(fee);
@@ -581,8 +580,8 @@ class AccountCore {
       tx.accountId = account.id;
       tx.id = account.id + tx.txid;
       console.log("sendTransaction tx", tx); //-- debug info
-      account.balance = substract(
-        substract(account.balance, tx.amount),
+      account.balance = SafeMath.minus(
+        SafeMath.minus(account.balance, tx.amount),
         tx.fee
       );
       console.log("_txEsendTransaction account.balance", account.balance); //-- debug info
