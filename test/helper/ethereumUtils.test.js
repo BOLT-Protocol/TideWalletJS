@@ -1,6 +1,5 @@
 const util = require("../../src/helpers/ethereumUtils");
 const ethTxModel = require("../../src/models/transactionETH.model");
-const BigNumber = require("bignumber.js");
 
 test("encodeToRlp without message", () => {
   const result =
@@ -9,9 +8,9 @@ test("encodeToRlp without message", () => {
   const tx = ethTxModel.createTransaction({
     nonce: 4,
     to: "0x3464fb42962bff99da312bd2f5ce9673e51b7d04",
-    amount: BigNumber(1000000000000000000),
-    gasUsed: BigNumber(21000),
-    feePerUnit: BigNumber(1000000000),
+    amount: "1000000000000000000",
+    gasUsed: "21000",
+    feePerUnit: "1000000000",
     chainId: 8017,
   });
 
