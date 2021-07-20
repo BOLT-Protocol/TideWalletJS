@@ -7,7 +7,7 @@ class SafeMath {
    * @returns {boolean}
    */
   static isHex(str) {
-    const reg = '/[a-fA-F]';
+    const reg = /[a-fA-F]/;
     return reg.test(str);
   }
 
