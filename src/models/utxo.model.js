@@ -1,6 +1,4 @@
-const BigNumber = require('bignumber.js');
-
-const Converter = require('../helpers/converter');
+const SafeMath = require('../helpers/SafeMath');
 const { BitcoinTransactionType } = require('../models/transactionBTC.model');
 
 class UnspentTxOut {
@@ -27,7 +25,7 @@ class UnspentTxOut {
   get hash() { return data };
   get signature() { return data };
   get amountInSmallestUint() {
-    return Converter.toSatoshi(this.amount);
+    return SafeMath.toSmallestUint(this.amount, this.decimals);
   }
 
   constructor({
@@ -87,7 +85,7 @@ class UnspentTxOut {
     publickey,
     // this.scriptPubKey,
   }) {
-    const cAmount = Converter.toBtc(amount);
+    const cAmount = SafeMath.toCurrencyUint(amount, decimals);
     return new UnspentTxOut({
       id,
       accountcurrencyId,
@@ -116,7 +114,7 @@ class UnspentTxOut {
       txId: utxo.txid,
       vout: utxo.vout,
       type: Object.values(BitcoinTransactionType).find((type) => type.value == utxo.type),
-      amount: Converter.toBtc(new BigNumber(utxo.amount)),
+      amount: SafeMath.toCurrencyUint(utxo.amount, utxo.decimals),
       changeIndex: utxo.changeIndex,
       keyIndex: utxo.keyIndex,
       data: Buffer.from(utxo.script),

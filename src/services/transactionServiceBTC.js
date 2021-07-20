@@ -192,7 +192,7 @@ class TransactionServiceBTC extends TransactionDecorator {
         : this.segwitType == SegwitType.segWit
           ? BitcoinTransactionType.SCRIPTHASH
           : BitcoinTransactionType.PUBKEYHASH,
-        amount: change,
+        amount: change.toFixed(),
         changeIndex: this._Index_InternalChain,
         keyIndex: keyIndex,
         timestamp: Math.floor(Date.now() / 1000),
