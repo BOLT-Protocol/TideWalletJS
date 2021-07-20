@@ -78,7 +78,7 @@ function encodeToRlp(transaction) {
 
   const list = [
     transaction.nonce,
-    transaction.feePerUnit.toNumber(),
+    parseInt(transaction.feePerUnit),
     transaction.gasUsed,
   ];
   console.log(list);
@@ -90,7 +90,7 @@ function encodeToRlp(transaction) {
   }
   console.log(list);
 
-  list.push(transaction.amount.toNumber());
+  list.push(parseInt(transaction.amount));
   console.log(list);
 
   if (transaction.message) {
