@@ -1,6 +1,6 @@
 const { ACCOUNT_EVT } = require("../models/account.model");
 const AccountService = require("./accountService");
-const BigNumber = require("bignumber.js");
+
 class AccountServiceBase extends AccountService {
   constructor(AccountCore) {
     super();

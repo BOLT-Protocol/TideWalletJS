@@ -8,7 +8,6 @@ const {
 } = require("../helpers/ethereumUtils");
 const EthereumTransaction = require("../models/transactionETH.model");
 const { Signature } = require("../models/tranasction.model");
-const BigNumber = require("bignumber.js");
 
 class TransactionServiceETH extends TransactionDecorator {
   service = null;

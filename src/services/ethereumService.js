@@ -1,6 +1,5 @@
 const AccountServiceDecorator = require("./accountServiceDecorator");
 const { ACCOUNT, ACCOUNT_EVT } = require("../models/account.model");
-const BigNumber = require("bignumber.js");
 const SafeMath = require("../helpers/SafeMath");
 
 class EthereumService extends AccountServiceDecorator {
@@ -89,18 +88,12 @@ class EthereumService extends AccountServiceDecorator {
   }
 
   _GWeiToWei(amount) {
-    const bnAmount = new BigNumber(amount);
-    const bnBase = new BigNumber(10);
-    const bnDecimal = bnBase.exponentiatedBy(9);
-    const wei = bnAmount.multipliedBy(bnDecimal).toFixed();
+    const wei = SafeMath.toSmallestUint(amount, 9)
     return wei;
   }
 
   _WeiToGWei(amount) {
-    const bnAmount = new BigNumber(amount);
-    const bnBase = new BigNumber(10);
-    const bnDecimal = bnBase.exponentiatedBy(9);
-    const gwei = bnAmount.dividedBy(bnDecimal).toFixed();
+    const gwei = SafeMath.toCurrencyUint(amount, 9);
     return gwei;
   }
 

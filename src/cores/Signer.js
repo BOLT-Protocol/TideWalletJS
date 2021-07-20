@@ -26,9 +26,9 @@ const TypeOutput = Object.freeze({
 /**
  * RLP encode ETH Transation
  * @method ecsign
- * @param {msgHash} Buffer
- * @param {privateKey} Buffer
- * @param {chainId} number
+ * @param {Buffer} msgHash
+ * @param {Buffer} privateKey
+ * @param {number} chainId
  * @returns {ECDSASignature} Returns the ECDSA signature of a message hash.
  */
 function ecsign(msgHash, privateKey, chainId) {
