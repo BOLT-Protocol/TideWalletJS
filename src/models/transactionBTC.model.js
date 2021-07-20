@@ -1,12 +1,9 @@
-const BigNumber = require('bignumber.js');
-
 const Cryptor = require('../helpers/Cryptor');
 const BitcoinUtils = require('../helpers/bitcoinUtils');
 const {
   Transaction,
   TRANSACTION_DIRECTION,
   TRANSACTION_STATUS,
-  Signature,
 } = require("./tranasction.model");
 
 const BitcoinTransactionType = {
@@ -153,7 +150,7 @@ class Input {
 
 class Output {
   /**
-   * @param {BigNumber} amount value in bitcoins of the output (inSatoshi)
+   * @param {string} amount value in bitcoins of the output (inSatoshi)
    * @param {String} address the address or public key of the recipient
    * @param {Buffer} script 
    */
@@ -250,7 +247,7 @@ class BitcoinTransaction extends Transaction {
   }
 
   /**
-   * @param {BigNumber} amount in smallest uint
+   * @param {string} amount in smallest uint
    * @param {string} address 
    * @param {Array<number>} script
    */
@@ -281,7 +278,7 @@ class BitcoinTransaction extends Transaction {
    */
   addData(data) {
     const scriptLength = data.length + 2;
-    const output = new Output(new BigNumber(0), '',
+    const output = new Output('0', '',
         Buffer.from([scriptLength, 0x6a, data.length, ...data]));
     this._outputs.push(output);
   }

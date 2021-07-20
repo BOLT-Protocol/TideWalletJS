@@ -1,14 +1,12 @@
-const BigNumber = require("bignumber.js");
-
 const TransactionDecorator = require("./accountServiceDecorator");
 const { ACCOUNT } = require("../models/account.model");
 const Cryptor = require("../helpers/Cryptor");
 const { BitcoinTransaction, BitcoinTransactionType, SegwitType, HashType } = require("../models/transactionBTC.model");
-const { Signature } = require("../models/tranasction.model");
 const UnspentTxOut = require('../models/utxo.model');
 const BitcoinUtils = require("../helpers/bitcoinUtils");
 const rlp = require('../helpers/rlp');
 const Signer = require('../cores/Signer');
+const SafeMath = require("../helpers/SafeMath");
 
 class TransactionServiceBTC extends TransactionDecorator {
   _Index_ExternalChain = 0;
@@ -110,14 +108,14 @@ class TransactionServiceBTC extends TransactionDecorator {
    * @param {object} param
    * @param {Boolean} param.isMainNet
    * @param {string} param.to
-   * @param {BigNumber} param.amount
+   * @param {string} param.amount
    * @param {Buffer} param.message
    * @param {string} param.accountId
-   * @param {BigNumber} param.fee
+   * @param {string} param.fee
    * @param {Array<UnspentTxOut>} param.unspentTxOuts
    * @param {string} param.keyIndex
    * @param {string} param.changeAddress
-   * @returns {ETHTransaction} transaction
+   * @returns {BitcoinTransaction} transaction
    */
   async prepareTransaction({
     isMainNet,
@@ -147,21 +145,22 @@ class TransactionServiceBTC extends TransactionDecorator {
     transaction.addOutput(amount, to, script);
     // input
     if (unspentTxOuts == null || unspentTxOuts.length == 0) return null;
-    let utxoAmount = new BigNumber(0);
+    let utxoAmount = '0';
+    const totalOut = SafeMath.plus(amount, fee);
     for (const utxo of unspentTxOuts) {
-      if (utxo.locked || !(new BigNumber(utxo.amount).gt(new BigNumber(0))) || utxo.type == null)
+      if (utxo.locked || !SafeMath.gt(utxo.amount, 0) || utxo.type == null)
         continue;
       transaction.addInput(utxo, HashType.SIGHASH_ALL);
-      utxoAmount = utxoAmount.plus(utxo.amountInSmallestUint);
+      utxoAmount = SafeMath.plus(utxoAmount, utxo.amountInSmallestUint);
     }
-    if (transaction.inputs.length == 0 || utxoAmount.lt(amount.plus(fee))) {
-      console.warn(`Insufficient utxo amount: $utxoAmount : ${amount.plus(fee).toFixed()}`);
+    if (transaction.inputs.length == 0 || SafeMath.lt(utxoAmount, totalOut)) {
+      console.warn(`Insufficient utxo amount: ${utxoAmount} : ${totalOut}`);
       return null;
     }
     // change, changeAddress
-    const change = utxoAmount.minus(amount).minus(fee);
-    console.log(`prepareTransaction change: ${change.toFixed()}`);
-    if (change.gt(new BigNumber(0))) {
+    const change = SafeMath.minus(utxoAmount, totalOut);
+    console.log(`prepareTransaction change: ${change}`);
+    if (SafeMath.gt(change, '0')) {
       const result = this.extractAddressData(changeAddress, isMainNet);
       const script = this._addressDataToScript(result[0], result[1]);
       transaction.addOutput(change, changeAddress, script);
@@ -181,7 +180,7 @@ class TransactionServiceBTC extends TransactionDecorator {
     const signedTransaction = await this._signTransaction(transaction);
 
     // Add ChangeUtxo
-    if (change.gt(new BigNumber(0))) {
+    if (SafeMath.gt(change, '0')) {
       const changeUtxo = UnspentTxOut.fromSmallestUint({
         id: signedTransaction.txId + "-1",
         accountcurrencyId: accountId,
@@ -192,7 +191,7 @@ class TransactionServiceBTC extends TransactionDecorator {
         : this.segwitType == SegwitType.segWit
           ? BitcoinTransactionType.SCRIPTHASH
           : BitcoinTransactionType.PUBKEYHASH,
-        amount: change.toFixed(),
+        amount: change,
         changeIndex: this._Index_InternalChain,
         keyIndex: keyIndex,
         timestamp: Math.floor(Date.now() / 1000),
