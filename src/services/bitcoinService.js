@@ -103,10 +103,11 @@ class BitcoinService extends AccountServiceDecorator {
    *
    * @param {object} param
    * @param {Array<UnspentTxOut>} param.unspentTxOuts
+   * @param {string} param.feePerByte
    * @param {string} param.amount
    * @param {Buffer} param.message
    */
-  calculateTransactionVSize({ unspentTxOuts, amount, message }) {
+  calculateTransactionVSize({ unspentTxOuts, feePerByte, amount, message }) {
     let unspentAmount = '0';
     let headerWeight;
     let inputWeight;
@@ -139,11 +140,11 @@ class BitcoinService extends AccountServiceDecorator {
           3) /
           4
       );
-      // fee = SafeMath.mult(vsize, feePerByte);
-      if (unspentAmount.gte(amount.plus(fee))) break;
+      fee = SafeMath.mult(vsize, feePerByte);
+      if (SafeMath.gte(unspentAmount, SafeMath.plus(amount, fee))) break;
     }
     // fee = SafeMath.mult(vsize, feePerByte);
-    return vsize; // ++ what[Tzuhan] why[Wayne]??
+    return vsize;
   }
 
   /**
@@ -185,9 +186,14 @@ class BitcoinService extends AccountServiceDecorator {
     const utxos = await this.getUnspentTxOut(id);
     console.log("getTransactionFee", utxos);
     const vsize = utxos.length
-      ? this.calculateTransactionVSize({ unspentTxOuts: utxos, amount, message })
+      ? this.calculateTransactionVSize({
+          unspentTxOuts: utxos,
+          feePerByte: feePerUnit.slow,    // ++ 要再調整fee wayne
+          amount,
+          message
+        })
       : 1;
-    return { feePerUnit: { ...feePerUnit }, unit: vsize };
+    return { feePerUnit: { ...feePerUnit }, unit: vsize }; // ++ 要再調整介面
   }
 
   /**
