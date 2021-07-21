@@ -67,7 +67,7 @@ class TideWallet {
   }
 
   async createUser({ user }) {
-    if (user.mnemonic && user.password) {
+    if (user.mnemonic && user.password !== undefined) {
       const seed = await mnemonicToSeed(user.mnemonic, user.password);
       this.core = await this.user.createUserWithSeed(
         user.thirdPartyId,
