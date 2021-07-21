@@ -1,4 +1,4 @@
-const BigNumber = require('bignumber.js');
+const SafeMath = require('./SafeMath');
 const bs58check = require('bs58check');
 const bchaddr = require('bchaddrjs');
 const bitcoin = require('bitcoinjs-lib');
@@ -59,16 +59,14 @@ class bitcoinUtils{
   
     const x = ucpk.slice(0, 32);
     const y = ucpk.slice(32, 64);
+
+    const strX = x.toString('hex');
+    const strY = y.toString('hex');
+
+    const check = SafeMath.compressedPubKeyCheck(strX, strY);
   
-    const bnP = new BigNumber('fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f', 16);
-  
-    const bnX = new BigNumber(x.toString('hex'), 16);
-    const bnY = new BigNumber(y.toString('hex'), 16);
-  
-    const check = bnX.pow(new BigNumber(3)).plus(new BigNumber(7)).minus((bnY.pow(new BigNumber(2)))).mod(bnP);
-  
-    if (!check.isZero()) return 'Error';
-    const prefix = bnY.mod(new BigNumber(2)).isZero() ? '02' : '03';
+    if (!check) return 'Error';
+    const prefix = SafeMath.eq(SafeMath.mod(strY, 2), 0) ? '02' : '03';
     const compressed = Buffer.concat([Buffer.from(prefix, 'hex'), x]);
   
     return compressed;

@@ -1,4 +1,3 @@
-const { default: BigNumber } = require("bignumber.js");
 const rlp = require("rlp");
 const Cryptor = require("./Cryptor");
 const createKeccakHash = require('keccak')
@@ -79,8 +78,8 @@ function encodeToRlp(transaction) {
 
   const list = [
     transaction.nonce,
-    transaction.feePerUnit.toNumber(),
-    transaction.gasUsed,
+    parseInt(transaction.feePerUnit),
+    parseInt(transaction.gasUsed),
   ];
   console.log(list);
 
@@ -91,7 +90,7 @@ function encodeToRlp(transaction) {
   }
   console.log(list);
 
-  list.push(transaction.amount.toNumber());
+  list.push(parseInt(transaction.amount));
   console.log(list);
 
   if (transaction.message) {
@@ -103,12 +102,8 @@ function encodeToRlp(transaction) {
 
   if (transaction.signature) {
     list.push(transaction.signature.v);
-    if (BigNumber.isBigNumber(transaction.signature.r))
-      list.push(transaction.signature.r.toNumber());
-    else list.push(transaction.signature.r);
-    if (BigNumber.isBigNumber(transaction.signature.s))
-      list.push(transaction.signature.s.toNumber());
-    else list.push(transaction.signature.s);
+    list.push(transaction.signature.r);
+    list.push(transaction.signature.s);
   }
   console.log(list);
 

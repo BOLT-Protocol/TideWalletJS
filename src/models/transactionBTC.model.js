@@ -1,13 +1,11 @@
-const BigNumber = require('bignumber.js');
-
 const Cryptor = require('../helpers/Cryptor');
 const BitcoinUtils = require('../helpers/bitcoinUtils');
 const {
   Transaction,
   TRANSACTION_DIRECTION,
   TRANSACTION_STATUS,
-  Signature,
 } = require("./tranasction.model");
+const SafeMath = require('../helpers/SafeMath');
 
 const BitcoinTransactionType = {
   PUBKEYHASH: { value: 'pubkeyhash' },
@@ -69,7 +67,7 @@ class Input {
   }
 
   get amountInBuffer() {
-    const amount = this.utxo.amountInSmallestUint.toString(16).padStart(16, '0');
+    const amount = SafeMath.toHex(this.utxo.amountInSmallestUint).padStart(16, '0');
     return Buffer.from(amount, 'hex').reverse();
   }
 
@@ -153,7 +151,7 @@ class Input {
 
 class Output {
   /**
-   * @param {BigNumber} amount value in bitcoins of the output (inSatoshi)
+   * @param {string} amount value in bitcoins of the output (inSatoshi)
    * @param {String} address the address or public key of the recipient
    * @param {Buffer} script 
    */
@@ -164,7 +162,7 @@ class Output {
   }
 
   get amountInBuffer() {
-    const amount = this.amount.toString(16).padStart(16, '0');
+    const amount = SafeMath.toHex(this.amount).padStart(16, '0');
     return Buffer.from(amount, 'hex').reverse();
   }
 }
@@ -200,10 +198,11 @@ class BitcoinTransaction extends Transaction {
     this.setlockTime(values.lockTime ? values.lockTime : 0);
   }
 
-  static createTransaction({ isMainNet, segwitType,
+  static createTransaction({ isMainNet, accountId, segwitType,
     amount, fee, message, lockTime }) {
     return new BitcoinTransaction({
       segwitType: (segwitType ? segwitType : SegwitType.nativeSegWit),
+      accountId,
       amount,
       fee,
       message,
@@ -250,7 +249,7 @@ class BitcoinTransaction extends Transaction {
   }
 
   /**
-   * @param {BigNumber} amount in smallest uint
+   * @param {string} amount in smallest uint
    * @param {string} address 
    * @param {Array<number>} script
    */
@@ -281,7 +280,7 @@ class BitcoinTransaction extends Transaction {
    */
   addData(data) {
     const scriptLength = data.length + 2;
-    const output = new Output(new BigNumber(0), '',
+    const output = new Output('0', '',
         Buffer.from([scriptLength, 0x6a, data.length, ...data]));
     this._outputs.push(output);
   }

@@ -1,4 +1,4 @@
-const BigNumber = require("bignumber.js");
+const SafeMath = require("./helpers/SafeMath");
 const config = require("./constants/config");
 const PaperWallet = require("./cores/PaperWallet");
 const Account = require("./cores/Account");
@@ -109,21 +109,15 @@ class TideWallet {
   async overview() {
     const currencies = await this.account.getAllCurrencies();
     const fiat = await this.trader.getSelectedFiat();
-    const bnRate = fiat.exchangeRate;
+    const rate = fiat.exchangeRate;
     const balance = currencies.reduce((rs, curr) => {
-      const bnBalance = new BigNumber(curr.balance);
-      const bnRs = new BigNumber(rs);
-      return bnRs
-        .plus(
-          this.trader.calculateToUSD({
-            currencyId: curr.currencyId,
-            amount: bnBalance,
-          })
-        )
-        .toFixed();
+      const amountInUSD = this.trader.calculateToUSD({
+        currencyId: curr.currencyId,
+        amount: curr.balance,
+      });
+      return SafeMath.plus(rs, amountInUSD);
     }, 0);
-    const bnBalance = new BigNumber(balance);
-    const balanceFiat = bnBalance.multipliedBy(bnRate).toFixed();
+    const balanceFiat = SafeMath.mult(balance, rate);
 
     const dashboard = {
       balance: balanceFiat,

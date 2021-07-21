@@ -2,7 +2,7 @@
  * @abstract
  * @property {string} id                    The transaction id
  * @property {string} direction             The direction
- * @property {BigNumber} amount             The amount
+ * @property {string} amount             The amount
  * @property {string} status                The transaction status
  * @property {number} confirmations         The confirmations number
  * @property {string} address               The address is to or from address depending on direction
@@ -11,7 +11,7 @@
  * @property {string} note               The transaction note
  * @property {string} sourceAddresses       The source addresses
  * @property {string} destinationAddresses  The destination addresses
- * @property {BigNumber} feePerUnit            The gas price
+ * @property {string} feePerUnit            The gas price
  * @property {number} gasUsed            The gase used/limit
  */
 class Transaction {
@@ -63,8 +63,8 @@ const TRANSACTION_PRIORITY = {
 
 /**
  * @property {number} v
- * @property {BigNumber} r
- * @property {BigNumber} s
+ * @property {string} r
+ * @property {string} s
  */
 class Signature {
   constructor({ v, r, s }) {

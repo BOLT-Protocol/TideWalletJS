@@ -7,8 +7,8 @@ const { network_publish } = require("../constants/config");
 const TransactionBase = require("../services/transactionService");
 const ETHTransactionSvc = require("../services/transactionServiceETH");
 const { Transaction } = require("../models/tranasction.model");
-const { substract, plus, isGreaterThanOrEqualTo } = require("../helpers/utils");
 const BTCTransactionSvc = require("../services/transactionServiceBTC");
+const SafeMath = require("../helpers/SafeMath");
 
 class AccountCore {
   static instance;
@@ -471,8 +471,8 @@ class AccountCore {
 
   async verifyAmount(id, amount, fee) {
     const account = this._accounts[id].find((acc) => acc.id === id);
-    const amountPlusFee = plus(amount, fee);
-    const result = isGreaterThanOrEqualTo(account.balance, amountPlusFee);
+    const amountPlusFee = SafeMath.plus(amount, fee);
+    const result = SafeMath.gte(account.balance, amountPlusFee);
     console.log(account.balance);
     console.log(amount);
     console.log(fee);
@@ -497,8 +497,18 @@ class AccountCore {
   }
 
   async sendBTCBasedTx(account, svc, safeSigner, transaction) {
+    console.log('sendBTCBasedTx transaction', transaction); // -- debug
     const txSvc = new BTCTransactionSvc(new TransactionBase(), safeSigner);
-    const utxos = await svc.getUnspentTxOut(account.id);
+    txSvc.accountDecimals = account.decimals;
+    const utxos = await svc.getUnspentTxOut(account.id, account.decimals);
+    utxos.map(async (utxo) => {
+      if (!utxo.locked) {
+        utxo.publickey = Buffer.from(
+          await this._TideWalletCore.getPubKey({ keyPath:
+            `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'/${utxo.changeIndex}/${utxo.keyIndex}` }),
+          'hex');
+      }
+    })
     const changeInfo = await svc.getChangingAddress(account.id);
     const signedTx = await txSvc.prepareTransaction({
       isMainNet: account.blockchainCoinType === 1 ? false : true,
@@ -516,6 +526,7 @@ class AccountCore {
       account.blockchainId,
       signedTx
     );
+    console.log('sendBTCBasedTx response:', response);
     return response;
   }
 
@@ -538,15 +549,15 @@ class AccountCore {
       `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'`
     );
     transaction.from = from;
-    transaction.amount = svc.toSmallestUint(
+    transaction.amount = SafeMath.toSmallestUint(
       transaction.amount,
       account.decimals
     );
-    transaction.feePerUnit = svc.toSmallestUint(
+    transaction.feePerUnit = SafeMath.toSmallestUint(
       transaction.feePerUnit,
       account.decimals
     );
-    transaction.fee = svc.toSmallestUint(transaction.fee, account.decimals);
+    transaction.fee = SafeMath.toSmallestUint(transaction.fee, account.decimals);
     let success, tx;
     switch (account.accountType) {
       case ACCOUNT.ETH:
@@ -571,17 +582,17 @@ class AccountCore {
     }
     if (success) {
       console.log("sendTransaction tx", tx); //-- debug info
-      tx.amount = svc.toCurrencyUint(transaction.amount, account.decimals);
-      tx.feePerUnit = svc.toCurrencyUint(
+      tx.amount = SafeMath.toCurrencyUint(transaction.amount, account.decimals);
+      tx.feePerUnit = SafeMath.toCurrencyUint(
         transaction.feePerUnit,
         account.decimals
       );
-      tx.fee = svc.toCurrencyUint(transaction.fee, account.decimals);
+      tx.fee = SafeMath.toCurrencyUint(transaction.fee, account.decimals);
       tx.accountId = account.id;
       tx.id = account.id + tx.txid;
       console.log("sendTransaction tx", tx); //-- debug info
-      account.balance = substract(
-        substract(account.balance, tx.amount),
+      account.balance = SafeMath.minus(
+        SafeMath.minus(account.balance, tx.amount),
         tx.fee
       );
       console.log("_txEsendTransaction account.balance", account.balance); //-- debug info

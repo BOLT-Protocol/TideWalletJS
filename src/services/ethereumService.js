@@ -1,6 +1,6 @@
 const AccountServiceDecorator = require("./accountServiceDecorator");
 const { ACCOUNT, ACCOUNT_EVT } = require("../models/account.model");
-const BigNumber = require("bignumber.js");
+const SafeMath = require("../helpers/SafeMath");
 
 class EthereumService extends AccountServiceDecorator {
   constructor(service, TideWalletCommunicator, DBOperator) {
@@ -88,27 +88,13 @@ class EthereumService extends AccountServiceDecorator {
   }
 
   _GWeiToWei(amount) {
-    const bnAmount = new BigNumber(amount);
-    const bnBase = new BigNumber(10);
-    const bnDecimal = bnBase.exponentiatedBy(9);
-    const wei = bnAmount.multipliedBy(bnDecimal).toFixed();
+    const wei = SafeMath.toSmallestUint(amount, 9)
     return wei;
   }
 
   _WeiToGWei(amount) {
-    const bnAmount = new BigNumber(amount);
-    const bnBase = new BigNumber(10);
-    const bnDecimal = bnBase.exponentiatedBy(9);
-    const gwei = bnAmount.dividedBy(bnDecimal).toFixed();
+    const gwei = SafeMath.toCurrencyUint(amount, 9);
     return gwei;
-  }
-
-  toCurrencyUint(amount, decimals) {
-    return this.service.toCurrencyUint(amount, decimals);
-  }
-
-  toSmallestUint(amount, decimals) {
-    return this.service.toSmallestUint(amount, decimals);
   }
 
   /**
@@ -132,12 +118,12 @@ class EthereumService extends AccountServiceDecorator {
         );
         const { slow, standard, fast } = response;
         this._fee = {
-          slow: this.service.toCurrencyUint(this._GWeiToWei(slow), decimals),
-          standard: this.service.toCurrencyUint(
+          slow: SafeMath.toCurrencyUint(this._GWeiToWei(slow), decimals),
+          standard: SafeMath.toCurrencyUint(
             this._GWeiToWei(standard),
             decimals
           ),
-          fast: this.service.toCurrencyUint(this._GWeiToWei(fast), decimals),
+          fast: SafeMath.toCurrencyUint(this._GWeiToWei(fast), decimals),
         };
         this._feeTimestamp = Date.now();
       } catch (error) {
