@@ -146,7 +146,7 @@ class TransactionServiceBTC extends TransactionDecorator {
     const script = this._addressDataToScript(result[0], result[1]);
     transaction.addOutput(amount, to, script);
     // input
-    if (unspentTxOuts == null || unspentTxOuts.length == 0) return new Error('Insufficient utxo');
+    if (unspentTxOuts == null || unspentTxOuts.length == 0) throw new Error('Insufficient utxo');
     let utxoAmount = '0';
     const totalOut = SafeMath.plus(amount, fee);
     for (const utxo of unspentTxOuts) {
@@ -158,7 +158,7 @@ class TransactionServiceBTC extends TransactionDecorator {
     }
     if (transaction.inputs.length == 0 || SafeMath.lt(utxoAmount, totalOut)) {
       // console.warn(`Insufficient utxo amount: ${utxoAmount} : ${totalOut}`);
-      return new Error(`Insufficient utxo amount: ${utxoAmount} : ${totalOut}`);
+      throw new Error(`Insufficient utxo amount: ${utxoAmount} : ${totalOut}`);
     }
     // change, changeAddress
     const change = SafeMath.minus(utxoAmount, totalOut);
@@ -175,7 +175,7 @@ class TransactionServiceBTC extends TransactionDecorator {
     if (msgData.length > 250) {
       // TODO BitcoinCash Address condition >220
       // Log.warning('Invalid msg data: ${msgData.toString()}');
-      return new Error(`Invalid msg data: ${msgData.toString()}`);
+      throw new Error(`Invalid msg data: ${msgData.toString()}`);
     }
     if (msgData.length > 0) {
       transaction.addData(msgData);
