@@ -9,6 +9,7 @@ const DBOperator = require("./database/dbOperator");
 const TideWalletCommunicator = require("./cores/TideWalletCommunicator");
 const TideWalletCore = require("./cores/TideWalletCore");
 const packageInfo = require("../package.json");
+const { mnemonicToSeed } = require("bip39");
 
 class TideWallet {
   // eventType: ready, update, notice
@@ -21,47 +22,62 @@ class TideWallet {
     return this;
   }
 
+  async _init() {
+    this.initObj.TideWalletCore = this.core;
+    this.account = new Account(this.initObj);
+    this.account.setMessenger();
+    await this.account.init({
+      debugMode: this.debugMode,
+      networkPublish: this.networkPublish,
+    });
+
+    this.trader = new Trader(this.initObj);
+    await this.trader.getFiatList();
+
+    this.account.messenger.subscribe((v) => {
+      this.notice(v, "update");
+    });
+    this.notice({}, "ready");
+  }
+
   async init({
     user,
     api,
     debugMode = config.debug_mode,
     networkPublish = config.network_publish,
   }) {
+    this.debugMode = debugMode;
+    this.networkPublish = networkPublish;
+
     const communicator = new TideWalletCommunicator(api);
     const db = new DBOperator();
     await db.init();
-    const initObj = { TideWalletCommunicator: communicator, DBOperator: db };
+    this.initObj = { TideWalletCommunicator: communicator, DBOperator: db };
 
-    this.user = new User(initObj);
+    this.user = new User(this.initObj);
 
-    const exist = await this.user.checkUser(user.OAuthID);
-    if (!exist) {
-      if (user.mnemonic && user.password) {
-        this.core = await this.user.createUserWithSeed(
-          user.OAuthID,
-          seed,
-          user.InstallID
-        );
-      } else {
-        this.core = await this.user.createUser(user.OAuthID, user.InstallID);
-      }
-    } else {
+    const exist = await this.user.checkUser(user.thirdPartyId);
+    if (exist) {
       this.core = this.user._TideWalletCore;
+      await this._init();
+      return null;
+    } else {
+      return user;
     }
+  }
 
-    initObj.TideWalletCore = this.core;
-    this.account = new Account(initObj);
-    this.account.setMessenger();
-    await this.account.init({ debugMode, networkPublish });
-
-    this.trader = new Trader(initObj);
-    await this.trader.getFiatList();
-
-    const listener = this.account.messenger.subscribe((v) => {
-      this.notice(v, "update");
-    });
-    this.notice({}, "ready");
-    return true;
+  async createUser({ user }) {
+    if (user.mnemonic && user.password) {
+      const seed = await mnemonicToSeed(user.mnemonic, user.password);
+      this.core = await this.user.createUserWithSeed(
+        user.thirdPartyId,
+        seed,
+        user.installId
+      );
+    } else {
+      this.core = await this.user.createUser(user.thirdPartyId, user.installId);
+    }
+    await this._init();
   }
 
   on(eventName = "", callback) {
@@ -204,16 +220,16 @@ if (isBrowser()) {
       apiSecret: "9e37d67450dc906042fde75113ecb78c",
     };
     const user1 = {
-      OAuthID: "test2ejknkjdniednwjq",
-      InstallID:
+      thirdPartyId: "test2ejknkjdniednwjq",
+      installId:
         "11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249",
       mnemonic:
         "cry hub inmate cliff sun program public else atom absurd release inherit funny edge assault",
       password: "12345",
     };
     const user2 = {
-      OAuthID: "test2ejknkjdniednwjq",
-      InstallID:
+      thirdPartyId: "test2ejknkjdniednwjq",
+      installId:
         "11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249",
     };
     await tw.init({ user: user2, api, debugMode: false, networkPublish: true });
