@@ -30,7 +30,6 @@ class TransactionServiceBTC extends TransactionDecorator {
     this.service = service;
     this.signer = signer;
     this.segwitType = option.segwitType ? option.segwitType : SegwitType.nativeSegWit;
-    this._currencyDecimals = this.service.currencyDecimals;
   }
 
   /**
@@ -76,7 +75,7 @@ class TransactionServiceBTC extends TransactionDecorator {
       });
       const buffer = Buffer.alloc(64, 0);
       console.log(`utxo txId: ${utxo.txId}`);
-      console.log(`utxo.amount: ${utxo.amount.toFixed()}`);
+      console.log(`utxo.amount: ${utxo.amount}`);
 
       sig.r.copy(buffer, 0, 0, 32);
       sig.s.copy(buffer, 32, 0, 32);
@@ -117,19 +116,22 @@ class TransactionServiceBTC extends TransactionDecorator {
    * @param {string} param.changeAddress
    * @returns {BitcoinTransaction} transaction
    */
-  async prepareTransaction({
-    isMainNet,
-    to,
-    amount,
-    message,
-    accountId,
-    fee,
-    unspentTxOuts,
-    keyIndex,
-    changeAddress,
-  }) {
+  async prepareTransaction(param) {
+    const {
+      isMainNet,
+      to,
+      amount,
+      message,
+      accountId,
+      fee,
+      unspentTxOuts,
+      keyIndex,
+      changeAddress,
+    } = param;
+    console.log('prepareTransaction param:', param);
     const transaction = BitcoinTransaction.createTransaction({
       isMainNet,
+      accountId,
       segwitType: this.segwitType,
       amount,
       fee,
@@ -144,7 +146,7 @@ class TransactionServiceBTC extends TransactionDecorator {
     const script = this._addressDataToScript(result[0], result[1]);
     transaction.addOutput(amount, to, script);
     // input
-    if (unspentTxOuts == null || unspentTxOuts.length == 0) return null;
+    if (unspentTxOuts == null || unspentTxOuts.length == 0) return new Error('Insufficient utxo');
     let utxoAmount = '0';
     const totalOut = SafeMath.plus(amount, fee);
     for (const utxo of unspentTxOuts) {
@@ -152,10 +154,11 @@ class TransactionServiceBTC extends TransactionDecorator {
         continue;
       transaction.addInput(utxo, HashType.SIGHASH_ALL);
       utxoAmount = SafeMath.plus(utxoAmount, utxo.amountInSmallestUint);
+      if (SafeMath.gte(utxoAmount, totalOut)) break;
     }
     if (transaction.inputs.length == 0 || SafeMath.lt(utxoAmount, totalOut)) {
-      console.warn(`Insufficient utxo amount: ${utxoAmount} : ${totalOut}`);
-      return null;
+      // console.warn(`Insufficient utxo amount: ${utxoAmount} : ${totalOut}`);
+      return new Error(`Insufficient utxo amount: ${utxoAmount} : ${totalOut}`);
     }
     // change, changeAddress
     const change = SafeMath.minus(utxoAmount, totalOut);
@@ -166,13 +169,13 @@ class TransactionServiceBTC extends TransactionDecorator {
       transaction.addOutput(change, changeAddress, script);
     }
     // Message
-    const msgData = (message == null) ? [] : rlp.toBuffer(message);
-    console.log(`msgData[${message.length}]: ${msgData}`);
+    const msgData = (message && message.length > 0) ? rlp.toBuffer(message) : [];
+    console.log(`msgData: ${msgData}`);
     // invalid msg data
     if (msgData.length > 250) {
       // TODO BitcoinCash Address condition >220
-      Log.warning('Invalid msg data: ${msgData.toString()}');
-      return null;
+      // Log.warning('Invalid msg data: ${msgData.toString()}');
+      return new Error(`Invalid msg data: ${msgData.toString()}`);
     }
     if (msgData.length > 0) {
       transaction.addData(msgData);
@@ -181,6 +184,7 @@ class TransactionServiceBTC extends TransactionDecorator {
 
     // Add ChangeUtxo
     if (SafeMath.gt(change, '0')) {
+      console.log('TransactionServiceBTC.accountDecimals', this.accountDecimals)
       const changeUtxo = UnspentTxOut.fromSmallestUint({
         id: signedTransaction.txId + "-1",
         accountcurrencyId: accountId,
@@ -197,7 +201,7 @@ class TransactionServiceBTC extends TransactionDecorator {
         timestamp: Math.floor(Date.now() / 1000),
         locked: false,
         data: Buffer.alloc(1, 0),
-        decimals: this.currencyDecimals,
+        decimals: this.accountDecimals,
         address: changeAddress
       });
       signedTransaction.addChangeUtxo(changeUtxo);

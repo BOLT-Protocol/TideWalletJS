@@ -5,6 +5,7 @@ const {
   TRANSACTION_DIRECTION,
   TRANSACTION_STATUS,
 } = require("./tranasction.model");
+const SafeMath = require('../helpers/SafeMath');
 
 const BitcoinTransactionType = {
   PUBKEYHASH: { value: 'pubkeyhash' },
@@ -66,7 +67,7 @@ class Input {
   }
 
   get amountInBuffer() {
-    const amount = this.utxo.amountInSmallestUint.toString(16).padStart(16, '0');
+    const amount = SafeMath.toHex(this.utxo.amountInSmallestUint).padStart(16, '0');
     return Buffer.from(amount, 'hex').reverse();
   }
 
@@ -161,7 +162,7 @@ class Output {
   }
 
   get amountInBuffer() {
-    const amount = this.amount.toString(16).padStart(16, '0');
+    const amount = SafeMath.toHex(this.amount).padStart(16, '0');
     return Buffer.from(amount, 'hex').reverse();
   }
 }
@@ -197,10 +198,11 @@ class BitcoinTransaction extends Transaction {
     this.setlockTime(values.lockTime ? values.lockTime : 0);
   }
 
-  static createTransaction({ isMainNet, segwitType,
+  static createTransaction({ isMainNet, accountId, segwitType,
     amount, fee, message, lockTime }) {
     return new BitcoinTransaction({
       segwitType: (segwitType ? segwitType : SegwitType.nativeSegWit),
+      accountId,
       amount,
       fee,
       message,

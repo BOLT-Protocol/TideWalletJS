@@ -108,6 +108,8 @@ class UnspentTxOut {
   };
 
   static fromUtxoEntity(utxo) {
+    console.log('utxo.amount:', utxo.amount, typeof utxo.amount);
+    console.log('utxo.decimals:', utxo.decimals, typeof utxo.decimals);
     return new UnspentTxOut({
       id: utxo.utxoId,
       accountcurrencyId: utxo.accountId,

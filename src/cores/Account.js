@@ -497,8 +497,18 @@ class AccountCore {
   }
 
   async sendBTCBasedTx(account, svc, safeSigner, transaction) {
+    console.log('sendBTCBasedTx transaction', transaction); // -- debug
     const txSvc = new BTCTransactionSvc(new TransactionBase(), safeSigner);
-    const utxos = await svc.getUnspentTxOut(account.id);
+    txSvc.accountDecimals = account.decimals;
+    const utxos = await svc.getUnspentTxOut(account.id, account.decimals);
+    utxos.map(async (utxo) => {
+      if (!utxo.locked) {
+        utxo.publickey = Buffer.from(
+          await this._TideWalletCore.getPubKey({ keyPath:
+            `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'/${utxo.changeIndex}/${utxo.keyIndex}` }),
+          'hex');
+      }
+    })
     const changeInfo = await svc.getChangingAddress(account.id);
     const signedTx = await txSvc.prepareTransaction({
       isMainNet: account.blockchainCoinType === 1 ? false : true,
@@ -516,6 +526,7 @@ class AccountCore {
       account.blockchainId,
       signedTx
     );
+    console.log('sendBTCBasedTx response:', response);
     return response;
   }
 

@@ -155,6 +155,7 @@ class SafeMath {
    * @returns {string}
    */
   static toCurrencyUint(amount, decimals) {
+    console.log(`toCurrencyUint(${amount}, ${decimals})`)
     const bnAmount = SafeMath.toBn(amount);
     const bnBase = SafeMath.toBn(10);
     const bnDecimal = bnBase.exponentiatedBy(decimals);
@@ -170,6 +171,7 @@ class SafeMath {
    * @returns {string}
    */
   static toSmallestUint(amount, decimals) {
+    console.log(`toSmallestUint(${amount}, ${decimals})`)
     const bnAmount = SafeMath.toBn(amount);
     const bnBase = SafeMath.toBn(10);
     const bnDecimal = bnBase.exponentiatedBy(decimals);
@@ -191,6 +193,16 @@ class SafeMath {
   
     const check = bnX.pow(new BigNumber(3)).plus(new BigNumber(7)).minus((bnY.pow(new BigNumber(2)))).mod(bnP);
     return check.isZero();
+  }
+
+  /**
+   * 
+   * @param {string} x 
+   * @returns {string} hex number string
+   */
+  static toHex(x) {
+    const bnX = SafeMath.toBn(x);
+    return bnX.toString(16);
   }
 }
 
