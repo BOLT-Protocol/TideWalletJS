@@ -21,7 +21,12 @@ class TideWallet {
     return this;
   }
 
-  async init({ user, api, debugMode = false, networkPublish = true }) {
+  async init({
+    user,
+    api,
+    debugMode = config.debug_mode,
+    networkPublish = config.network_publish,
+  }) {
     const communicator = new TideWalletCommunicator(api);
     const db = new DBOperator();
     await db.init();
