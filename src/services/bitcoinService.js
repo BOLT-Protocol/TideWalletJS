@@ -45,7 +45,7 @@ class BitcoinService extends AccountServiceDecorator {
     await this.service.start();
     this.lastSyncUtxoTimestamp = this.service.lastSyncTimestamp;
 
-    this.synchro();
+    await this.synchro(true);
 
     this.service.timer = setInterval(() => {
       this.synchro();
@@ -304,8 +304,8 @@ class BitcoinService extends AccountServiceDecorator {
    * @override
    **/
   async synchro(force = false) {
-    this.service.synchro(force);
-    this._syncUTXO(force);
+    await this.service.synchro(force);
+    await this._syncUTXO(force);
   }
 }
 

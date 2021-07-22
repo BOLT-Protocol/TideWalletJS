@@ -107,7 +107,7 @@ class bitcoinUtils{
     const data = [];
     data.push(OP_HASH160);
     data.push(sriptHash.length);
-    data.psuh(...sriptHash);
+    data.push(...sriptHash);
     data.push(OP_EQUAL);
     return Buffer.from(data);
   }
@@ -120,7 +120,7 @@ class bitcoinUtils{
     const publicKey = pubKey.length > 33 ? bitcoinUtils.compressedPubKey(pubKey) : pubKey;
     let data = [];
     data.push(publicKey.length);
-    data.psuh(...publicKey);
+    data.push(...publicKey);
     data.push(OP_CHECKSIG);
     return Buffer.from(data);
   }
