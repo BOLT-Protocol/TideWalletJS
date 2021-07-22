@@ -70,7 +70,7 @@ class TransactionServiceBTC extends TransactionDecorator {
       const utxo = transaction.inputs[index].utxo;
       const sig = await this.signer.sign({
         data: rawDataHash,
-        changeIndex: utxo.changeIndex,
+        chainIndex: utxo.changeIndex,
         keyIndex: utxo.keyIndex
       });
       const buffer = Buffer.alloc(64, 0);
