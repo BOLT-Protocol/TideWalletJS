@@ -5,7 +5,7 @@ const Cryptor = require('../helpers/Cryptor');
 
 class PaperWallet {
   static EXT_PATH = "m/84'/3324'/0'";
-  static EXT_CHAININDEX = 0;
+  static EXT_CHANGEINDEX = 0;
   static EXT_KEYINDEX = 0;
   static KEYSTOREID = 'keyObject'
 
@@ -84,16 +84,16 @@ class PaperWallet {
   /**
    * @method getPubKey
    * @param {Buffer} seed bip seed
-   * @param {number} chainIndex - integer for hdwallet chainIndex
+   * @param {number} changeIndex - integer for hdwallet changeIndex
    * @param {number} keyIndex - integer for hdwallet keyIndex
    * @param {object} options
    * @param {string} [path] - default EXT_PATH
    * @param {boolean} [compressed] - default true
    * @returns {string}
    */
-  static getPubKey(seed, chainIndex, keyIndex, options = {}) {
+  static getPubKey(seed, changeIndex, keyIndex, options = {}) {
     const {path = PaperWallet.EXT_PATH, compressed = true } = options;
-    const dPath = `${path}/${chainIndex}/${keyIndex}`;
+    const dPath = `${path}/${changeIndex}/${keyIndex}`;
     const root = bitcoin.bip32.fromSeed(seed);
     const child = root.derivePath(dPath);
     if (!compressed) {
@@ -105,15 +105,15 @@ class PaperWallet {
   /**
    * @method getPriKey
    * @param {Buffer} seed bip seed
-   * @param {number} chainIndex - integer for hdwallet chainIndex
+   * @param {number} changeIndex - integer for hdwallet changeIndex
    * @param {number} keyIndex - integer for hdwallet keyIndex
    * @param {object} options
    * @param {string} [options.path] - default EXT_PATH
    * @returns {string}
    */
-  static getPriKey(seed, chainIndex, keyIndex, options = {}) {
+  static getPriKey(seed, changeIndex, keyIndex, options = {}) {
     const {path = PaperWallet.EXT_PATH } = options;
-    const dPath = `${path}/${chainIndex}/${keyIndex}`;
+    const dPath = `${path}/${changeIndex}/${keyIndex}`;
     const root = bitcoin.bip32.fromSeed(seed);
     const child = root.derivePath(dPath);
     return child.privateKey.toString('hex');

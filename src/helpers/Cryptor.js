@@ -30,12 +30,12 @@ class Cryptor {
     // keyPath = "m/84'/3324'/0'/0/0"
 
     const arr = keyPath.split("/");
-    const chainIndex = arr[4];
+    const changeIndex = arr[4];
     const keyIndex = arr[5];
     const options = {
       path: `${arr[0]}/${arr[1]}/${arr[2]}/${arr[3]}`,
     };
-    return { chainIndex, keyIndex, options };
+    return { changeIndex, keyIndex, options };
   }
 
   /**
