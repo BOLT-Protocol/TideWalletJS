@@ -617,6 +617,7 @@ class UtxoDao extends DAO {
     script,
     timestamp,
     address,
+    locked,
   }) {
     const DEFAULT_SEQUENCE = 0xffffffff; // temp
     return {
@@ -630,7 +631,7 @@ class UtxoDao extends DAO {
       keyIndex: key_index,
       script,
       timestamp,
-      locked: false,
+      locked: locked ?? false,
       address,
       // sequence: BitcoinTransaction.DEFAULT_SEQUENCE,
       sequence: DEFAULT_SEQUENCE, // temp
@@ -646,7 +647,7 @@ class UtxoDao extends DAO {
   }
 
   async findAllUtxos(accountId) {
-    return this._readAll(accountId, 'accountId');
+    return this._readAll(accountId, "accountId");
   }
 }
 

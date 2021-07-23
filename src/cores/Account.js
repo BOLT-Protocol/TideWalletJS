@@ -8,6 +8,7 @@ const ETHTransactionSvc = require("../services/transactionServiceETH");
 const { Transaction } = require("../models/tranasction.model");
 const BTCTransactionSvc = require("../services/transactionServiceBTC");
 const SafeMath = require("../helpers/SafeMath");
+const UnspentTxOut = require("../models/utxo.model");
 
 class AccountCore {
   static instance;
@@ -592,8 +593,15 @@ class AccountCore {
         );
         if (success) {
           const txOuts = tx.inputs.map((input) => {
-            const txOut = { ...input.utxo };
-            txOut.locked = true;
+            const _txOut = new UnspentTxOut({ ...input.utxo });
+            const txOut = {
+              ..._txOut,
+              utxoId: _txOut.id,
+              amount: _txOut.amountInSmallestUint,
+              locked: true,
+              type: _txOut.type.value,
+              script: _txOut.data.toString("hex"),
+            };
             return txOut;
           });
           console.log("insert data:", [...txOuts, tx.changeUtxo]);

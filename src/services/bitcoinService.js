@@ -62,13 +62,13 @@ class BitcoinService extends AccountServiceDecorator {
   /**
    * getReceivingAddress
    * @override
-   * @param {String} accountcurrencyId
+   * @param {String} accountId
    * @returns {Array.<{address: String || error, code: Number}>} result
    */
-  async getReceivingAddress(accountcurrencyId) {
+  async getReceivingAddress(accountId) {
     try {
       const response = await this._TideWalletCommunicator.AccountReceive(
-        accountcurrencyId
+        accountId
       );
       const address = response["address"];
       this._numberOfUsedExternalKey = response["key_index"];
@@ -82,13 +82,13 @@ class BitcoinService extends AccountServiceDecorator {
   /**
    * getChangingAddress
    * @override
-   * @param {String} accountcurrencyId
+   * @param {String} accountId
    * @returns {{address: String || error, code: Number}[]} result
    */
-  async getChangingAddress(accountcurrencyId) {
+  async getChangingAddress(accountId) {
     try {
       const response = await this._TideWalletCommunicator.AccountChange(
-        accountcurrencyId
+        accountId
       );
       const address = response["address"];
       this._numberOfUsedInternalKey = response["key_index"];
@@ -209,12 +209,12 @@ class BitcoinService extends AccountServiceDecorator {
     const vsize = utxos.length
       ? this.calculateTransactionVSize({
           unspentTxOuts: utxos,
-          feePerByte: this.feePerUnit(speed, feePerUnits), // ++ 要再調整fee wayne
+          feePerByte: this.feePerUnit(speed, feePerUnits),
           amount,
           message,
         })
       : 1;
-    return { feePerUnit: { ...feePerUnits }, unit: vsize }; // ++ 要再調整介面
+    return { feePerUnit: { ...feePerUnits }, unit: vsize };
   }
 
   /**
@@ -240,8 +240,12 @@ class BitcoinService extends AccountServiceDecorator {
       _transaction.txid = response["txid"];
       _transaction.timestamp = Math.floor(Date.now() / 1000);
       _transaction.confirmations = 0;
-      _transaction.inputs = transaction.inputs.map((input) => ({ ...input }));
-      _transaction.changeUtxo = { ...transaction.changeUtxo };
+      _transaction.inputs = transaction.inputs.map((input) => ({
+        ...input
+      }));
+      _transaction.changeUtxo = {
+        ...transaction.changeUtxo,
+      };
       return [true, _transaction];
     } catch (error) {
       console.log(error);

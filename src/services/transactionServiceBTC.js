@@ -1,11 +1,16 @@
 const TransactionDecorator = require("./accountServiceDecorator");
 const { ACCOUNT } = require("../models/account.model");
 const Cryptor = require("../helpers/Cryptor");
-const { BitcoinTransaction, BitcoinTransactionType, SegwitType, HashType } = require("../models/transactionBTC.model");
-const UnspentTxOut = require('../models/utxo.model');
+const {
+  BitcoinTransaction,
+  BitcoinTransactionType,
+  SegwitType,
+  HashType,
+} = require("../models/transactionBTC.model");
+const UnspentTxOut = require("../models/utxo.model");
 const BitcoinUtils = require("../helpers/bitcoinUtils");
-const rlp = require('../helpers/rlp');
-const Signer = require('../cores/Signer');
+const rlp = require("../helpers/rlp");
+const Signer = require("../cores/Signer");
 const SafeMath = require("../helpers/SafeMath");
 
 class TransactionServiceBTC extends TransactionDecorator {
@@ -15,13 +20,13 @@ class TransactionServiceBTC extends TransactionDecorator {
   service = null;
   _base = ACCOUNT.BTC;
 
-  p2pkhAddressPrefixTestnet = 0x6F;
+  p2pkhAddressPrefixTestnet = 0x6f;
   p2pkhAddressPrefixMainnet = 0;
-  p2shAddressPrefixTestnet = 0xC4;
+  p2shAddressPrefixTestnet = 0xc4;
   p2shAddressPrefixMainnet = 0x05;
-  bech32HrpMainnet = 'bc';
-  bech32HrpTestnet = 'tb';
-  bech32Separator = '1';
+  bech32HrpMainnet = "bc";
+  bech32HrpTestnet = "tb";
+  bech32Separator = "1";
   supportSegwit = true;
   segwitType = SegwitType.nativeSegWit;
 
@@ -29,7 +34,9 @@ class TransactionServiceBTC extends TransactionDecorator {
     super();
     this.service = service;
     this.signer = signer;
-    this.segwitType = option.segwitType ? option.segwitType : SegwitType.nativeSegWit;
+    this.segwitType = option.segwitType
+      ? option.segwitType
+      : SegwitType.nativeSegWit;
   }
 
   /**
@@ -37,32 +44,38 @@ class TransactionServiceBTC extends TransactionDecorator {
    * @param {string} address
    * @param {boolean} isMainNet
    */
-   verifyAddress(address, isMainNet) {
+  verifyAddress(address, isMainNet) {
     console.log("address", address);
-    const verified = BitcoinUtils.isP2pkhAddress(
+    const verified =
+      BitcoinUtils.isP2pkhAddress(
         address,
         isMainNet
           ? this.p2pkhAddressPrefixMainnet
-          : this.p2pkhAddressPrefixTestnet) ||
+          : this.p2pkhAddressPrefixTestnet
+      ) ||
       BitcoinUtils.isP2shAddress(
         address,
         isMainNet
           ? this.p2shAddressPrefixMainnet
-          : this.p2shAddressPrefixTestnet) ||
+          : this.p2shAddressPrefixTestnet
+      ) ||
       BitcoinUtils.isSegWitAddress(
         address,
         isMainNet ? this.bech32HrpMainnet : this.bech32HrpTestnet,
-        this.bech32Separator); // TODO BitcoinCash Address condition
+        this.bech32Separator
+      ); // TODO BitcoinCash Address condition
     return verified;
   }
 
   /**
-   * 
-   * @param {BitcoinTransaction} transaction 
-   * @returns 
+   *
+   * @param {BitcoinTransaction} transaction
+   * @returns
    */
   async _signTransaction(transaction) {
-    console.log(`_unsignTransaction: ${transaction.serializeTransaction.toString('hex')}`);
+    console.log(
+      `_unsignTransaction: ${transaction.serializeTransaction.toString("hex")}`
+    );
 
     for (let index = 0; index < transaction.inputs.length; index++) {
       const rawData = transaction.getRawDataToSign(index);
@@ -71,35 +84,37 @@ class TransactionServiceBTC extends TransactionDecorator {
       const sig = await this.signer.sign({
         data: rawDataHash,
         changeIndex: utxo.changeIndex,
-        keyIndex: utxo.keyIndex
+        keyIndex: utxo.keyIndex,
       });
       const buffer = Buffer.alloc(64, 0);
-      console.log(`utxo txId: ${utxo.txId}`);
+      console.log(`utxo txid: ${utxo.txid}`);
       console.log(`utxo.amount: ${utxo.amount}`);
 
       sig.r.copy(buffer, 0, 0, 32);
       sig.s.copy(buffer, 32, 0, 32);
-      const signature = Signer
-          .encodeSignature(buffer, transaction.inputs[index].hashType.value);
+      const signature = Signer.encodeSignature(
+        buffer,
+        transaction.inputs[index].hashType.value
+      );
       transaction.inputs[index].addSignature(signature);
     }
     const signedTransaction = transaction.serializeTransaction;
-    console.log(`_signTransaction: ${signedTransaction.toString('hex')}`);
+    console.log(`_signTransaction: ${signedTransaction.toString("hex")}`);
     return transaction;
   }
 
   /**
    * @override
    */
-// --  verifyAmount(balance, amount, fee) {
-    // ++ TODO 2021/07/08
-// --   console.log("balance", balance);
-// --   console.log("amount", amount);
-// --   console.log("fee", fee);
-// --   return BigNumber(balance).isGreaterThanOrEqualTo(
-// --     BigNumber(amount).plus(BigNumber(fee))
-// --   );
-// -- }
+  // --  verifyAmount(balance, amount, fee) {
+  // ++ TODO 2021/07/08
+  // --   console.log("balance", balance);
+  // --   console.log("amount", amount);
+  // --   console.log("fee", fee);
+  // --   return BigNumber(balance).isGreaterThanOrEqualTo(
+  // --     BigNumber(amount).plus(BigNumber(fee))
+  // --   );
+  // -- }
 
   /**
    * @override
@@ -128,26 +143,27 @@ class TransactionServiceBTC extends TransactionDecorator {
       keyIndex,
       changeAddress,
     } = param;
-    console.log('prepareTransaction param:', param);
+    console.log("prepareTransaction param:", param);
     const transaction = BitcoinTransaction.createTransaction({
       isMainNet,
       accountId,
       segwitType: this.segwitType,
       amount,
       fee,
-      message
+      message,
     });
     // to
-    if (to.includes(':')) {
-      to = to.split(':')[1];
+    if (to.includes(":")) {
+      to = to.split(":")[1];
     }
     // output
     const result = this.extractAddressData(to, isMainNet);
     const script = this._addressDataToScript(result[0], result[1]);
     transaction.addOutput(amount, to, script);
     // input
-    if (unspentTxOuts == null || unspentTxOuts.length == 0) throw new Error('Insufficient utxo');
-    let utxoAmount = '0';
+    if (unspentTxOuts == null || unspentTxOuts.length == 0)
+      throw new Error("Insufficient utxo");
+    let utxoAmount = "0";
     const totalOut = SafeMath.plus(amount, fee);
     for (const utxo of unspentTxOuts) {
       if (utxo.locked || !SafeMath.gt(utxo.amount, 0) || utxo.type == null)
@@ -163,13 +179,13 @@ class TransactionServiceBTC extends TransactionDecorator {
     // change, changeAddress
     const change = SafeMath.minus(utxoAmount, totalOut);
     console.log(`prepareTransaction change: ${change}`);
-    if (SafeMath.gt(change, '0')) {
+    if (SafeMath.gt(change, "0")) {
       const result = this.extractAddressData(changeAddress, isMainNet);
       const script = this._addressDataToScript(result[0], result[1]);
       transaction.addOutput(change, changeAddress, script);
     }
     // Message
-    const msgData = (message && message.length > 0) ? rlp.toBuffer(message) : [];
+    const msgData = message && message.length > 0 ? rlp.toBuffer(message) : [];
     console.log(`msgData: ${msgData}`);
     // invalid msg data
     if (msgData.length > 250) {
@@ -183,29 +199,32 @@ class TransactionServiceBTC extends TransactionDecorator {
     const signedTransaction = await this._signTransaction(transaction);
 
     // Add ChangeUtxo
-    if (SafeMath.gt(change, '0')) {
-      console.log('TransactionServiceBTC.accountDecimals', this.accountDecimals)
-      const changeUtxo = UnspentTxOut.fromSmallestUint({
-        id: signedTransaction.txId + "-1",
-        accountcurrencyId: accountId,
-        txId: signedTransaction.txId,
+    if (SafeMath.gt(change, "0")) {
+      console.log(
+        "TransactionServiceBTC.accountDecimals",
+        this.accountDecimals
+      );
+      const changeUtxo = {
+        utxoId: `${signedTransaction.txid}-${1}`,
+        accountId,
+        txid: signedTransaction.txid,
         vout: 1,
-        type: this.segwitType == SegwitType.nativeSegWit
-        ? BitcoinTransactionType.WITNESS_V0_KEYHASH
-        : this.segwitType == SegwitType.segWit
-          ? BitcoinTransactionType.SCRIPTHASH
-          : BitcoinTransactionType.PUBKEYHASH,
+        type:
+          this.segwitType == SegwitType.nativeSegWit
+            ? BitcoinTransactionType.WITNESS_V0_KEYHASH.value
+            : this.segwitType == SegwitType.segWit
+            ? BitcoinTransactionType.SCRIPTHASH.value
+            : BitcoinTransactionType.PUBKEYHASH.value,
         amount: change,
         changeIndex: this._Index_InternalChain,
         keyIndex: keyIndex,
         timestamp: Math.floor(Date.now() / 1000),
         locked: false,
-        data: Buffer.alloc(1, 0),
-        decimals: this.accountDecimals,
-        address: changeAddress
-      });
+        script: Buffer.alloc(1, 0).toString('hex'),
+        address: changeAddress,
+      };
       signedTransaction.addChangeUtxo(changeUtxo);
-      console.log(`changeUtxo txid: ${signedTransaction.txId}`);
+      console.log(`changeUtxo txid: ${signedTransaction.txid}`);
       console.log(`changeUtxo amount: ${change}`);
     }
 
@@ -215,46 +234,55 @@ class TransactionServiceBTC extends TransactionDecorator {
   }
 
   /**
-   * 
-   * @param {string} address 
-   * @param {Boolean} isMainNet 
+   *
+   * @param {string} address
+   * @param {Boolean} isMainNet
    * @returns {Array}
    */
   extractAddressData(address, isMainNet) {
     let data;
     let type;
-    if (BitcoinUtils.isP2pkhAddress(
-      address,
-      isMainNet
-        ? this.p2pkhAddressPrefixMainnet
-        : this.p2pkhAddressPrefixTestnet)) {
-      type = BitcoinTransactionType.PUBKEYHASH;
-      data = BitcoinUtils.decodeAddress(address).slice(1);
-    } else if (BitcoinUtils.isP2shAddress(
+    if (
+      BitcoinUtils.isP2pkhAddress(
         address,
         isMainNet
-            ? this.p2shAddressPrefixMainnet
-            : this.p2shAddressPrefixTestnet)) {
+          ? this.p2pkhAddressPrefixMainnet
+          : this.p2pkhAddressPrefixTestnet
+      )
+    ) {
+      type = BitcoinTransactionType.PUBKEYHASH;
+      data = BitcoinUtils.decodeAddress(address).slice(1);
+    } else if (
+      BitcoinUtils.isP2shAddress(
+        address,
+        isMainNet
+          ? this.p2shAddressPrefixMainnet
+          : this.p2shAddressPrefixTestnet
+      )
+    ) {
       type = BitcoinTransactionType.SCRIPTHASH;
       data = BitcoinUtils.decodeAddress(address).slice(1);
-    } else if (BitcoinUtils.isSegWitAddress(
+    } else if (
+      BitcoinUtils.isSegWitAddress(
         address,
         isMainNet ? this.bech32HrpMainnet : this.bech32HrpTestnet,
-        this.bech32Separator)) {
+        this.bech32Separator
+      )
+    ) {
       type = BitcoinTransactionType.WITNESS_V0_KEYHASH;
       data = BitcoinUtils.extractScriptPubkeyFromSegwitAddress(address);
     } else {
       // TODO BitcoinCash Address condition
-      console.warn('unsupported Address');
+      console.warn("unsupported Address");
     }
     return [type, data];
   }
 
   /**
-   *  
+   *
    * @param {object} transactionType
    * @param {string} transactionType.value
-   * @param {Buffer} data 
+   * @param {Buffer} data
    * @returns {Buffer}
    */
   _addressDataToScript(transactionType, data) {
