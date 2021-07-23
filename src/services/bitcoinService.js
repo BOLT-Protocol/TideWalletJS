@@ -240,6 +240,8 @@ class BitcoinService extends AccountServiceDecorator {
       _transaction.txid = response["txid"];
       _transaction.timestamp = Math.floor(Date.now() / 1000);
       _transaction.confirmations = 0;
+      _transaction.inputs = transaction.inputs.map((input) => ({ ...input }));
+      _transaction.changeUtxo = { ...transaction.changeUtxo };
       return [true, _transaction];
     } catch (error) {
       console.log(error);

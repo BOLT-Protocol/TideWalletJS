@@ -590,12 +590,23 @@ class AccountCore {
           safeSigner,
           transaction
         );
+        if (success) {
+          const txOuts = tx.inputs.map((input) => {
+            const txOut = { ...input.utxo };
+            txOut.locked = true;
+            return txOut;
+          });
+          console.log("insert data:", [...txOuts, tx.changeUtxo]);
+          await this._DBOperator.utxoDao.insertUtxos([
+            ...txOuts,
+            tx.changeUtxo,
+          ]);
+        }
         break;
       default:
         break;
     }
     if (success) {
-      console.log("sendTransaction tx", tx); //-- debug info
       tx.amount = SafeMath.toCurrencyUint(transaction.amount, account.decimals);
       tx.feePerUnit = SafeMath.toCurrencyUint(
         transaction.feePerUnit,
