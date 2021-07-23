@@ -251,8 +251,8 @@ class TideWalletCore {
   }
 
   getSafeSigner(keyRoot = "m/84'/3324'/0'") {
-    const safeSigner = new SafeSigner(({ chainIndex = 0, keyIndex = 0, data }) => {
-      const keyPath = `${keyRoot}/${chainIndex}/${keyIndex}`;
+    const safeSigner = new SafeSigner(({ changeIndex = 0, keyIndex = 0, data }) => {
+      const keyPath = `${keyRoot}/${changeIndex}/${keyIndex}`;
       return this.signBuffer({ keyPath, data });
     });
     return safeSigner;
@@ -264,13 +264,13 @@ class TideWalletCore {
   //  *
   //  * @param {object} param
   //  * @param {object} param.keyPath
-  //  * @param {number} param.keyPath.chainIndex
+  //  * @param {number} param.keyPath.changeIndex
   //  * @param {number} param.keyPath.keyIndex
   //  * @param {Buffer} param.buffer -  hash data buffer
   //  * @returns
   //  */
   // async sign({ keyPath, buffer }) {
-  //   return this._signer.sign(buffer, keyPath.chainIndex, keyPath.keyIndex);
+  //   return this._signer.sign(buffer, keyPath.changeIndex, keyPath.keyIndex);
   // }
 
   /**
@@ -283,11 +283,11 @@ class TideWalletCore {
   async signBuffer({ keyPath, data }) {
     console.log(`keyPath: ${keyPath}`); // --
     console.log("data", data); // --
-    const { chainIndex, keyIndex, options } = Cryptor.pathParse(keyPath);
+    const { changeIndex, keyIndex, options } = Cryptor.pathParse(keyPath);
     const seed = await this._getSeedByKeyStore();
     const privateKey = PaperWallet.getPriKey(
       Buffer.from(seed, "hex"),
-      chainIndex,
+      changeIndex,
       keyIndex,
       options
     );
@@ -299,9 +299,9 @@ class TideWalletCore {
   }
 
   async getPubKey({ keyPath }) {
-    const {chainIndex, keyIndex, options} = Cryptor.pathParse(keyPath);
+    const { changeIndex, keyIndex, options} = Cryptor.pathParse(keyPath);
     const seed = await this._getSeedByKeyStore();
-    return PaperWallet.getPubKey(Buffer.from(seed, 'hex'), chainIndex, keyIndex, options);
+    return PaperWallet.getPubKey(Buffer.from(seed, 'hex'), changeIndex, keyIndex, options);
   }
 
   async signData({ keyPath, jsonData }) {
