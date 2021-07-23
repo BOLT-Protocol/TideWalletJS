@@ -681,8 +681,7 @@ class PrefDao extends DAO {
 
   async getSelectedFiat() {
     const result = await this._read(PrefDao.SELECTED_FIAT_KEY);
-
-    return result;
+    return result.name;
   }
 
   setSelectedFiat(name) {

@@ -1,3 +1,4 @@
+const SafeMath = require("../helpers/SafeMath");
 const { ACCOUNT_EVT } = require("../models/account.model");
 const AccountService = require("./accountService");
 
@@ -26,9 +27,17 @@ class AccountServiceBase extends AccountService {
 
     this._AccountCore.accounts[this._accountId] = accounts;
 
+    const currencies = await this._AccountCore.getAllCurrencies();
+    const fiat = await this._AccountCore.trader.getSelectedFiat();
+    const userBalanceInFiat = currencies.reduce((rs, curr) => {
+      curr.inFiat = this._AccountCore.trader.calculateToFiat(curr, fiat);
+      return SafeMath.plus(rs, curr.inFiat);
+    }, 0);
     const msg = {
       evt: ACCOUNT_EVT.OnUpdateCurrency,
-      value: accounts,
+      accounts,
+      userBalanceInFiat,
+      fiat,
     };
 
     this._AccountCore.messenger.next(msg);
@@ -53,12 +62,14 @@ class AccountServiceBase extends AccountService {
       account.numberOfUsedExternalKey = res["number_of_used_external_key"] ?? 0;
       account.numberOfUsedInternalKey = res["number_of_used_internal_key"] ?? 0;
       account.lastSyncTime = timestamp;
+      const fiat = await this._AccountCore.trader.getSelectedFiat();
+      account.inFiat = this._AccountCore.trader.calculateToFiat(account, fiat);
 
       let tokens = res["tokens"];
       const currs = await this._DBOperator.currencyDao.findAllCurrencies();
       const newTokens = [];
 
-      tokens = tokens.map((token) => {
+      tokens = tokens.map(async (token) => {
         const index = currs.findIndex(
           (c) => c.currencyId === token["token_id"]
         );
@@ -93,6 +104,7 @@ class AccountServiceBase extends AccountService {
           image: currs[index].image, // Join Currency || url
           exchange_rate: currs[index].exchangeRate, // ++ Join Currency || inUSD,
         });
+        entity.inFiat = this._AccountCore.trader.calculateToFiat(entity, fiat);
         return entity;
       });
       await this._DBOperator.accountDao.insertAccounts(tokens);
@@ -195,9 +207,6 @@ class AccountServiceBase extends AccountService {
     const txReady = transactions
       .filter((t) => t.timestamp !== null)
       .sort((a, b) => (a.timestamp <= b.timestamp ? 1 : -1));
-    console.log("_loadTransactions txNull", txNull);
-    console.log("_loadTransactions txReady", txReady);
-
     return [...txNull, ...txReady];
   }
 

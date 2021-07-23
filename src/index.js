@@ -22,17 +22,27 @@ class TideWallet {
     return this;
   }
 
+  async getFiatList() {
+    return await this.trader.getFiatList();
+  }
+
+  async changeSelectedFiat(fiat) {
+    await this.trader.setSelectedFiat(fiat);
+  }
+
   async _init() {
     this.initObj.TideWalletCore = this.core;
-    this.account = new Account(this.initObj);
+    this.trader = new Trader(this.initObj);
+    this._fiats = await this.getFiatList();
+    await this.changeSelectedFiat(
+      this._fiats.find((fiat) => fiat.name === "USD")
+    );
+    this.account = new Account({ ...this.initObj, Trader: this.trader });
     this.account.setMessenger();
     await this.account.init({
       debugMode: this.debugMode,
       networkPublish: this.networkPublish,
     });
-
-    this.trader = new Trader(this.initObj);
-    await this.trader.getFiatList();
 
     this.account.messenger.subscribe((v) => {
       this.notice(v, "update");
@@ -99,29 +109,24 @@ class TideWallet {
     return true;
   }
 
-  async getFiat() {
-    return await this.trader.getSelectedFiat();
-  }
   getVersion() {
     return packageInfo.version;
   }
 
   async overview() {
-    const currencies = await this.account.getAllCurrencies();
+    const currencies = this.account.getAllCurrencies();
     const fiat = await this.trader.getSelectedFiat();
-    const rate = fiat.exchangeRate;
+
     const balance = currencies.reduce((rs, curr) => {
-      const amountInUSD = this.trader.calculateToUSD({
-        currencyId: curr.currencyId,
-        amount: curr.balance,
-      });
-      return SafeMath.plus(rs, amountInUSD);
+      curr.inFiat = this.trader.calculateToFiat(curr, fiat);
+      return SafeMath.plus(rs, curr.inFiat);
     }, 0);
-    const balanceFiat = SafeMath.mult(balance, rate);
+    console.log("overview balance", balance);
 
     const dashboard = {
-      balance: balanceFiat,
+      balance,
       currencies,
+      fiat,
     };
     return dashboard;
   }
