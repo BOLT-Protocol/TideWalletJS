@@ -109,7 +109,7 @@ class BitcoinService extends AccountServiceDecorator {
    * @param {Buffer} param.message
    */
   calculateTransactionVSize({ unspentTxOuts, feePerByte, amount, message }) {
-    let unspentAmount = '0';
+    let unspentAmount = "0";
     let headerWeight;
     let inputWeight;
     let outputWeight;
@@ -181,20 +181,40 @@ class BitcoinService extends AccountServiceDecorator {
     return this._fee;
   }
 
-  async getTransactionFee(id, blockchainId, decimals, to, amount, message) {
-    const feePerUnit = await this.getFeePerUnit(blockchainId, decimals);
-    console.log("getTransactionFee", feePerUnit);
+  feePerUnit(speed, feePerUnits) {
+    switch (speed) {
+      case "slow":
+        return feePerUnits.slow;
+      case "standard":
+        return feePerUnits.standard;
+      case "fast":
+        return feePerUnits.fast;
+      default:
+        return feePerUnits.standard;
+    }
+  }
+
+  async getTransactionFee({
+    id,
+    blockchainId,
+    decimals,
+    amount,
+    message,
+    speed,
+  } = {}) {
+    const feePerUnits = await this.getFeePerUnit(blockchainId, decimals);
+    console.log("getTransactionFee", feePerUnits);
     const utxos = await this.getUnspentTxOut(id);
     console.log("getTransactionFee", utxos);
     const vsize = utxos.length
       ? this.calculateTransactionVSize({
           unspentTxOuts: utxos,
-          feePerByte: feePerUnit.slow,    // ++ 要再調整fee wayne
+          feePerByte: this.feePerUnit(speed, feePerUnits), // ++ 要再調整fee wayne
           amount,
-          message
+          message,
         })
       : 1;
-    return { feePerUnit: { ...feePerUnit }, unit: vsize }; // ++ 要再調整介面
+    return { feePerUnit: { ...feePerUnits }, unit: vsize }; // ++ 要再調整介面
   }
 
   /**
@@ -210,8 +230,7 @@ class BitcoinService extends AccountServiceDecorator {
 
     try {
       const body = {
-        hex:
-          Buffer.from(transaction.serializeTransaction).toString("hex"),
+        hex: Buffer.from(transaction.serializeTransaction).toString("hex"),
       };
       console.log("publishTransaction", body);
       const response = await this._TideWalletCommunicator.PublishTransaction(
@@ -219,7 +238,7 @@ class BitcoinService extends AccountServiceDecorator {
         body
       );
       _transaction.txid = response["txid"];
-      _transaction.timestamp = Math.floor(Date.now()/1000);
+      _transaction.timestamp = Math.floor(Date.now() / 1000);
       _transaction.confirmations = 0;
       return [true, _transaction];
     } catch (error) {
@@ -230,7 +249,10 @@ class BitcoinService extends AccountServiceDecorator {
 
   async _syncUTXO(force = false) {
     const now = Date.now();
-    console.log('now - this.lastSyncUtxoTimestamp > this._syncInterval', now - this.lastSyncUtxoTimestamp > this._syncInterval)
+    console.log(
+      "now - this.lastSyncUtxoTimestamp > this._syncInterval",
+      now - this.lastSyncUtxoTimestamp > this._syncInterval
+    );
 
     if (now - this.lastSyncUtxoTimestamp > this._syncInterval || force) {
       console.log("_syncUTXO");

@@ -163,7 +163,7 @@ class AccountCore {
   async sync() {
     if (this._isInit) {
       const jobs = [];
-      for(const svc of this._services) {
+      for (const svc of this._services) {
         jobs.push(svc.synchro(true));
       }
       await Promise.all(jobs);
@@ -438,17 +438,18 @@ class AccountCore {
    * @param {string} data [optional]
    * @returns
    */
-  async getTransactionFee(id, to, amount, data) {
+  async getTransactionFee({ id, to, amount, data, speed }) {
     const svc = this.getService(id);
     const account = this._accounts[id].find((acc) => acc.id === id);
-    const fees = await svc.getTransactionFee(
-      account.id,
-      account.blockchainId,
-      account.decimals,
+    const fees = await svc.getTransactionFee({
+      id: account.id,
+      blockchainId: account.blockchainId,
+      decimals: account.decimals,
       to,
       amount,
-      data
-    );
+      data,
+      speed,
+    });
     console.log("fees", fees);
     return fees;
   }
