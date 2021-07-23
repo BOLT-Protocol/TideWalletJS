@@ -162,9 +162,11 @@ class AccountCore {
    */
   async sync() {
     if (this._isInit) {
-      this._services.forEach((svc) => {
-        svc.synchro(true);
-      });
+      const jobs = [];
+      for(const svc of this._services) {
+        jobs.push(svc.synchro(true));
+      }
+      await Promise.all(jobs);
     }
   }
 

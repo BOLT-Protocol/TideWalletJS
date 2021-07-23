@@ -68,9 +68,10 @@ class TransactionServiceBTC extends TransactionDecorator {
       const rawData = transaction.getRawDataToSign(index);
       const rawDataHash = Cryptor.sha256round(rawData);
       const utxo = transaction.inputs[index].utxo;
+      // TODO: Backend naming issue - changeIndex not chainIndex
       const sig = await this.signer.sign({
         data: rawDataHash,
-        changeIndex: utxo.changeIndex,
+        chainIndex: utxo.changeIndex,
         keyIndex: utxo.keyIndex
       });
       const buffer = Buffer.alloc(64, 0);

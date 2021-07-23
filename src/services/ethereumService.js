@@ -43,7 +43,7 @@ class EthereumService extends AccountServiceDecorator {
 
     await this.service.start();
 
-    this.synchro();
+    await this.synchro(true);
 
     this.service.timer = setInterval(() => {
       this.synchro();
@@ -237,8 +237,8 @@ class EthereumService extends AccountServiceDecorator {
   /**
    * @override
    **/
-  synchro(force = false) {
-    this.service.synchro(force);
+  async synchro(force = false) {
+    await this.service.synchro(force);
   }
 
   /**
