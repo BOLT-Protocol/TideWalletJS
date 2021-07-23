@@ -3,8 +3,8 @@ const { BitcoinTransactionType } = require('../models/transactionBTC.model');
 
 class UnspentTxOut {
   id;
-  accountcurrencyId;
-  txId;
+  accountId;
+  txid;
   vout;
   type;
   address;
@@ -30,8 +30,8 @@ class UnspentTxOut {
 
   constructor({
     id,
-    accountcurrencyId,
-    txId,
+    accountId,
+    txid,
     vout,
     type,
     address,
@@ -48,8 +48,8 @@ class UnspentTxOut {
     // this.scriptPubKey,
   }) {
     this.id = id;
-    this.accountcurrencyId = accountcurrencyId;
-    this.txId = txId;
+    this.accountId = accountId;
+    this.txid = txid;
     this.vout = vout;
     this.type = type;
     this.address = address;
@@ -68,8 +68,8 @@ class UnspentTxOut {
 
   static fromSmallestUint({
     id,
-    accountcurrencyId,
-    txId,
+    accountId,
+    txid,
     vout,
     type,
     address,
@@ -88,8 +88,8 @@ class UnspentTxOut {
     const cAmount = SafeMath.toCurrencyUint(amount, decimals);
     return new UnspentTxOut({
       id,
-      accountcurrencyId,
-      txId,
+      accountId,
+      txid,
       vout,
       type,
       address,
@@ -112,8 +112,8 @@ class UnspentTxOut {
     console.log('utxo.decimals:', utxo.decimals, typeof utxo.decimals);
     return new UnspentTxOut({
       id: utxo.utxoId,
-      accountcurrencyId: utxo.accountId,
-      txId: utxo.txid,
+      accountId: utxo.accountId,
+      txid: utxo.txid,
       vout: utxo.vout,
       type: Object.values(BitcoinTransactionType).find((type) => type.value == utxo.type),
       amount: SafeMath.toCurrencyUint(utxo.amount, utxo.decimals),

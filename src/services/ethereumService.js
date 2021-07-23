@@ -88,7 +88,7 @@ class EthereumService extends AccountServiceDecorator {
   }
 
   _GWeiToWei(amount) {
-    const wei = SafeMath.toSmallestUint(amount, 9)
+    const wei = SafeMath.toSmallestUint(amount, 9);
     return wei;
   }
 
@@ -169,7 +169,14 @@ class EthereumService extends AccountServiceDecorator {
     }
   }
 
-  async getTransactionFee(id, blockchainId, decimals, to, amount, message) {
+  async getTransactionFee({
+    id,
+    blockchainId,
+    decimals,
+    to,
+    amount,
+    message,
+  } = {}) {
     const gasPrice = await this.getGasPrice(blockchainId, decimals);
     const gasLimit = await this.estimateGasLimit(
       id,
@@ -203,7 +210,7 @@ class EthereumService extends AccountServiceDecorator {
         body
       );
       _transaction.txid = response["txid"];
-      _transaction.timestamp = Math.floor(Date.now()/1000);
+      _transaction.timestamp = Math.floor(Date.now() / 1000);
       _transaction.confirmations = 0;
       return [true, _transaction];
     } catch (error) {

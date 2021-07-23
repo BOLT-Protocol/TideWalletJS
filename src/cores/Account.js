@@ -8,6 +8,7 @@ const ETHTransactionSvc = require("../services/transactionServiceETH");
 const { Transaction } = require("../models/tranasction.model");
 const BTCTransactionSvc = require("../services/transactionServiceBTC");
 const SafeMath = require("../helpers/SafeMath");
+const UnspentTxOut = require("../models/utxo.model");
 
 class AccountCore {
   static instance;
@@ -163,7 +164,7 @@ class AccountCore {
   async sync() {
     if (this._isInit) {
       const jobs = [];
-      for(const svc of this._services) {
+      for (const svc of this._services) {
         jobs.push(svc.synchro(true));
       }
       await Promise.all(jobs);
@@ -438,17 +439,18 @@ class AccountCore {
    * @param {string} data [optional]
    * @returns
    */
-  async getTransactionFee(id, to, amount, data) {
+  async getTransactionFee({ id, to, amount, data, speed }) {
     const svc = this.getService(id);
     const account = this._accounts[id].find((acc) => acc.id === id);
-    const fees = await svc.getTransactionFee(
-      account.id,
-      account.blockchainId,
-      account.decimals,
+    const fees = await svc.getTransactionFee({
+      id: account.id,
+      blockchainId: account.blockchainId,
+      decimals: account.decimals,
       to,
       amount,
-      data
-    );
+      data,
+      speed,
+    });
     console.log("fees", fees);
     return fees;
   }
@@ -589,12 +591,30 @@ class AccountCore {
           safeSigner,
           transaction
         );
+        if (success) {
+          const txOuts = tx.inputs.map((input) => {
+            const _txOut = new UnspentTxOut({ ...input.utxo });
+            const txOut = {
+              ..._txOut,
+              utxoId: _txOut.id,
+              amount: _txOut.amountInSmallestUint,
+              locked: true,
+              type: _txOut.type.value,
+              script: _txOut.data.toString("hex"),
+            };
+            return txOut;
+          });
+          console.log("insert data:", [...txOuts, tx.changeUtxo]);
+          await this._DBOperator.utxoDao.insertUtxos([
+            ...txOuts,
+            tx.changeUtxo,
+          ]);
+        }
         break;
       default:
         break;
     }
     if (success) {
-      console.log("sendTransaction tx", tx); //-- debug info
       tx.amount = SafeMath.toCurrencyUint(transaction.amount, account.decimals);
       tx.feePerUnit = SafeMath.toCurrencyUint(
         transaction.feePerUnit,

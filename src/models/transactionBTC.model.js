@@ -50,7 +50,7 @@ class Input {
   }
 
   get reservedTxId() {
-    return Buffer.from(this.utxo.txId, 'hex').reverse();
+    return Buffer.from(this.utxo.txid, 'hex').reverse();
   }
 
   get voutInBuffer() {
@@ -95,7 +95,7 @@ class Input {
     } else if (this.utxo.type == BitcoinTransactionType.PUBKEY) {
       // do nothing
     } else {
-      Log.warning('Unusable this.utxo: ${this.utxo.txId}');
+      Log.warning('Unusable this.utxo: ${this.utxo.txid}');
       return null;
     }
     this.segwit = segwit;
@@ -419,7 +419,7 @@ class BitcoinTransaction extends Transaction {
               BitcoinTransactionType.WITNESS_V0_KEYHASH) {
             // do nothing
           } else {
-            console.warn(`Unusable utxo: ${input.utxo.txId}`);
+            console.warn(`Unusable utxo: ${input.utxo.txid}`);
             return null;
           }
           data.push(...script);
@@ -478,7 +478,7 @@ class BitcoinTransaction extends Transaction {
       data.push(...output.amountInBuffer, ...output.script);
     }
     // txId
-    this.txId = Cryptor.sha256round(Buffer.from([...data, ...this._lockTime])).reverse().toString('hex');
+    this.txid = Cryptor.sha256round(Buffer.from([...data, ...this._lockTime])).reverse().toString('hex');
 
     //witness
     if (segwit) {
