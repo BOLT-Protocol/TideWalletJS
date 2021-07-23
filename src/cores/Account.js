@@ -3,7 +3,6 @@ const { ACCOUNT } = require("../models/account.model");
 const AccountServiceBase = require("../services/accountServiceBase");
 const EthereumService = require("../services/ethereumService");
 const BitcoinService = require("../services/bitcoinService");
-const { network_publish } = require("../constants/config");
 const TransactionBase = require("../services/transactionService");
 const ETHTransactionSvc = require("../services/transactionServiceETH");
 const { Transaction } = require("../models/tranasction.model");
@@ -25,6 +24,10 @@ class AccountCore {
     return this._messenger;
   }
 
+  get trader() {
+    return this._trader;
+  }
+
   set accounts(accounts) {
     this._accounts = accounts;
   }
@@ -37,7 +40,7 @@ class AccountCore {
     this._settingOptions = options;
   }
 
-  constructor({ TideWalletCommunicator, DBOperator, TideWalletCore }) {
+  constructor({ TideWalletCommunicator, DBOperator, TideWalletCore, Trader }) {
     if (!AccountCore.instance) {
       this._messenger = null;
       this._isInit = false;
@@ -46,6 +49,7 @@ class AccountCore {
       this._DBOperator = DBOperator;
       this._TideWalletCommunicator = TideWalletCommunicator;
       this._TideWalletCore = TideWalletCore;
+      this._trader = Trader;
       AccountCore.instance = this;
     }
 
@@ -60,12 +64,12 @@ class AccountCore {
     this._debugMode = debugMode;
     this._networkPublish = networkPublish;
     this._isInit = true;
-
     await this._initAccounts();
   }
 
   async _initAccounts() {
     this.close();
+    const fiat = await this._trader.getSelectedFiat();
     const chains = await this._getNetworks();
     const accounts = await this._getAccounts();
     const currencies = await this._getSupportedCurrencies();
@@ -84,6 +88,7 @@ class AccountCore {
         acc.image = currency.image;
         acc.publish = currency.publish;
         acc.exchangeRate = currency.exchangeRate;
+        acc.inFiat = this._trader.calculateToFiat(acc, fiat);
       }
 
       await this._DBOperator.accountDao.insertAccount(acc);
@@ -497,18 +502,20 @@ class AccountCore {
   }
 
   async sendBTCBasedTx(account, svc, safeSigner, transaction) {
-    console.log('sendBTCBasedTx transaction', transaction); // -- debug
+    console.log("sendBTCBasedTx transaction", transaction); // -- debug
     const txSvc = new BTCTransactionSvc(new TransactionBase(), safeSigner);
     txSvc.accountDecimals = account.decimals;
     const utxos = await svc.getUnspentTxOut(account.id, account.decimals);
     utxos.map(async (utxo) => {
       if (!utxo.locked) {
         utxo.publickey = Buffer.from(
-          await this._TideWalletCore.getPubKey({ keyPath:
-            `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'/${utxo.changeIndex}/${utxo.keyIndex}` }),
-          'hex');
+          await this._TideWalletCore.getPubKey({
+            keyPath: `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'/${utxo.changeIndex}/${utxo.keyIndex}`,
+          }),
+          "hex"
+        );
       }
-    })
+    });
     const changeInfo = await svc.getChangingAddress(account.id);
     const signedTx = await txSvc.prepareTransaction({
       isMainNet: account.blockchainCoinType === 1 ? false : true,
@@ -526,7 +533,8 @@ class AccountCore {
       account.blockchainId,
       signedTx
     );
-    console.log('sendBTCBasedTx response:', response);
+
+    console.log("sendBTCBasedTx response:", response);
     return response;
   }
 
@@ -557,7 +565,10 @@ class AccountCore {
       transaction.feePerUnit,
       account.decimals
     );
-    transaction.fee = SafeMath.toSmallestUint(transaction.fee, account.decimals);
+    transaction.fee = SafeMath.toSmallestUint(
+      transaction.fee,
+      account.decimals
+    );
     let success, tx;
     switch (account.accountType) {
       case ACCOUNT.ETH:

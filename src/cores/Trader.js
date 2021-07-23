@@ -1,10 +1,10 @@
-const SafeMath = require('../helpers/SafeMath');
+const SafeMath = require("../helpers/SafeMath");
 
 class Trader {
   static syncInterval = 24 * 60 * 60 * 1000;
   static instance;
 
-  constructor({TideWalletCommunicator, DBOperator}) {
+  constructor({ TideWalletCommunicator, DBOperator }) {
     if (!Trader.instance) {
       this._fiats = [];
       this._cryptos = [];
@@ -21,54 +21,60 @@ class Trader {
     const local = await this._DBOperator.exchangeRateDao.findAllExchageRates();
     const now = Date.now();
 
-    if (!Array.isArray(local) || !local[0] || now - local[0].lastSyncTime > Trader.syncInterval) {
+    if (
+      !Array.isArray(local) ||
+      !local[0] ||
+      now - local[0].lastSyncTime > Trader.syncInterval
+    ) {
       try {
         const works = [
           this._TideWalletCommunicator.FiatsRate(),
-          this._TideWalletCommunicator.CryptoRate()
-        ]
+          this._TideWalletCommunicator.CryptoRate(),
+        ];
         const res = await Promise.all(works);
         const fiats = res[0];
         const cryptos = res[1];
         const rates = [
-          ...fiats.map(
-            (e) => this._DBOperator.exchangeRateDao.entity({
-              ...e, timestamp: now, type: 'fiat',
+          ...fiats.map((e) =>
+            this._DBOperator.exchangeRateDao.entity({
+              ...e,
+              timestamp: now,
+              type: "fiat",
             })
           ),
-          ...cryptos.map(
-            (e) => this._DBOperator.exchangeRateDao.entity({
-              ...e, timestamp: now, type: 'currency',
+          ...cryptos.map((e) =>
+            this._DBOperator.exchangeRateDao.entity({
+              ...e,
+              timestamp: now,
+              type: "currency",
             })
-          )
+          ),
         ];
         await this._DBOperator.exchangeRateDao.insertExchangeRates(rates);
 
-        this._fiats = fiats
-          .map((r) => ({
-            currencyId: r.currency_id,
-            name: r.name,
-            exchangeRate: r.rate,
-          }));
-        this._cryptos = cryptos
-          .map((r) => ({
-            currencyId: r.currency_id,
-            name: r.name,
-            exchangeRate: r.rate,
-          }));
+        this._fiats = fiats.map((r) => ({
+          currencyId: r.currency_id,
+          name: r.name,
+          exchangeRate: r.rate,
+        }));
+        this._cryptos = cryptos.map((r) => ({
+          currencyId: r.currency_id,
+          name: r.name,
+          exchangeRate: r.rate,
+        }));
       } catch (error) {
         console.log(error);
       }
     } else {
       this._fiats = local
-        .filter((rate) => rate.type === 'fiat')
+        .filter((rate) => rate.type === "fiat")
         .map((r) => ({
           currencyId: r.exchangeRateId,
           name: r.name,
           exchangeRate: r.rate,
         }));
       this._cryptos = local
-        .filter((rate) => rate.type === 'currency')
+        .filter((rate) => rate.type === "currency")
         .map((r) => ({
           currencyId: r.exchangeRateId,
           name: r.name,
@@ -80,7 +86,7 @@ class Trader {
   }
 
   /**
-   * 
+   *
    * @param {object} fiat
    * @param {string} fiat.name
    */
@@ -90,6 +96,10 @@ class Trader {
 
   async getSelectedFiat() {
     const name = await this._DBOperator.prefDao.getSelectedFiat();
+    
+    if (this._fiats.length === 0) {
+      await this.getFiatList();
+    }
 
     if (name == null || name == undefined) return this._fiats[0];
 
@@ -99,14 +109,34 @@ class Trader {
 
   /**
    * calculateToUSD
+   * @param {object} account
+   * @param {string} account.amount
+   * @returns {string}
+   */
+  calculateToFiat(account, fiat) {
+    console.log("calculateToFiat fiat", fiat)
+    const amountInUSD = SafeMath.mult(
+      account.balance,
+      account.exchangeRate ?? "1" //--
+    );
+
+    const amountInFiat = SafeMath.mult(amountInUSD, fiat.exchangeRate);
+
+    return amountInFiat;
+  }
+
+  /**
+   * calculateToUSD
    * @param {object} _currency
    * @param {string} _currency.currencyId
    * @param {string} _currency.amount
-   * @returns {string} 
+   * @returns {string}
    */
   calculateToUSD(_currency) {
-    const crypto = this._cryptos.find((c) => c.currencyId === _currency.currencyId);
-    if (!crypto) return '0';
+    const crypto = this._cryptos.find(
+      (c) => c.currencyId === _currency.currencyId
+    );
+    if (!crypto) return "0";
 
     return SafeMath.mult(_currency.amount, crypto.exchangeRate);
   }
@@ -115,37 +145,41 @@ class Trader {
    * calculateUSDToCurrency
    * @param {object} _currency
    * @param {string} _currency.currencyId
-   * @param {string} amountInUSD 
+   * @param {string} amountInUSD
    * @returns {string}
    */
   calculateUSDToCurrency(_currency, amountInUSD) {
-    const crypto = this._cryptos.find((c) => c.currencyId === _currency.currencyId);
-    if (!crypto) return new '0';
+    const crypto = this._cryptos.find(
+      (c) => c.currencyId === _currency.currencyId
+    );
+    if (!crypto) return new "0"();
 
-    return SafeMath.div(amountInUSD, crypto.exchangeRate)
+    return SafeMath.div(amountInUSD, crypto.exchangeRate);
   }
 
   /**
    * calculateAmountToUSD
    * @param {object} _currency
    * @param {string} _currency.currencyId
-   * @param {string} amount 
+   * @param {string} amount
    * @returns {string}
    */
   calculateAmountToUSD(_currency, amount) {
-    const crypto = this._cryptos.find((c) => c.currencyId === _currency.currencyId);
-    if (!crypto) return '0';
+    const crypto = this._cryptos.find(
+      (c) => c.currencyId === _currency.currencyId
+    );
+    if (!crypto) return "0";
 
-    return SafeMath.mult(amount, crypto.exchangeRate)
+    return SafeMath.mult(amount, crypto.exchangeRate);
   }
 
   /**
-   * 
+   *
    * @param {object} sellCurrency
    * @param {string} sellCurrency.currencyId
    * @param {object} buyCurrency
    * @param {string} buyCurrency.currencyId
-   * @param {string} sellAmount 
+   * @param {string} sellAmount
    * @returns {object} result
    * @returns {string} result.buyAmount
    * @returns {string} result.exchangeRate
@@ -158,11 +192,17 @@ class Trader {
     // console.log(
     //     `buyCryptos ${buyCryptos.name} [${buyCryptos.currencyId}]: ${buyCryptos.exchangeRate}`);
 
-    const exchangeRate = this.calculateUSDToCurrency(buyCurrency, this.calculateAmountToUSD(sellCurrency, '1'));
-    const buyAmount = this.calculateUSDToCurrency(buyCurrency, SafeMath.mult(sellAmount, exchangeRate));
-    console.log('buyAmount:', buyAmount)
-    console.log('exchangeRate:', exchangeRate);
-    return {buyAmount, exchangeRate};
+    const exchangeRate = this.calculateUSDToCurrency(
+      buyCurrency,
+      this.calculateAmountToUSD(sellCurrency, "1")
+    );
+    const buyAmount = this.calculateUSDToCurrency(
+      buyCurrency,
+      SafeMath.mult(sellAmount, exchangeRate)
+    );
+    console.log("buyAmount:", buyAmount);
+    console.log("exchangeRate:", exchangeRate);
+    return { buyAmount, exchangeRate };
   }
 }
 
