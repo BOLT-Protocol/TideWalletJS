@@ -33,7 +33,6 @@ class AccountServiceBase extends AccountService {
       curr.inFiat = this._AccountCore.trader.calculateToFiat(curr, fiat);
       return SafeMath.plus(rs, curr.inFiat);
     }, 0);
-    console.log("_pushResult balance", userBalanceInFiat);
     const msg = {
       evt: ACCOUNT_EVT.OnUpdateCurrency,
       accounts,

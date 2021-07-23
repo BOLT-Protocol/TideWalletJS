@@ -114,7 +114,6 @@ class Trader {
    * @returns {string}
    */
   calculateToFiat(account, fiat) {
-    console.log("calculateToFiat fiat", fiat)
     const amountInUSD = SafeMath.mult(
       account.balance,
       account.exchangeRate ?? "1" //--
