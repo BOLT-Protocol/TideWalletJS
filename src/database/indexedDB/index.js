@@ -329,6 +329,7 @@ class UserDao extends DAO {
     timestamp,
     backup_status,
     keystore,
+    last_sync_time,
   }) {
     return {
       userId: user_id,
@@ -338,6 +339,7 @@ class UserDao extends DAO {
       timestamp,
       backupStatus: backup_status,
       keystore,
+      lastSyncTime: last_sync_time,
     };
   }
 
@@ -590,7 +592,7 @@ class TransactionDao extends DAO {
   insertTransactions(txs) {
     return this._writeAll(txs);
   }
-  clearAll(){
+  clearAll() {
     return this._deleteAll();
   }
 }
@@ -615,7 +617,7 @@ class ExchangeRateDao extends DAO {
   findAllExchageRates() {
     return this._readAll();
   }
-  clearAll(){
+  clearAll() {
     return this._deleteAll();
   }
 }
@@ -664,7 +666,7 @@ class UtxoDao extends DAO {
   async findAllUtxos(accountId) {
     return this._readAll(accountId, "accountId");
   }
-  clearAll(){
+  clearAll() {
     return this._deleteAll();
   }
 }
@@ -672,6 +674,7 @@ class UtxoDao extends DAO {
 class PrefDao extends DAO {
   static AUTH_ITEM_KEY = 1;
   static SELECTED_FIAT_KEY = 2;
+  static MODE_ITEM_KEY = "debugMode";
 
   entity({ userId, token, tokenSecret }) {
     return {
@@ -707,6 +710,23 @@ class PrefDao extends DAO {
     return this._write({
       prefId: PrefDao.SELECTED_FIAT_KEY,
       name,
+    });
+  }
+
+  async getDebugMode() {
+    const result = await this._read(PrefDao.MODE_ITEM_KEY);
+    console.log("getDebugMode", result);
+    return result.value;
+  }
+  /**
+   *
+   * @param {Boolean} value
+   * @returns
+   */
+  setDebugMode(value) {
+    return this._write({
+      prefId: PrefDao.MODE_ITEM_KEY,
+      value,
     });
   }
 

@@ -11,6 +11,7 @@ const SafeMath = require("../helpers/SafeMath");
 const UnspentTxOut = require("../models/utxo.model");
 
 class AccountCore {
+  static syncInterval = 24 * 60 * 60 * 1000;
   static instance;
   _accounts = {};
   _messenger = null;
@@ -250,7 +251,16 @@ class AccountCore {
       (acc) => acc.userId === this._TideWalletCore.userInfo.id
     );
 
-    if (!accounts || accounts.length < 1) {
+    const user = await this._DBOperator.userDao.findUser(
+      this._TideWalletCore.userInfo.id
+    );
+    const timestamp = Date.now();
+
+    if (
+      !accounts ||
+      accounts.length < 1 ||
+      user.lastSyncTime - timestamp > AccountCore.syncInterval
+    ) {
       try {
         const res = await this._TideWalletCommunicator.AccountList();
         /**
@@ -278,11 +288,12 @@ class AccountCore {
             chain_id: a["network_id"],
             number_of_used_external_key: a["number_of_used_external_key"] ?? 0,
             number_of_used_internal_key: a["number_of_used_internal_key"] ?? 0,
-            last_sync_time: Date.now(),
+            last_sync_time: timestamp,
           })
         );
         accounts = enties;
-        // await this._DBOperator.accountDao.insertAccounts(accounts);
+        user.lastSyncTime = timestamp;
+        await this._DBOperator.userDao.insertUser(user);
       } catch (error) {
         console.log(error); // ++ throw exception
       }

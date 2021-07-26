@@ -145,6 +145,7 @@ class User {
         install_id: installId,
         timestamp,
         backup_status: false,
+        last_sync_time: timestamp,
       });
       await this._DBOperator.userDao.insertUser(user);
       this._initFromRegist = true;
