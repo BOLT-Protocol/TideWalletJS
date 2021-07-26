@@ -22,6 +22,11 @@ class TideWallet {
     return this;
   }
 
+  async resetWallet() {
+    await this.account.close();
+    await this.user.deleteUser();
+  }
+
   async getFiatList() {
     return await this.trader.getFiatList();
   }
@@ -47,7 +52,11 @@ class TideWallet {
     this.account.messenger.subscribe((v) => {
       this.notice(v, "update");
     });
-    this.notice({}, "ready");
+    this.notice({ debugMode: this.debugMode }, "ready");
+  }
+
+  async getDebugMode() {
+    return await this.initObj.DBOperator.prefDao.getDebugMode(this.debugMode);
   }
 
   async init({
@@ -63,6 +72,7 @@ class TideWallet {
     const db = new DBOperator();
     await db.init();
     this.initObj = { TideWalletCommunicator: communicator, DBOperator: db };
+    await this.initObj.DBOperator.prefDao.setDebugMode(this.debugMode);
 
     this.user = new User(this.initObj);
 
