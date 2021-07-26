@@ -22,6 +22,11 @@ class TideWallet {
     return this;
   }
 
+  async resetWallet() {
+    await this.account.close();
+    await this.user.deleteUser();
+  }
+
   async getFiatList() {
     return await this.trader.getFiatList();
   }
@@ -181,7 +186,7 @@ class TideWallet {
   }
 
   async sync() {
-    this.account.sync();
+    await this.account.sync();
     return true;
   }
 

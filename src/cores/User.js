@@ -4,7 +4,7 @@ const config = require("./../constants/config");
 const Mnemonic = require("../helpers/Mnemonic");
 
 class User {
-  constructor({TideWalletCommunicator, DBOperator}) {
+  constructor({ TideWalletCommunicator, DBOperator }) {
     this.id = null;
     this.thirdPartyId = null;
     this.installId = null;
@@ -28,7 +28,7 @@ class User {
         this.id = userInfo[0];
       }
       const user = await this._DBOperator.userDao.findUser(this.id);
-      
+
       // TODO: Remove this log
       console.log("checkUser: ", user);
 
@@ -57,13 +57,14 @@ class User {
     const userId = user[0];
     const userSecret = user[1];
     const timestamp = Math.floor(new Date() / 1000);
-    const { wallet, extendPublicKey: extPK } = await this._TideWalletCore.createWallet({
-      userIdentifier,
-      userId,
-      userSecret,
-      installId,
-      timestamp,
-    });
+    const { wallet, extendPublicKey: extPK } =
+      await this._TideWalletCore.createWallet({
+        userIdentifier,
+        userId,
+        userSecret,
+        installId,
+        timestamp,
+      });
 
     const success = await this._registerUser({
       extendPublicKey: extPK,
@@ -91,7 +92,7 @@ class User {
       userId = _res.userId;
       userSecret = _res.userSecret;
     } catch (error) {
-      console.log('_getUser:', error)
+      console.log("_getUser:", error);
     }
     return [userId, userSecret];
   }
@@ -121,10 +122,14 @@ class User {
       install_id: installId,
       app_uuid: installId,
     };
-    console.log('_registerUser With: ', payload)
+    console.log("_registerUser With: ", payload);
 
     try {
-      const res = await this._communicator.register(installId, installId, extendPublicKey);
+      const res = await this._communicator.register(
+        installId,
+        installId,
+        extendPublicKey
+      );
 
       await this._DBOperator.prefDao.setAuthItem(
         userId,
@@ -146,7 +151,7 @@ class User {
       await this._initUser(user);
       return true;
     } catch (error) {
-      console.log('_registerUser:', error);
+      console.log("_registerUser:", error);
       return false;
     }
   }
@@ -162,14 +167,15 @@ class User {
     const user = await this._getUser(userIdentifier);
     const userId = user[0];
     const timestamp = Math.floor(new Date() / 1000);
-    
-    const { wallet, extendPublicKey: extPK } = await this._TideWalletCore.createWalletWithSeed({
-      seed,
-      userIdentifier,
-      userId,
-      installId,
-      timestamp,
-    });
+
+    const { wallet, extendPublicKey: extPK } =
+      await this._TideWalletCore.createWalletWithSeed({
+        seed,
+        userIdentifier,
+        userId,
+        installId,
+        timestamp,
+      });
 
     const success = await this._registerUser({
       extendPublicKey: extPK,
@@ -289,22 +295,22 @@ class User {
       thirdPartyId: user.thirdPartyId,
       installId: user.installId,
       timestamp: user.timestamp,
-      keystore: user.keystore
-    }
+      keystore: user.keystore,
+    };
     this._TideWalletCore.setUserInfo(userInfo);
 
     const item = await this._DBOperator.prefDao.getAuthItem(user.userId);
     if (item != null && !this._initFromRegist) {
-      let _token = item.token
-      let _tokenSecret = item.tokenSecret
+      let _token = item.token;
+      let _tokenSecret = item.tokenSecret;
       try {
         const res = await this._communicator.AccessTokenRenew({
-            token: _token,
-            tokenSecret: _tokenSecret
-          })
+          token: _token,
+          tokenSecret: _tokenSecret,
+        });
         if (res.token) {
-          _token = res.token
-          _tokenSecret = res.tokenSecret
+          _token = res.token;
+          _tokenSecret = res.tokenSecret;
           await this._DBOperator.prefDao.setAuthItem(
             user.userId,
             _token,
@@ -313,11 +319,15 @@ class User {
         }
       } catch (e) {
         console.trace(e);
-        const res = await this._communicator.register(this.installId, this.installId, await this._TideWalletCore.getExtendedPublicKey());
+        const res = await this._communicator.register(
+          this.installId,
+          this.installId,
+          await this._TideWalletCore.getExtendedPublicKey()
+        );
 
         if (res.token) {
-          _token = res.token
-          _tokenSecret = res.tokenSecret
+          _token = res.token;
+          _tokenSecret = res.tokenSecret;
           await this._DBOperator.prefDao.setAuthItem(
             user.userId,
             _token,
@@ -327,7 +337,6 @@ class User {
         // verify, if not verify, set token null
         await this._communicator.login(_token, _tokenSecret);
       }
-
     }
   }
 
@@ -358,12 +367,18 @@ class User {
    * @returns {Boolean}
    */
   async deleteUser() {
-    const user = await this._DBOperator.userDao.findUser(this.id);
-    const item = await this._DBOperator.userDao.deleteUser(user);
+    console.log("deleteUser this.id", this.id);
+    const item = await this._DBOperator.userDao.deleteUser(this.id);
 
     if (item < 0) return false;
 
-    // await this._prefManager.clearAll();
+    await this._DBOperator.prefDao.clearAll();
+    await this._DBOperator.accountDao.clearAll();
+    await this._DBOperator.transactionDao.clearAll();
+    await this._DBOperator.utxoDao.clearAll();
+    await this._DBOperator.currencyDao.clearAll();
+    await this._DBOperator.networkDao.clearAll();
+    await this._DBOperator.exchangeRateDao.clearAll();
     return true;
   }
 

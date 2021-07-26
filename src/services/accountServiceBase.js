@@ -69,7 +69,7 @@ class AccountServiceBase extends AccountService {
       const currs = await this._DBOperator.currencyDao.findAllCurrencies();
       const newTokens = [];
 
-      tokens = tokens.map(async (token) => {
+      tokens = tokens.map((token) => {
         const index = currs.findIndex(
           (c) => c.currencyId === token["token_id"]
         );
@@ -107,7 +107,6 @@ class AccountServiceBase extends AccountService {
         entity.inFiat = this._AccountCore.trader.calculateToFiat(entity, fiat);
         return entity;
       });
-      await this._DBOperator.accountDao.insertAccounts(tokens);
 
       if (newTokens.length > 0) {
         await Promise.all(

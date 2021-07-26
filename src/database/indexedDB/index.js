@@ -444,6 +444,9 @@ class AccountDao extends DAO {
   insertAccounts(accounts) {
     return this._writeAll(accounts);
   }
+  clearAll() {
+    return this._deleteAll();
+  }
 }
 
 class CurrencyDao extends DAO {
@@ -502,6 +505,9 @@ class CurrencyDao extends DAO {
   findAllCurrenciesByBlockchainId(blockchainId) {
     return this._readAll(blockchainId, "blockchainId");
   }
+  clearAll() {
+    return this._deleteAll();
+  }
 }
 
 class NetworkDao extends DAO {
@@ -526,6 +532,9 @@ class NetworkDao extends DAO {
   }
   insertNetworks(networks) {
     return this._writeAll(networks);
+  }
+  clearAll() {
+    return this._deleteAll();
   }
 }
 
@@ -581,6 +590,9 @@ class TransactionDao extends DAO {
   insertTransactions(txs) {
     return this._writeAll(txs);
   }
+  clearAll(){
+    return this._deleteAll();
+  }
 }
 class ExchangeRateDao extends DAO {
   entity({ currency_id, name, rate, timestamp, type }) {
@@ -602,6 +614,9 @@ class ExchangeRateDao extends DAO {
 
   findAllExchageRates() {
     return this._readAll();
+  }
+  clearAll(){
+    return this._deleteAll();
   }
 }
 
@@ -649,6 +664,9 @@ class UtxoDao extends DAO {
   async findAllUtxos(accountId) {
     return this._readAll(accountId, "accountId");
   }
+  clearAll(){
+    return this._deleteAll();
+  }
 }
 
 class PrefDao extends DAO {
@@ -690,6 +708,10 @@ class PrefDao extends DAO {
       prefId: PrefDao.SELECTED_FIAT_KEY,
       name,
     });
+  }
+
+  clearAll() {
+    return this._deleteAll();
   }
 }
 
