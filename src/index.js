@@ -195,6 +195,11 @@ class TideWallet {
     return true;
   }
 
+  async partialSync(id) {
+    await this.account.partialSync(id);
+    return true;
+  }
+
   async backup() {
     return this.user.getKeystore();
   }
@@ -247,8 +252,9 @@ if (isBrowser()) {
       installId:
         "11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249",
     };
-    await tw.init({ user: user2, api, debugMode: false, networkPublish: true });
+    const user = await tw.init({ user: user2, api, debugMode: false, networkPublish: false });
     //test
+    if (user) await tw.createUser({user});
     console.log("overview:", await tw.overview());
     console.log(
       "getTransactionFee:",
@@ -260,6 +266,7 @@ if (isBrowser()) {
     // console.log('getReceivingAddress:', await tw.getReceivingAddress({ id: "a7255d05-eacf-4278-9139-0cfceb9abed6" }));
     // console.log('getWalletConfig:', await tw.getWalletConfig());
     // await tw.sync();
+    await tw.partialSync("cb955812-37df-476a-95a8-d69295b28347");
     // console.log('backup:', await tw.backup());
     // await tw.close();
   };
