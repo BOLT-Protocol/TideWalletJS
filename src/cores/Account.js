@@ -70,6 +70,7 @@ class AccountCore {
 
   async _initAccounts() {
     this.close();
+    this._isInit = true;
     const fiat = await this._trader.getSelectedFiat();
     const chains = await this._getNetworks();
     const accounts = await this._getAccounts();
@@ -168,6 +169,20 @@ class AccountCore {
         jobs.push(svc.synchro(true));
       }
       await Promise.all(jobs);
+    }
+  }
+
+  /**
+   * partial sync service
+   * @method partialSync
+   * @param accountId
+   */
+   async partialSync(accountId) {
+    if (this._isInit) {
+      const targetSvc = this._services.find((svc) => svc.accountId == accountId);
+      console.log('partialStnc svc', targetSvc);
+      if (!!targetSvc)
+        await targetSvc.synchro(true);
     }
   }
 
