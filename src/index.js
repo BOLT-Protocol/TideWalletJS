@@ -124,7 +124,7 @@ class TideWallet {
   }
 
   async overview() {
-    const currencies = this.account.getAllCurrencies();
+    const currencies = this.account.getAllCurrencies;
     const fiat = await this.trader.getSelectedFiat();
 
     const balance = currencies.reduce((rs, curr) => {
@@ -146,7 +146,7 @@ class TideWallet {
    * @param {string} id
    */
   async getAssetDetail(id) {
-    const asset = await this.account.getCurrencies(id);
+    const asset = this.account.getCurrency(id);
     const transactions = await this.account.getTransactions(id);
 
     return { asset, transactions };

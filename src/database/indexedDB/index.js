@@ -558,7 +558,7 @@ class TransactionDao extends DAO {
     fee,
     gas_price,
     gas_used,
-    note,
+    message,
   }) {
     return {
       id: accountId + txid,
@@ -569,7 +569,7 @@ class TransactionDao extends DAO {
       destinationAddresses: destination_addresses,
       gasPrice: gas_price,
       gasUsed: gas_used,
-      note,
+      message,
       fee,
       status,
       timestamp,
