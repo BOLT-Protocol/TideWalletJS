@@ -17,6 +17,9 @@ class AccountCore {
   _messenger = null;
   _settingOptions = [];
   _DBOperator = null;
+  _syncCalledCount = 0;
+  _partialSyncCalledCount = 0;
+  _forceSyncLock = false;
 
   get accounts() {
     return this._accounts;
@@ -164,12 +167,16 @@ class AccountCore {
    * @method sync
    */
   async sync() {
-    if (this._isInit) {
+    if (this._isInit && !this._forceSyncLock) {
+      this._forceSyncLock = true;
       const jobs = [];
       for (const svc of this._services) {
         jobs.push(svc.synchro(true));
       }
+      console.log('account.sync() jobs:', jobs);
+      console.log('account.sync() sync called time:', ++this._syncCalledCount);
       await Promise.all(jobs);
+      this._forceSyncLock = false;
     }
   }
 
@@ -178,14 +185,17 @@ class AccountCore {
    * @method partialSync
    * @param accountId
    */
-  async partialSync(accountId) {
-    if (this._isInit) {
+   async partialSync(id) {
+    if (this._isInit && !this._forceSyncLock) {
+      this._forceSyncLock = true;
       const account = this.getAllCurrencies.find((acc) => acc.id === id);
-      const targetSvc = this._services.find(
-        (svc) => svc.accountId == account.accountId
-      );
-      console.log("partialStnc svc", targetSvc);
-      if (!!targetSvc) await targetSvc.synchro(true);
+      const targetSvc = this._services.find((svc) => svc.accountId == account.accountId);
+      console.log('partialStnc svc', targetSvc);
+      if (!!targetSvc) {
+        console.log('account.partialSync() partialSync called time:', ++this._partialSyncCalledCount);
+        await targetSvc.synchro(true);
+      }
+      this._forceSyncLock = false;
     }
   }
 
