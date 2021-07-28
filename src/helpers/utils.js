@@ -84,7 +84,7 @@ function stripHexPrefix(str) {
     return str;
   }
 
-  return rlp.isHexPrefixed(str) ? str.slice(2) : str;
+  return isHexPrefixed(str) ? str.slice(2) : str;
 }
 
 /**
