@@ -30,9 +30,9 @@ class AccountServiceBase extends AccountService {
 
     const currencies = this._AccountCore.getAllCurrencies;
     const fiat = await this._AccountCore.trader.getSelectedFiat();
-    const userBalanceInFiat = currencies.reduce((rs, curr) => {
+    const userBalanceInFiat = currencies.reduce((acc, curr) => {
       curr.inFiat = this._AccountCore.trader.calculateToFiat(curr, fiat);
-      return SafeMath.plus(rs, curr.inFiat);
+      return SafeMath.plus(acc, curr.inFiat);
     }, 0);
     const msg = {
       evt: ACCOUNT_EVT.OnUpdateCurrency,
