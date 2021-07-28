@@ -185,10 +185,11 @@ class AccountCore {
    * @method partialSync
    * @param accountId
    */
-   async partialSync(accountId) {
+   async partialSync(id) {
     if (this._isInit && !this._forceSyncLock) {
       this._forceSyncLock = true;
-      const targetSvc = this._services.find((svc) => svc.accountId == accountId);
+      const account = this.getAllCurrencies.find((acc) => acc.id === id);
+      const targetSvc = this._services.find((svc) => svc.accountId == account.accountId);
       console.log('partialStnc svc', targetSvc);
       if (!!targetSvc) {
         console.log('account.partialSync() partialSync called time:', ++this._partialSyncCalledCount);
@@ -377,8 +378,13 @@ class AccountCore {
         await this._DBOperator.currencyDao.findAllCurrenciesByBlockchainId(
           chain.blockchainId
         );
+      console.log("_getSupportedToken tokens", tokens);
       if (!tokens || tokens.length < 1) {
         try {
+          console.log(
+            "_getSupportedToken chain.blockchainId",
+            chain.blockchainId
+          );
           const res = await this._TideWalletCommunicator.TokenList(
             chain.blockchainId
           );
@@ -421,6 +427,16 @@ class AccountCore {
 
   /**
    * Get currency list by accountId
+   * @method getCurrency
+   * @param {string} id The account id
+   * @returns {Account} The Account
+   */
+  getCurrency(id) {
+    return this.getAllCurrencies.find((acc) => acc.id === id);
+  }
+
+  /**
+   * Get currency list by accountId
    * @method getCurrencies
    * @param {string} accountId The accountId
    * @returns {Array} The currency list
@@ -434,7 +450,7 @@ class AccountCore {
    * @method getAllCurrencies
    * @returns {Array} The currency list
    */
-  getAllCurrencies() {
+  get getAllCurrencies() {
     return Object.values(this._accounts).reduce(
       (list, curr) => list.concat(curr),
       []
@@ -458,12 +474,13 @@ class AccountCore {
   /**
    * Get receive address by accountId
    * @method getReceiveAddress
-   * @param {string} accountId The accountId
+   * @param {string} id The id of the account
    * @returns {string} The address
    */
-  async getReceiveAddress(accountId) {
-    const svc = this.getService(accountId);
-    const address = await svc.getReceivingAddress(accountId);
+  async getReceiveAddress(id) {
+    const account = this.getAllCurrencies.find((acc) => acc.id === id);
+    const svc = this.getService(account.accountId);
+    const address = await svc.getReceivingAddress(account.accountId);
     console.log(address);
     return address;
   }
@@ -473,27 +490,39 @@ class AccountCore {
    * @param {string} id
    * @param {string} to [optional]
    * @param {string} amount [optional]
-   * @param {string} data [optional]
+   * @param {string} message [optional]
    * @returns
    */
-  async getTransactionFee({ id, to, amount, data, speed }) {
-    const svc = this.getService(id);
-    const account = this._accounts[id].find((acc) => acc.id === id);
+  async getTransactionFee({ id, to, amount, message, speed }) {
+    const account = this.getAllCurrencies.find((acc) => acc.id === id);
+    const svc = this.getService(account.accountId);
+    let shareAccount;
+    if (account.type === "token") {
+      shareAccount = this._accounts[account.accountId][0];
+      message = svc.tokenTxMessage({
+        to,
+        amount: amount,
+        decimals: account.decimals,
+        message: message,
+      });
+      amount = "0";
+      to = account.contract;
+    } else shareAccount = account;
     const fees = await svc.getTransactionFee({
-      id: account.id,
+      id: account.accountId,
       blockchainId: account.blockchainId,
-      decimals: account.decimals,
+      decimals: shareAccount.decimals,
       to,
       amount,
-      data,
+      message,
       speed,
     });
     console.log("fees", fees);
-    return fees;
+    return { ...fees, symbol: shareAccount.symbol };
   }
 
   async verifyAddress(id, address) {
-    const account = this._accounts[id].find((acc) => acc.id === id);
+    const account = this.getAllCurrencies.find((acc) => acc.id === id);
     const safeSigner = this._TideWalletCore.getSafeSigner(
       `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'`
     );
@@ -516,13 +545,17 @@ class AccountCore {
   }
 
   async verifyAmount(id, amount, fee) {
-    const account = this._accounts[id].find((acc) => acc.id === id);
+    const account = this.getAllCurrencies.find((acc) => acc.id === id);
+    let shareAccount;
+    if (account.type === "token")
+      shareAccount = this._accounts[account.accountId][0];
+    else shareAccount = account;
     const amountPlusFee = SafeMath.plus(amount, fee);
-    const result = SafeMath.gte(account.balance, amountPlusFee);
-    console.log(account.balance);
-    console.log(amount);
-    console.log(fee);
-    console.log(result);
+    const result =
+      account.type === "token"
+        ? SafeMath.gte(shareAccount.balance, fee) &&
+          SafeMath.gte(account.balance, amount)
+        : SafeMath.gte(account.balance, amountPlusFee);
     return result;
   }
 
@@ -591,24 +624,37 @@ class AccountCore {
    * @returns {boolean}} success
    */
   async sendTransaction(id, transaction) {
-    const account = this._accounts[id].find((acc) => acc.id === id);
+    const account = this.getAllCurrencies.find((acc) => acc.id === id);
+    let _transaction = { ...transaction };
+    let shareAccount;
     const svc = this.getService(account.accountId);
     const from = await svc.getReceivingAddress(id);
     const safeSigner = this._TideWalletCore.getSafeSigner(
       `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'`
     );
+    if (account.type === "token") {
+      shareAccount = this._accounts[account.accountId][0];
+      transaction.message = svc.tokenTxMessage({
+        ...transaction,
+        decimals: account.decimals,
+      });
+      transaction.to = account.contract;
+      transaction.amount = "0";
+    } else {
+      shareAccount = account;
+      transaction.amount = SafeMath.toSmallestUint(
+        transaction.amount,
+        account.decimals
+      );
+    }
     transaction.from = from;
-    transaction.amount = SafeMath.toSmallestUint(
-      transaction.amount,
-      account.decimals
-    );
     transaction.feePerUnit = SafeMath.toSmallestUint(
       transaction.feePerUnit,
-      account.decimals
+      shareAccount.decimals
     );
     transaction.fee = SafeMath.toSmallestUint(
       transaction.fee,
-      account.decimals
+      shareAccount.decimals
     );
     let success, tx;
     switch (account.accountType) {
@@ -652,22 +698,52 @@ class AccountCore {
         break;
     }
     if (success) {
-      tx.amount = SafeMath.toCurrencyUint(transaction.amount, account.decimals);
       tx.feePerUnit = SafeMath.toCurrencyUint(
         transaction.feePerUnit,
-        account.decimals
+        shareAccount.decimals
       );
-      tx.fee = SafeMath.toCurrencyUint(transaction.fee, account.decimals);
+      tx.fee = SafeMath.toCurrencyUint(transaction.fee, shareAccount.decimals);
       tx.accountId = account.id;
       tx.id = account.id + tx.txid;
-      console.log("sendTransaction tx", tx); //-- debug info
-      account.balance = SafeMath.minus(
-        SafeMath.minus(account.balance, tx.amount),
-        tx.fee
-      );
-      console.log("_txEsendTransaction account.balance", account.balance); //-- debug info
-      await this._DBOperator.accountDao.insertAccount(account);
-      await this._DBOperator.transactionDao.insertTransaction(tx);
+      if (account.type === "token") {
+        const _tokenTx = {
+          ...tx,
+          amount: _transaction.amount,
+          destinationAddresses: _transaction.to,
+          fee: "0",
+          gasPrice: "0",
+        };
+        const _accTx = {
+          ...tx,
+          id: shareAccount.id + tx.txid,
+          accountId: shareAccount.id,
+          amount: "0",
+          destinationAddresses: _transaction.to,
+        };
+        account.balance = SafeMath.minus(account.balance, _tokenTx.amount);
+        shareAccount.balance = SafeMath.minus(shareAccount.balance, _accTx.fee);
+        await this._DBOperator.accountDao.insertAccounts([
+          account,
+          shareAccount,
+        ]);
+        await this._DBOperator.transactionDao.insertTransactions([
+          _tokenTx,
+          _accTx,
+        ]);
+      } else {
+        tx.amount = SafeMath.toCurrencyUint(
+          transaction.amount,
+          account.decimals
+        );
+        console.log("sendTransaction tx", tx); //-- debug info
+        account.balance = SafeMath.minus(
+          SafeMath.minus(account.balance, tx.amount),
+          tx.fee
+        );
+        console.log("_txEsendTransaction account.balance", account.balance); //-- debug info
+        await this._DBOperator.accountDao.insertAccount(account);
+        await this._DBOperator.transactionDao.insertTransaction(tx);
+      }
     }
     return success;
   }

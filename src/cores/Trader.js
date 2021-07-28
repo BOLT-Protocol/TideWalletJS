@@ -116,7 +116,7 @@ class Trader {
   calculateToFiat(account, fiat) {
     const amountInUSD = SafeMath.mult(
       account.balance,
-      account.exchangeRate ?? "1" //--
+      account.exchangeRate ?? "0"
     );
 
     const amountInFiat = SafeMath.mult(amountInUSD, fiat.exchangeRate);

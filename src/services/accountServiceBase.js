@@ -27,7 +27,7 @@ class AccountServiceBase extends AccountService {
 
     this._AccountCore.accounts[this._accountId] = accounts;
 
-    const currencies = await this._AccountCore.getAllCurrencies();
+    const currencies = this._AccountCore.getAllCurrencies;
     const fiat = await this._AccountCore.trader.getSelectedFiat();
     const userBalanceInFiat = currencies.reduce((rs, curr) => {
       curr.inFiat = this._AccountCore.trader.calculateToFiat(curr, fiat);
@@ -65,18 +65,18 @@ class AccountServiceBase extends AccountService {
       const fiat = await this._AccountCore.trader.getSelectedFiat();
       account.inFiat = this._AccountCore.trader.calculateToFiat(account, fiat);
 
-      let tokens = res["tokens"];
+      const _tokens = res["tokens"];
       const currs = await this._DBOperator.currencyDao.findAllCurrencies();
+      const tokens = [];
       const newTokens = [];
 
-      tokens = tokens.map((token) => {
+     _tokens.forEach((token) => {
+        let entity;
         const index = currs.findIndex(
           (c) => c.currencyId === token["token_id"]
         );
-        if (index < 0) {
-          newTokens.push(cur);
-        }
-        const entity = this._DBOperator.accountDao.entity({
+        const _type = token["type"] === 0 ? "fiat" : token["type"] === 1 ? "currency" : "token";
+        entity = this._DBOperator.accountDao.entity({
           id: token["account_token_id"],
           account_id: account.accountId,
           user_id: account.userId,
@@ -100,12 +100,19 @@ class AccountServiceBase extends AccountService {
           decimals: token["decimals"], // Join Token
           total_supply: token["total_supply"], // Join Token
           contract: token["contract"], // Join Token
-          type: token["type"], // Join Token
-          image: currs[index].image, // Join Currency || url
-          exchange_rate: currs[index].exchangeRate, // ++ Join Currency || inUSD,
+          type: _type, // Join Token
         });
-        entity.inFiat = this._AccountCore.trader.calculateToFiat(entity, fiat);
-        return entity;
+        if (index < 0) {
+          newTokens.push(entity);
+        } else {
+          entity.image = currs[index].image; // Join Currency || url
+          entity.exchangeRate = currs[index].exchangeRate; // ++ Join Currency || inUSD,
+          entity.inFiat = this._AccountCore.trader.calculateToFiat(
+            entity,
+            fiat
+          );
+          tokens.push(entity);
+        }
       });
 
       if (newTokens.length > 0) {
@@ -113,19 +120,23 @@ class AccountServiceBase extends AccountService {
           newTokens.map((token) => {
             return new Promise(async (resolve, reject) => {
               const res = await this._TideWalletCommunicator.TokenDetail(
-                token["blockchain_id"],
-                token["token_id"]
+                token.blockchainId,
+                token.currencyId
               );
+              console.log("newTokens res", res);
               if (res != null) {
                 const token = this._DBOperator.currencyDao.entity(res);
                 await this._DBOperator.currencyDao.insertCurrency(token);
+                token.image = res["icon"]; // Join Currency || url
+                token.exchangeRate = res["exchange_rate"]; // ++ Join Currency || inUSD,
+                return token;
               }
             });
           })
         );
       }
 
-      return [account, ...tokens];
+      return [account, ...tokens, ...newTokens];
     } catch (error) {
       console.log(error);
       return [];
@@ -180,6 +191,7 @@ class AccountServiceBase extends AccountService {
       const txs = res.map((t) =>
         this._DBOperator.transactionDao.entity({
           ...t,
+          message: t.note,
           accountId: account.id,
         })
       );

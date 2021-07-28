@@ -1,6 +1,8 @@
 const AccountServiceDecorator = require("./accountServiceDecorator");
 const { ACCOUNT, ACCOUNT_EVT } = require("../models/account.model");
 const SafeMath = require("../helpers/SafeMath");
+const { toBuffer } = require("../helpers/rlp");
+const Cryptor = require("../helpers/Cryptor");
 
 class EthereumService extends AccountServiceDecorator {
   constructor(service, TideWalletCommunicator, DBOperator) {
@@ -134,6 +136,19 @@ class EthereumService extends AccountServiceDecorator {
     return this._fee;
   }
 
+  tokenTxMessage({ to, amount, decimals, message }) {
+    const erc20Func = Cryptor.keccak256round(
+      toBuffer("transfer(address,uint256)").toString("hex"),
+      1
+    ).slice(0, 8);
+    message = `0x${erc20Func}${Buffer.concat([
+      toBuffer(to ?? ""),
+      toBuffer(SafeMath.toSmallestUint(amount ?? "0", decimals)),
+      toBuffer(message ?? ""),
+    ]).toString("hex")}`;
+    return message;
+  }
+
   /**
    * estimateGasLimit
    * @override
@@ -156,6 +171,7 @@ class EthereumService extends AccountServiceDecorator {
         value: amount,
         data: message,
       };
+      console.log(payload);
       try {
         const response = await this._TideWalletCommunicator.GetGasLimit(
           blockchainId,
@@ -163,6 +179,7 @@ class EthereumService extends AccountServiceDecorator {
         );
         this._gasLimit = Number(response.gasLimit);
       } catch (error) {
+        console.log(error);
         throw error;
       }
       return this._gasLimit;
