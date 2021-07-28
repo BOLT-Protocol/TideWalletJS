@@ -74,7 +74,7 @@ function verifyEthereumAddress(address) {
  * @returns {Buffer} rlp
  */
 function encodeToRlp(transaction) {
-  console.log(transaction);
+  console.log("encodeToRlp",transaction);
 
   const list = [
     transaction.nonce,

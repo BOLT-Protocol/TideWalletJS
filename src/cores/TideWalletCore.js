@@ -2,7 +2,7 @@ const PaperWallet = require("./PaperWallet");
 const Signer = require("./Signer");
 const SafeSigner = require("./SafeSigner");
 const Cryptor = require("../helpers/Cryptor");
-const rlp = require("./../helpers/rlp");
+const { toBuffer } = require("../helpers/utils");
 
 class TideWalletCore {
   static instance;
@@ -44,7 +44,7 @@ class TideWalletCore {
       Cryptor.keccak256round(
         Buffer.concat([
           Buffer.from(userIdentifier, "utf8"),
-          rlp.toBuffer(nonce),
+          toBuffer(nonce),
         ]).toString("hex"),
         1
       )
@@ -55,7 +55,7 @@ class TideWalletCore {
       nonce = Number(nonce) + 1;
     }
 
-    return rlp.toBuffer(nonce).toString("hex");
+    return toBuffer(nonce).toString("hex");
   }
 
   /**
@@ -82,9 +82,9 @@ class TideWalletCore {
       ) +
         Cryptor.keccak256round(
           Cryptor.keccak256round(
-            rlp
-              .toBuffer(rlp.toBuffer(timestamp).toString("hex").slice(3, 6))
-              .toString("hex"),
+            toBuffer(toBuffer(timestamp).toString("hex").slice(3, 6)).toString(
+              "hex"
+            ),
             1
           ) + Cryptor.keccak256round(installIdBuff, 1)
         )
@@ -251,10 +251,12 @@ class TideWalletCore {
   }
 
   getSafeSigner(keyRoot = "m/84'/3324'/0'") {
-    const safeSigner = new SafeSigner(({ changeIndex = 0, keyIndex = 0, data }) => {
-      const keyPath = `${keyRoot}/${changeIndex}/${keyIndex}`;
-      return this.signBuffer({ keyPath, data });
-    });
+    const safeSigner = new SafeSigner(
+      ({ changeIndex = 0, keyIndex = 0, data }) => {
+        const keyPath = `${keyRoot}/${changeIndex}/${keyIndex}`;
+        return this.signBuffer({ keyPath, data });
+      }
+    );
     return safeSigner;
   }
 
@@ -299,9 +301,14 @@ class TideWalletCore {
   }
 
   async getPubKey({ keyPath }) {
-    const { changeIndex, keyIndex, options} = Cryptor.pathParse(keyPath);
+    const { changeIndex, keyIndex, options } = Cryptor.pathParse(keyPath);
     const seed = await this._getSeedByKeyStore();
-    return PaperWallet.getPubKey(Buffer.from(seed, 'hex'), changeIndex, keyIndex, options);
+    return PaperWallet.getPubKey(
+      Buffer.from(seed, "hex"),
+      changeIndex,
+      keyIndex,
+      options
+    );
   }
 
   async signData({ keyPath, jsonData }) {
