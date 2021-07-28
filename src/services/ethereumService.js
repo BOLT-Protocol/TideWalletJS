@@ -1,7 +1,7 @@
 const AccountServiceDecorator = require("./accountServiceDecorator");
 const { ACCOUNT, ACCOUNT_EVT } = require("../models/account.model");
 const SafeMath = require("../helpers/SafeMath");
-const { toBuffer } = require("../helpers/utils");
+const { toBuffer, pad } = require("../helpers/utils");
 const Cryptor = require("../helpers/Cryptor");
 
 class EthereumService extends AccountServiceDecorator {
@@ -120,7 +120,7 @@ class EthereumService extends AccountServiceDecorator {
         );
         console.log("getGasPrice fee in Gwei", response);
         this._fee = response;
-        
+
         this._feeTimestamp = Date.now();
       } catch (error) {
         console.log(error);
@@ -132,17 +132,47 @@ class EthereumService extends AccountServiceDecorator {
   }
 
   tokenTxMessage({ to, amount, decimals, message }) {
-    console.log("tokenTxMessage to", to);
-    console.log("tokenTxMessage toBuffer(to)", toBuffer(to));
     const erc20Func = Cryptor.keccak256round(
       toBuffer("transfer(address,uint256)").toString("hex"),
       1
     ).slice(0, 8);
-    message = `0x${erc20Func}${Buffer.concat([
-      toBuffer(to),
-      toBuffer(SafeMath.toSmallestUint(amount ?? "0", decimals)),
-      toBuffer(message ?? ""),
-    ]).toString("hex")}`;
+    // -- debugInfo
+    // console.log("tokenTxMessage erc20Func", erc20Func);
+    // console.log(
+    //   "tokenTxMessage to",
+    //   to,
+    //   pad(toBuffer(to ?? "").toString("hex"), 64)
+    // );
+    // console.log(
+    //   "tokenTxMessage amount",
+    //   amount,
+    //   "tokenTxMessage amountInDecimal",
+    //   Number.parseFloat(SafeMath.toSmallestUint(amount ?? "0", decimals)),
+    //   "tokenTxMessage buffer",
+    //   pad(
+    //     toBuffer(
+    //       Number.parseFloat(SafeMath.toSmallestUint(amount ?? "0", decimals))
+    //     ).toString("hex"),
+    //     64
+    //   )
+    // );
+    // console.log(
+    //   "tokenTxMessage message",
+    //   message,
+    //   toBuffer(message).toString("hex")
+    // );
+    console.log("tokenTxMessage amount", amount);
+    amount = amount ?? "0";
+    console.log("tokenTxMessage amount", amount);
+    console.log("tokenTxMessage to", to);
+    to = to ?? "";
+    console.log("tokenTxMessage to", to);
+    message = `0x${erc20Func}${pad(toBuffer(to).toString("hex"), 64)}${pad(
+      toBuffer(
+        Number.parseFloat(SafeMath.toSmallestUint(amount, decimals))
+      ).toString("hex"),
+      64
+    )}${toBuffer(message).toString("hex")}`;
     return message;
   }
 
@@ -162,14 +192,13 @@ class EthereumService extends AccountServiceDecorator {
     if (message == "0x" && this._gasLimit != null) {
       return this._gasLimit;
     } else {
-      console.trace("estimateGasLimit message", message);
       const payload = {
         fromAddress: from,
         toAddress: to,
         value: amount,
         data: message,
       };
-      console.log("estimateGasLimit payload",payload);
+      console.log("estimateGasLimit payload", payload);
       try {
         const response = await this._TideWalletCommunicator.GetGasLimit(
           blockchainId,

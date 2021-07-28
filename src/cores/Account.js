@@ -173,8 +173,8 @@ class AccountCore {
       for (const svc of this._services) {
         jobs.push(svc.synchro(true));
       }
-      console.log('account.sync() jobs:', jobs);
-      console.log('account.sync() sync called time:', ++this._syncCalledCount);
+      console.log("account.sync() jobs:", jobs);
+      console.log("account.sync() sync called time:", ++this._syncCalledCount);
       await Promise.all(jobs);
       this._forceSyncLock = false;
     }
@@ -185,14 +185,19 @@ class AccountCore {
    * @method partialSync
    * @param accountId
    */
-   async partialSync(id) {
+  async partialSync(id) {
     if (this._isInit && !this._forceSyncLock) {
       this._forceSyncLock = true;
       const account = this.getAllCurrencies.find((acc) => acc.id === id);
-      const targetSvc = this._services.find((svc) => svc.accountId == account.accountId);
-      console.log('partialStnc svc', targetSvc);
+      const targetSvc = this._services.find(
+        (svc) => svc.accountId == account.accountId
+      );
+      console.log("partialStnc svc", targetSvc);
       if (!!targetSvc) {
-        console.log('account.partialSync() partialSync called time:', ++this._partialSyncCalledCount);
+        console.log(
+          "account.partialSync() partialSync called time:",
+          ++this._partialSyncCalledCount
+        );
         await targetSvc.synchro(true);
       }
       this._forceSyncLock = false;
@@ -521,7 +526,7 @@ class AccountCore {
     return { ...fees, symbol: shareAccount.symbol };
   }
 
-  async verifyAddress(id, address) {
+  verifyAddress(id, address) {
     const account = this.getAllCurrencies.find((acc) => acc.id === id);
     const safeSigner = this._TideWalletCore.getSafeSigner(
       `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'`
@@ -544,7 +549,7 @@ class AccountCore {
     );
   }
 
-  async verifyAmount(id, amount, fee) {
+  verifyAmount(id, amount, fee) {
     const account = this.getAllCurrencies.find((acc) => acc.id === id);
     let shareAccount;
     if (account.type === "token")

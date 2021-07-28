@@ -1,3 +1,4 @@
+const { toCurrencyUint } = require("../helpers/SafeMath");
 const SafeMath = require("../helpers/SafeMath");
 const { ACCOUNT_EVT } = require("../models/account.model");
 const AccountService = require("./accountService");
@@ -70,12 +71,17 @@ class AccountServiceBase extends AccountService {
       const tokens = [];
       const newTokens = [];
 
-     _tokens.forEach((token) => {
+      _tokens.forEach((token) => {
         let entity;
         const index = currs.findIndex(
           (c) => c.currencyId === token["token_id"]
         );
-        const _type = token["type"] === 0 ? "fiat" : token["type"] === 1 ? "currency" : "token";
+        const _type =
+          token["type"] === 0
+            ? "fiat"
+            : token["type"] === 1
+            ? "currency"
+            : "token";
         entity = this._DBOperator.accountDao.entity({
           id: token["account_token_id"],
           account_id: account.accountId,
@@ -129,7 +135,7 @@ class AccountServiceBase extends AccountService {
                 await this._DBOperator.currencyDao.insertCurrency(token);
                 token.image = res["icon"]; // Join Currency || url
                 token.exchangeRate = res["exchange_rate"]; // ++ Join Currency || inUSD,
-                resolve(token)
+                resolve(token);
                 return token;
               }
             });
@@ -185,6 +191,12 @@ class AccountServiceBase extends AccountService {
    * @returns {Array} The sorted transactions
    */
   async _getTransaction(account) {
+    let shareAccount;
+    if (account.type === "token") {
+      shareAccount = this._AccountCore.accounts[account.accountId][0];
+    } else {
+      shareAccount = account;
+    }
     try {
       const res = await this._TideWalletCommunicator.ListTransactions(
         account.id
@@ -194,6 +206,12 @@ class AccountServiceBase extends AccountService {
           ...t,
           message: t.note,
           accountId: account.id,
+          fee:
+            account.type === "token"
+              ? toCurrencyUint(t.fee, shareAccount.decimals) +
+                " " +
+                shareAccount.symbol
+              : t.fee + " " + account.symbol,
         })
       );
 

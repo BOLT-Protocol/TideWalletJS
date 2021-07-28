@@ -317,23 +317,41 @@ function toBuffer(v) {
  * @param {Boolean} allowEmpty
  * @returns {Array} output just a simple array of output keys
  */
- function getKeys(params, key, allowEmpty) {
-  if (!Array.isArray(params)) { throw new Error(`[ethjs-util] method getKeys expecting type Array as 'params' input, got '${typeof params}'`); }
-  if (typeof key !== 'string') { throw new Error(`[ethjs-util] method getKeys expecting type String for input 'key' got '${typeof key}'.`); }
+function getKeys(params, key, allowEmpty) {
+  if (!Array.isArray(params)) {
+    throw new Error(
+      `[ethjs-util] method getKeys expecting type Array as 'params' input, got '${typeof params}'`
+    );
+  }
+  if (typeof key !== "string") {
+    throw new Error(
+      `[ethjs-util] method getKeys expecting type String for input 'key' got '${typeof key}'.`
+    );
+  }
 
   var result = []; // eslint-disable-line
 
-  for (var i = 0; i < params.length; i++) { // eslint-disable-line
+  for (var i = 0; i < params.length; i++) {
+    // eslint-disable-line
     var value = params[i][key]; // eslint-disable-line
     if (allowEmpty && !value) {
-      value = '';
-    } else if (typeof(value) !== 'string') {
-      throw new Error('invalid abi');
+      value = "";
+    } else if (typeof value !== "string") {
+      throw new Error("invalid abi");
     }
     result.push(value);
   }
 
   return result;
+}
+function pad(data, length) {
+  if (data.startsWith("0x")) {
+    data = data.slice(2);
+  }
+  while (data.length < (length || 64)) {
+    data = "0" + data;
+  }
+  return data;
 }
 
 module.exports = {
@@ -355,6 +373,6 @@ module.exports = {
   getKeys,
   isHexString,
   toBuffer,
+  pad
 };
 //https://github.com/ethjs/ethjs-util/blob/master/src/tests/test.index.js
-
