@@ -89,7 +89,8 @@ class IndexedDB {
       const txs = this.db.createObjectStore(OBJ_TX, {
         keyPath: "id",
       });
-      let txIndex = txs.createIndex("accountId", "accountId");
+      let accountIdIndex = txs.createIndex("accountId", "accountId");
+      let txIndex = txs.createIndex("id", "id");
 
       const currency = this.db.createObjectStore(OBJ_CURRENCY, {
         keyPath: "currencyId",
@@ -266,7 +267,7 @@ class DAO {
     });
   }
 
-  _update() {
+  _update(data) {
     return new Promise((resolve, reject) => {
       const tx = this._db.transaction(this._name, "readwrite");
       const request = tx.objectStore(this._name).put(data);
@@ -582,6 +583,10 @@ class TransactionDao extends DAO {
     return this._readAll(accountId, "accountId");
   }
 
+  findTransactionById(id) {
+    return this._read(id);
+  }
+
   insertTransaction(entity) {
     return this._write(entity);
   }
@@ -591,6 +596,9 @@ class TransactionDao extends DAO {
   }
   insertTransactions(txs) {
     return this._writeAll(txs);
+  }
+  deleteById(id) {
+    return this._delete();
   }
   clearAll() {
     return this._deleteAll();

@@ -191,18 +191,49 @@ class AccountServiceBase extends AccountService {
    * @returns {Array} The sorted transactions
    */
   async _getTransaction(account) {
-    let shareAccount;
-    if (account.type === "token") {
-      shareAccount = this._AccountCore.accounts[account.accountId][0];
-    } else {
-      shareAccount = account;
-    }
+    let shareAccount,
+      transactions = [];
     try {
       const res = await this._TideWalletCommunicator.ListTransactions(
         account.id
       );
-      const txs = res.map((t) =>
-        this._DBOperator.transactionDao.entity({
+      if (account.type === "token") {
+        shareAccount = this._AccountCore.accounts[account.accountId][0];
+        transactions =
+          await this._DBOperator.transactionDao.findAllTransactionsById(
+            account.id
+          );
+        if (transactions.length > res.length) {
+          transactions = transactions.filter(
+            (tx) =>
+              res.findIndex((r) => r.txid === tx.txid) < 0 &&
+              tx.status === "pending"
+          );
+          console.log("_getTransaction transactions", transactions);
+          transactions = transactions.filter(async (tx) => {
+            const shareTx =
+              await this._DBOperator.transactionDao.findTransactionById(
+                shareAccount.id + tx.txid
+              );
+            console.log(
+              "_getTransaction shareAccount.id + tx.txid",
+              shareAccount.id + tx.txid
+            );
+            console.log("_getTransaction shareTx", shareTx);
+
+            if (!shareTx) this._DBOperator.transactionDao.deleteById(tx.id);
+            if (shareTx.status === "success") {
+              tx.status = "fail";
+              this._DBOperator.transactionDao.updateTransaction(tx);
+              return true;
+            }
+          });
+        }
+      } else {
+        shareAccount = account;
+      }
+      const txs = res.map((t) => {
+        const enity = this._DBOperator.transactionDao.entity({
           ...t,
           message: t.note,
           accountId: account.id,
@@ -212,9 +243,10 @@ class AccountServiceBase extends AccountService {
                 " " +
                 shareAccount.symbol
               : t.fee + " " + account.symbol,
-        })
-      );
+        });
 
+        return enity;
+      });
       await this._DBOperator.transactionDao.insertTransactions(txs);
     } catch (error) {
       console.log(error);

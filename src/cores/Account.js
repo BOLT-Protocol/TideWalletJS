@@ -383,13 +383,8 @@ class AccountCore {
         await this._DBOperator.currencyDao.findAllCurrenciesByBlockchainId(
           chain.blockchainId
         );
-      console.log("_getSupportedToken tokens", tokens);
       if (!tokens || tokens.length < 1) {
         try {
-          console.log(
-            "_getSupportedToken chain.blockchainId",
-            chain.blockchainId
-          );
           const res = await this._TideWalletCommunicator.TokenList(
             chain.blockchainId
           );
