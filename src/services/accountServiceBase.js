@@ -129,6 +129,7 @@ class AccountServiceBase extends AccountService {
                 await this._DBOperator.currencyDao.insertCurrency(token);
                 token.image = res["icon"]; // Join Currency || url
                 token.exchangeRate = res["exchange_rate"]; // ++ Join Currency || inUSD,
+                resolve(token)
                 return token;
               }
             });
