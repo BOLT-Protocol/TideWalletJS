@@ -1,7 +1,7 @@
 const AccountServiceDecorator = require("./accountServiceDecorator");
 const { ACCOUNT, ACCOUNT_EVT } = require("../models/account.model");
 const SafeMath = require("../helpers/SafeMath");
-const { toBuffer, pad } = require("../helpers/utils");
+const { toBuffer, pad, intToHex } = require("../helpers/utils");
 const Cryptor = require("../helpers/Cryptor");
 
 class EthereumService extends AccountServiceDecorator {
@@ -195,7 +195,7 @@ class EthereumService extends AccountServiceDecorator {
       const payload = {
         fromAddress: from,
         toAddress: to,
-        value: amount,
+        value: intToHex(amount),
         data: message,
       };
       console.log("estimateGasLimit payload", payload);
