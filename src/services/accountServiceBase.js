@@ -70,12 +70,17 @@ class AccountServiceBase extends AccountService {
       const tokens = [];
       const newTokens = [];
 
-     _tokens.forEach((token) => {
+      _tokens.forEach((token) => {
         let entity;
         const index = currs.findIndex(
           (c) => c.currencyId === token["token_id"]
         );
-        const _type = token["type"] === 0 ? "fiat" : token["type"] === 1 ? "currency" : "token";
+        const _type =
+          token["type"] === 0
+            ? "fiat"
+            : token["type"] === 1
+            ? "currency"
+            : "token";
         entity = this._DBOperator.accountDao.entity({
           id: token["account_token_id"],
           account_id: account.accountId,
@@ -123,12 +128,12 @@ class AccountServiceBase extends AccountService {
                 token.blockchainId,
                 token.currencyId
               );
-              console.log("newTokens res", res);
               if (res != null) {
                 const token = this._DBOperator.currencyDao.entity(res);
                 await this._DBOperator.currencyDao.insertCurrency(token);
                 token.image = res["icon"]; // Join Currency || url
                 token.exchangeRate = res["exchange_rate"]; // ++ Join Currency || inUSD,
+                resolve(token);
                 return token;
               }
             });
@@ -344,7 +349,6 @@ class AccountServiceBase extends AccountService {
 
     if (now - this._lastSyncTimestamp > this._syncInterval || force) {
       const accounts = await this._getData();
-      console.log(accounts);
       await this._DBOperator.accountDao.insertAccounts(accounts);
       this._lastSyncTimestamp = now;
     }
