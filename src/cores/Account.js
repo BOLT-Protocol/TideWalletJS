@@ -456,21 +456,20 @@ class AccountCore {
   }
 
   /**
-   * Get transaction list by accountId
+   * Get transaction list by account id
    * @method getTransactions
-   * @param {string} accountId The accountId
+   * @param {string} id The account id
    * @returns {Array} The transaction list
    */
-  async getTransactions(accountId) {
-    const txs = await this._DBOperator.transactionDao.findAllTransactionsById(
-      accountId
-    );
-    // https://dmitripavlutin.com/javascript-array-sort-numbers/
-    return txs.sort((a, b) => (a.timestamp <= b.timestamp ? 1 : -1)); //(a, b) => a.timestamp - b.timestamp
+  async getTransactions(id) {
+    const account = this.getAllCurrencies.find((acc) => acc.id === id);
+    const svc = this.getService(account.accountId);
+    const txs = await svc.getTransactions(id);
+    return txs;
   }
 
   /**
-   * Get receive address by accountId
+   * Get receive address by account Id
    * @method getReceiveAddress
    * @param {string} id The id of the account
    * @returns {string} The address
@@ -492,6 +491,8 @@ class AccountCore {
    * @returns
    */
   async getTransactionFee({ id, to, amount, message, speed }) {
+    console.log("getTransactionFee to", to);
+    console.log("getTransactionFee amount", amount);
     const account = this.getAllCurrencies.find((acc) => acc.id === id);
     const svc = this.getService(account.accountId);
     let shareAccount;
@@ -499,9 +500,9 @@ class AccountCore {
       shareAccount = this._accounts[account.accountId][0];
       message = svc.tokenTxMessage({
         to,
-        amount: amount,
+        amount,
         decimals: account.decimals,
-        message: message,
+        message,
       });
       amount = "0";
       to = account.contract;
@@ -700,10 +701,7 @@ class AccountCore {
         transaction.feePerUnit,
         shareAccount.decimals
       );
-      tx.fee =
-        SafeMath.toCurrencyUint(transaction.fee, shareAccount.decimals) +
-        " " +
-        shareAccount.symbol;
+      tx.fee = SafeMath.toCurrencyUint(transaction.fee, shareAccount.decimals);
       tx.accountId = account.id;
       tx.id = account.id + tx.txid;
       if (account.type === "token") {
@@ -720,10 +718,7 @@ class AccountCore {
           destinationAddresses: _transaction.to,
         };
         account.balance = SafeMath.minus(account.balance, _tokenTx.amount);
-        shareAccount.balance = SafeMath.minus(
-          shareAccount.balance,
-          SafeMath.toCurrencyUint(transaction.fee, shareAccount.decimals)
-        );
+        shareAccount.balance = SafeMath.minus(shareAccount.balance, tx.fee);
         await this._DBOperator.accountDao.insertAccounts([
           account,
           shareAccount,
@@ -740,7 +735,7 @@ class AccountCore {
         console.log("sendTransaction tx", tx); //-- debug info
         account.balance = SafeMath.minus(
           SafeMath.minus(account.balance, tx.amount),
-          SafeMath.toCurrencyUint(transaction.fee, shareAccount.decimals)
+          tx.fee
         );
         console.log("_txEsendTransaction account.balance", account.balance); //-- debug info
         await this._DBOperator.accountDao.insertAccount(account);

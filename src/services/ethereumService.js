@@ -89,16 +89,6 @@ class EthereumService extends AccountServiceDecorator {
     return await this.getReceivingAddress(id);
   }
 
-  _GWeiToWei(amount) {
-    const wei = SafeMath.toSmallestUint(amount, 9);
-    return wei;
-  }
-
-  _WeiToGWei(amount) {
-    const gwei = SafeMath.toCurrencyUint(amount, 9);
-    return gwei;
-  }
-
   /**
    * getGasPrice
    * @override
@@ -118,16 +108,14 @@ class EthereumService extends AccountServiceDecorator {
         const response = await this._TideWalletCommunicator.GetFee(
           blockchainId
         );
-        console.log("getGasPrice fee in Gwei", response);
         this._fee = response;
-
+        console.log("getGasPrice fee in Eth", this._fee);
         this._feeTimestamp = Date.now();
       } catch (error) {
         console.log(error);
-        // TODO fee = null 前面會出錯
+        throw error;
       }
     }
-    console.log("getGasPrice fee in Eth", this._fee);
     return this._fee;
   }
 
@@ -136,31 +124,6 @@ class EthereumService extends AccountServiceDecorator {
       toBuffer("transfer(address,uint256)").toString("hex"),
       1
     ).slice(0, 8);
-    // -- debugInfo
-    // console.log("tokenTxMessage erc20Func", erc20Func);
-    // console.log(
-    //   "tokenTxMessage to",
-    //   to,
-    //   pad(toBuffer(to ?? "").toString("hex"), 64)
-    // );
-    // console.log(
-    //   "tokenTxMessage amount",
-    //   amount,
-    //   "tokenTxMessage amountInDecimal",
-    //   Number.parseFloat(SafeMath.toSmallestUint(amount ?? "0", decimals)),
-    //   "tokenTxMessage buffer",
-    //   pad(
-    //     toBuffer(
-    //       Number.parseFloat(SafeMath.toSmallestUint(amount ?? "0", decimals))
-    //     ).toString("hex"),
-    //     64
-    //   )
-    // );
-    // console.log(
-    //   "tokenTxMessage message",
-    //   message,
-    //   toBuffer(message).toString("hex")
-    // );
     console.log("tokenTxMessage amount", amount);
     amount = amount ?? "0";
     console.log("tokenTxMessage amount", amount);
@@ -187,9 +150,11 @@ class EthereumService extends AccountServiceDecorator {
    * @returns {Boolean} result
    */
   async estimateGasLimit(id, blockchainId, to, amount = "0", message = "0x") {
+    console.log("estimateGasLimit amount", amount);
     if (!to) return 21000;
     const from = await this.getReceivingAddress(id);
-    if (message == "0x" && this._gasLimit != null) {
+    if (message === "0x" && amount === "0" && this._gasLimit != null) {
+      // if (message == "0x" && this._gasLimit != null) {
       return this._gasLimit;
     } else {
       const payload = {
@@ -204,10 +169,11 @@ class EthereumService extends AccountServiceDecorator {
           blockchainId,
           payload
         );
+        console.log("estimateGasLimit response", response);
         this._gasLimit = Number(response.gasLimit);
       } catch (error) {
-        console.log(error);
-        throw error;
+        console.log("estimateGasLimit error", error);
+        return 90000;
       }
       return this._gasLimit;
     }
@@ -226,7 +192,7 @@ class EthereumService extends AccountServiceDecorator {
       id,
       blockchainId,
       to,
-      amount,
+      SafeMath.ethToGwei(amount), // ??
       message
     );
     return { feePerUnit: { ...gasPrice }, unit: gasLimit };
