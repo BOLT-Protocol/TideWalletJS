@@ -164,13 +164,13 @@ class TideWallet {
     return address;
   }
 
-  async verifyAddress(id, address) {
-    const result = await this.account.verifyAddress(id, address);
+  verifyAddress(id, address) {
+    const result = this.account.verifyAddress(id, address);
     return result;
   }
 
-  async verifyAmount(id, amount, fee) {
-    const result = await this.account.verifyAmount(id, amount, fee);
+  verifyAmount(id, amount, fee) {
+    const result = this.account.verifyAmount(id, amount, fee);
     return result;
   }
 
@@ -252,9 +252,14 @@ if (isBrowser()) {
       installId:
         "11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249",
     };
-    const user = await tw.init({ user: user2, api, debugMode: false, networkPublish: false });
+    const user = await tw.init({
+      user: user2,
+      api,
+      debugMode: false,
+      networkPublish: false,
+    });
     //test
-    if (user) await tw.createUser({user});
+    if (user) await tw.createUser({ user });
     console.log("overview:", await tw.overview());
     console.log(
       "getTransactionFee:",

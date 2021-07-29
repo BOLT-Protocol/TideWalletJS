@@ -1,3 +1,4 @@
+const { toCurrencyUint } = require("../helpers/SafeMath");
 const SafeMath = require("../helpers/SafeMath");
 const { ACCOUNT_EVT } = require("../models/account.model");
 const AccountService = require("./accountService");
@@ -29,9 +30,9 @@ class AccountServiceBase extends AccountService {
 
     const currencies = this._AccountCore.getAllCurrencies;
     const fiat = await this._AccountCore.trader.getSelectedFiat();
-    const userBalanceInFiat = currencies.reduce((rs, curr) => {
+    const userBalanceInFiat = currencies.reduce((acc, curr) => {
       curr.inFiat = this._AccountCore.trader.calculateToFiat(curr, fiat);
-      return SafeMath.plus(rs, curr.inFiat);
+      return SafeMath.plus(acc, curr.inFiat);
     }, 0);
     const msg = {
       evt: ACCOUNT_EVT.OnUpdateCurrency,
@@ -189,18 +190,62 @@ class AccountServiceBase extends AccountService {
    * @returns {Array} The sorted transactions
    */
   async _getTransaction(account) {
+    let shareAccount,
+      transactions = [];
     try {
       const res = await this._TideWalletCommunicator.ListTransactions(
         account.id
       );
-      const txs = res.map((t) =>
-        this._DBOperator.transactionDao.entity({
+      if (account.type === "token") {
+        shareAccount = this._AccountCore.accounts[account.accountId][0];
+        transactions =
+          await this._DBOperator.transactionDao.findAllTransactionsById(
+            account.id
+          );
+        if (transactions.length > res.length) {
+          transactions = transactions.filter(
+            (tx) =>
+              res.findIndex((r) => r.txid === tx.txid) < 0 &&
+              tx.status === "pending"
+          );
+          console.log("_getTransaction transactions", transactions);
+          transactions = transactions.filter(async (tx) => {
+            const shareTx =
+              await this._DBOperator.transactionDao.findTransactionById(
+                shareAccount.id + tx.txid
+              );
+            console.log(
+              "_getTransaction shareAccount.id + tx.txid",
+              shareAccount.id + tx.txid
+            );
+            console.log("_getTransaction shareTx", shareTx);
+
+            if (!shareTx) this._DBOperator.transactionDao.deleteById(tx.id);
+            if (shareTx.status === "success") {
+              tx.status = "fail";
+              this._DBOperator.transactionDao.updateTransaction(tx);
+              return true;
+            }
+          });
+        }
+      } else {
+        shareAccount = account;
+      }
+      const txs = res.map((t) => {
+        const enity = this._DBOperator.transactionDao.entity({
           ...t,
           message: t.note,
           accountId: account.id,
-        })
-      );
+          fee:
+            account.type === "token"
+              ? toCurrencyUint(t.fee, shareAccount.decimals) +
+                " " +
+                shareAccount.symbol
+              : t.fee + " " + account.symbol,
+        });
 
+        return enity;
+      });
       await this._DBOperator.transactionDao.insertTransactions(txs);
     } catch (error) {
       console.log(error);

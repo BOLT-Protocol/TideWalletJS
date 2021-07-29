@@ -381,13 +381,8 @@ class AccountCore {
         await this._DBOperator.currencyDao.findAllCurrenciesByBlockchainId(
           chain.blockchainId
         );
-      console.log("_getSupportedToken tokens", tokens);
       if (!tokens || tokens.length < 1) {
         try {
-          console.log(
-            "_getSupportedToken chain.blockchainId",
-            chain.blockchainId
-          );
           const res = await this._TideWalletCommunicator.TokenList(
             chain.blockchainId
           );
@@ -524,7 +519,7 @@ class AccountCore {
     return { ...fees, symbol: shareAccount.symbol };
   }
 
-  async verifyAddress(id, address) {
+  verifyAddress(id, address) {
     const account = this.getAllCurrencies.find((acc) => acc.id === id);
     const safeSigner = this._TideWalletCore.getSafeSigner(
       `m/${account.purpose}'/${account.accountCoinType}'/${account.accountIndex}'`
@@ -547,7 +542,7 @@ class AccountCore {
     );
   }
 
-  async verifyAmount(id, amount, fee) {
+  verifyAmount(id, amount, fee) {
     const account = this.getAllCurrencies.find((acc) => acc.id === id);
     let shareAccount;
     if (account.type === "token")
@@ -705,7 +700,10 @@ class AccountCore {
         transaction.feePerUnit,
         shareAccount.decimals
       );
-      tx.fee = SafeMath.toCurrencyUint(transaction.fee, shareAccount.decimals);
+      tx.fee =
+        SafeMath.toCurrencyUint(transaction.fee, shareAccount.decimals) +
+        " " +
+        shareAccount.symbol;
       tx.accountId = account.id;
       tx.id = account.id + tx.txid;
       if (account.type === "token") {
@@ -713,8 +711,6 @@ class AccountCore {
           ...tx,
           amount: _transaction.amount,
           destinationAddresses: _transaction.to,
-          fee: "0",
-          gasPrice: "0",
         };
         const _accTx = {
           ...tx,
@@ -724,7 +720,10 @@ class AccountCore {
           destinationAddresses: _transaction.to,
         };
         account.balance = SafeMath.minus(account.balance, _tokenTx.amount);
-        shareAccount.balance = SafeMath.minus(shareAccount.balance, _accTx.fee);
+        shareAccount.balance = SafeMath.minus(
+          shareAccount.balance,
+          SafeMath.toCurrencyUint(transaction.fee, shareAccount.decimals)
+        );
         await this._DBOperator.accountDao.insertAccounts([
           account,
           shareAccount,
@@ -741,7 +740,7 @@ class AccountCore {
         console.log("sendTransaction tx", tx); //-- debug info
         account.balance = SafeMath.minus(
           SafeMath.minus(account.balance, tx.amount),
-          tx.fee
+          SafeMath.toCurrencyUint(transaction.fee, shareAccount.decimals)
         );
         console.log("_txEsendTransaction account.balance", account.balance); //-- debug info
         await this._DBOperator.accountDao.insertAccount(account);

@@ -9,9 +9,9 @@ const {
 } = require("../models/transactionBTC.model");
 const UnspentTxOut = require("../models/utxo.model");
 const BitcoinUtils = require("../helpers/bitcoinUtils");
-const rlp = require("../helpers/rlp");
 const Signer = require("../cores/Signer");
 const SafeMath = require("../helpers/SafeMath");
+const { toBuffer } = require("../helpers/utils");
 
 class TransactionServiceBTC extends TransactionDecorator {
   _Index_ExternalChain = 0;
@@ -185,7 +185,7 @@ class TransactionServiceBTC extends TransactionDecorator {
       transaction.addOutput(change, changeAddress, script);
     }
     // Message
-    const msgData = message && message.length > 0 ? rlp.toBuffer(message) : [];
+    const msgData = message && message.length > 0 ? toBuffer(message) : [];
     console.log(`msgData: ${msgData}`);
     // invalid msg data
     if (msgData.length > 250) {
@@ -220,7 +220,7 @@ class TransactionServiceBTC extends TransactionDecorator {
         keyIndex: keyIndex,
         timestamp: Math.floor(Date.now() / 1000),
         locked: false,
-        script: Buffer.alloc(1, 0).toString('hex'),
+        script: Buffer.alloc(1, 0).toString("hex"),
         address: changeAddress,
       };
       signedTransaction.addChangeUtxo(changeUtxo);
