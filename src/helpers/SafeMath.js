@@ -1,9 +1,9 @@
-const BigNumber = require('bignumber.js');
+const BigNumber = require("bignumber.js");
 
 class SafeMath {
   /**
    * check is hex number string
-   * @param {string} str 
+   * @param {string} str
    * @returns {boolean}
    */
   static isHex(str) {
@@ -13,12 +13,12 @@ class SafeMath {
 
   /**
    * change string or number to bignumber
-   * @param {string | number} input 
+   * @param {string | number} input
    * @returns {BigNumber}
    */
   static toBn(input) {
     let bnInput;
-    if (typeof input === 'string' && SafeMath.isHex(input)) {
+    if (typeof input === "string" && SafeMath.isHex(input)) {
       bnInput = new BigNumber(input, 16);
     } else {
       bnInput = new BigNumber(input);
@@ -28,8 +28,8 @@ class SafeMath {
 
   /**
    * a + b
-   * @param {string | number} a 
-   * @param {string | number} b 
+   * @param {string | number} a
+   * @param {string | number} b
    * @returns {string}
    */
   static plus(a, b) {
@@ -40,11 +40,11 @@ class SafeMath {
 
   /**
    * a - b
-   * @param {string | number} a 
-   * @param {string | number} b 
+   * @param {string | number} a
+   * @param {string | number} b
    * @returns {string}
    */
-  static minus(a, b){
+  static minus(a, b) {
     const bnA = SafeMath.toBn(a);
     const bnB = SafeMath.toBn(b);
     return bnA.minus(bnB).toFixed();
@@ -52,8 +52,8 @@ class SafeMath {
 
   /**
    * a * b
-   * @param {string | number} a 
-   * @param {string | number} b 
+   * @param {string | number} a
+   * @param {string | number} b
    * @returns {string}
    */
   static mult(a, b) {
@@ -64,8 +64,8 @@ class SafeMath {
 
   /**
    * a / b
-   * @param {string | number} a 
-   * @param {string | number} b 
+   * @param {string | number} a
+   * @param {string | number} b
    * @returns {string}
    */
   static div(a, b) {
@@ -76,8 +76,8 @@ class SafeMath {
 
   /**
    * a % b
-   * @param {string | number} a 
-   * @param {string | number} b 
+   * @param {string | number} a
+   * @param {string | number} b
    * @returns {string}
    */
   static mod(a, b) {
@@ -88,8 +88,8 @@ class SafeMath {
 
   /**
    * a == b
-   * @param {string | number} a 
-   * @param {string | number} b 
+   * @param {string | number} a
+   * @param {string | number} b
    * @returns {boolean}
    */
   static eq(a, b) {
@@ -100,11 +100,11 @@ class SafeMath {
 
   /**
    * a > b
-   * @param {string | number} a 
-   * @param {string | number} b 
+   * @param {string | number} a
+   * @param {string | number} b
    * @returns {boolean}
    */
-   static gt(a, b) {
+  static gt(a, b) {
     const bnA = SafeMath.toBn(a);
     const bnB = SafeMath.toBn(b);
     return bnA.gt(bnB);
@@ -112,11 +112,11 @@ class SafeMath {
 
   /**
    * a >= b
-   * @param {string | number} a 
-   * @param {string | number} b 
+   * @param {string | number} a
+   * @param {string | number} b
    * @returns {boolean}
    */
-   static gte(a, b) {
+  static gte(a, b) {
     const bnA = SafeMath.toBn(a);
     const bnB = SafeMath.toBn(b);
     return bnA.gte(bnB);
@@ -124,11 +124,11 @@ class SafeMath {
 
   /**
    * a < b
-   * @param {string | number} a 
-   * @param {string | number} b 
+   * @param {string | number} a
+   * @param {string | number} b
    * @returns {boolean}
    */
-   static lt(a, b) {
+  static lt(a, b) {
     const bnA = SafeMath.toBn(a);
     const bnB = SafeMath.toBn(b);
     return bnA.lt(bnB);
@@ -136,11 +136,11 @@ class SafeMath {
 
   /**
    * a <= b
-   * @param {string | number} a 
-   * @param {string | number} b 
+   * @param {string | number} a
+   * @param {string | number} b
    * @returns {boolean}
    */
-   static lte(a, b) {
+  static lte(a, b) {
     const bnA = SafeMath.toBn(a);
     const bnB = SafeMath.toBn(b);
     return bnA.lte(bnB);
@@ -155,10 +155,39 @@ class SafeMath {
    * @returns {string}
    */
   static toCurrencyUint(amount, decimals) {
-    console.log(`toCurrencyUint(${amount}, ${decimals})`)
     const bnAmount = SafeMath.toBn(amount);
     const bnBase = SafeMath.toBn(10);
     const bnDecimal = bnBase.exponentiatedBy(decimals);
+    const currencyUint = bnAmount.dividedBy(bnDecimal).toFixed();
+    return currencyUint;
+  }
+
+  /**
+   * @override
+   * according to currency decimal to transform amount to currency unit
+   * @method gweiToEth
+   * @param {string} amount
+   * @returns {string}
+   */
+  static gweiToEth(amount) {
+    const bnAmount = SafeMath.toBn(amount);
+    const bnBase = SafeMath.toBn(10);
+    const bnDecimal = bnBase.exponentiatedBy(9);
+    const currencyUint = bnAmount.dividedBy(bnDecimal).toFixed();
+    return currencyUint;
+  }
+
+  /**
+   * @override
+   * according to currency decimal to transform amount to currency unit
+   * @method weiToGwei
+   * @param {string} amount
+   * @returns {string}
+   */
+  static weiToGwei(amount) {
+    const bnAmount = SafeMath.toBn(amount);
+    const bnBase = SafeMath.toBn(10);
+    const bnDecimal = bnBase.exponentiatedBy(9);
     const currencyUint = bnAmount.dividedBy(bnDecimal).toFixed();
     return currencyUint;
   }
@@ -171,7 +200,6 @@ class SafeMath {
    * @returns {string}
    */
   static toSmallestUint(amount, decimals) {
-    console.log(`toSmallestUint(${amount}, ${decimals})`)
     const bnAmount = SafeMath.toBn(amount);
     const bnBase = SafeMath.toBn(10);
     const bnDecimal = bnBase.exponentiatedBy(decimals);
@@ -180,24 +208,58 @@ class SafeMath {
   }
 
   /**
+   * @override
+   * @method ethToGwei
+   * @param {string} amount
+   * @returns {string}
+   */
+  static ethToGwei(amount) {
+    const bnAmount = SafeMath.toBn(amount);
+    const bnBase = SafeMath.toBn(10);
+    const bnDecimal = bnBase.exponentiatedBy(9);
+    const smallestUint = bnAmount.multipliedBy(bnDecimal).toFixed();
+    return smallestUint;
+  }
+
+  /**
+   * @override
+   * @method gweiToWei
+   * @param {string} amount
+   * @returns {string}
+   */
+  static gweiToWei(amount) {
+    const bnAmount = SafeMath.toBn(amount);
+    const bnBase = SafeMath.toBn(10);
+    const bnDecimal = bnBase.exponentiatedBy(9);
+    const smallestUint = bnAmount.multipliedBy(bnDecimal).toFixed();
+    return smallestUint;
+  }
+
+  /**
    * compressedPubKey check number
-   * @param {string} x 
-   * @param {string} y 
+   * @param {string} x
+   * @param {string} y
    * @returns {boolean}
    */
   static compressedPubKeyCheck(x, y) {
-    const bnP = SafeMath.toBn('fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f');
-  
+    const bnP = SafeMath.toBn(
+      "fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f"
+    );
+
     const bnX = SafeMath.toBn(x);
     const bnY = SafeMath.toBn(y);
-  
-    const check = bnX.pow(new BigNumber(3)).plus(new BigNumber(7)).minus((bnY.pow(new BigNumber(2)))).mod(bnP);
+
+    const check = bnX
+      .pow(new BigNumber(3))
+      .plus(new BigNumber(7))
+      .minus(bnY.pow(new BigNumber(2)))
+      .mod(bnP);
     return check.isZero();
   }
 
   /**
-   * 
-   * @param {string} x 
+   *
+   * @param {string} x
    * @returns {string} hex number string
    */
   static toHex(x) {

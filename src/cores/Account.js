@@ -492,6 +492,8 @@ class AccountCore {
    * @returns
    */
   async getTransactionFee({ id, to, amount, message, speed }) {
+    console.log("getTransactionFee to", to);
+    console.log("getTransactionFee amount", amount);
     const account = this.getAllCurrencies.find((acc) => acc.id === id);
     const svc = this.getService(account.accountId);
     let shareAccount;
@@ -499,9 +501,9 @@ class AccountCore {
       shareAccount = this._accounts[account.accountId][0];
       message = svc.tokenTxMessage({
         to,
-        amount: amount,
+        amount,
         decimals: account.decimals,
-        message: message,
+        message,
       });
       amount = "0";
       to = account.contract;
