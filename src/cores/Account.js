@@ -11,7 +11,7 @@ const SafeMath = require("../helpers/SafeMath");
 const UnspentTxOut = require("../models/utxo.model");
 
 class AccountCore {
-  static syncInterval = 24 * 60 * 60 * 1000;
+  static syncInterval = 24 * 60 * 60;
   static instance;
   _accounts = {};
   _messenger = null;
@@ -78,7 +78,7 @@ class AccountCore {
     const user = await this._DBOperator.userDao.findUser(
       this._TideWalletCore.userInfo.id
     );
-    const timestamp = Date.now();
+    const timestamp = Math.floor(new Date() / 1000);
     const update = user.lastSyncTime - timestamp > AccountCore.syncInterval;
     const fiat = await this._trader.getSelectedFiat();
     const chains = await this._getNetworks(update);
