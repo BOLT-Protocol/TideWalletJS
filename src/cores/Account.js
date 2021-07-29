@@ -11,7 +11,7 @@ const SafeMath = require("../helpers/SafeMath");
 const UnspentTxOut = require("../models/utxo.model");
 
 class AccountCore {
-  static syncInterval = 24 * 60 * 60;
+  static syncInterval = 24 * 60 * 60; // second
   static instance;
   _accounts = {};
   _messenger = null;
