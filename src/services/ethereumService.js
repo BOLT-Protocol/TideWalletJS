@@ -89,16 +89,6 @@ class EthereumService extends AccountServiceDecorator {
     return await this.getReceivingAddress(id);
   }
 
-  _GWeiToWei(amount) {
-    const wei = SafeMath.toSmallestUint(amount, 9);
-    return wei;
-  }
-
-  _WeiToGWei(amount) {
-    const gwei = SafeMath.toCurrencyUint(amount, 9);
-    return gwei;
-  }
-
   /**
    * getGasPrice
    * @override

@@ -65,6 +65,10 @@ class AccountService {
   updateCurrency() {}
 
   synchro() {}
+
+  async getTransactions(id) {
+    return await this.service.getTransactions(id);
+  }
 }
 
 module.exports = AccountService;

@@ -197,7 +197,7 @@ class AccountServiceBase extends AccountService {
         account.id
       );
       if (account.type === "token") {
-        shareAccount = this._AccountCore.accounts[account.accountId][0];
+        shareAccount = this._AccountCore.accounts[this.accountId][0];
         transactions =
           await this._DBOperator.transactionDao.findAllTransactionsById(
             account.id
@@ -208,18 +208,11 @@ class AccountServiceBase extends AccountService {
               res.findIndex((r) => r.txid === tx.txid) < 0 &&
               tx.status === "pending"
           );
-          console.log("_getTransaction transactions", transactions);
           transactions = transactions.filter(async (tx) => {
             const shareTx =
               await this._DBOperator.transactionDao.findTransactionById(
                 shareAccount.id + tx.txid
               );
-            console.log(
-              "_getTransaction shareAccount.id + tx.txid",
-              shareAccount.id + tx.txid
-            );
-            console.log("_getTransaction shareTx", shareTx);
-
             if (!shareTx) this._DBOperator.transactionDao.deleteById(tx.id);
             if (shareTx.status === "success") {
               tx.status = "fail";
@@ -228,20 +221,12 @@ class AccountServiceBase extends AccountService {
             }
           });
         }
-      } else {
-        shareAccount = account;
       }
       const txs = res.map((t) => {
         const enity = this._DBOperator.transactionDao.entity({
           ...t,
           message: t.note,
           accountId: account.id,
-          fee:
-            account.type === "token"
-              ? toCurrencyUint(t.fee, shareAccount.decimals) +
-                " " +
-                shareAccount.symbol
-              : t.fee + " " + account.symbol,
         });
 
         return enity;
@@ -254,20 +239,28 @@ class AccountServiceBase extends AccountService {
     return this._loadTransactions(account.id);
   }
 
+  async getTransactions(id) {
+    return await this._loadTransactions(id);
+  }
+
   /**
    * Load transctions from database
    * @method _loadTransactions
-   * @param {string} accountId The account Id
+   * @param {string} id The account Id
    * @returns {Array} The sorted transactions
    */
-  async _loadTransactions(accountId) {
+  async _loadTransactions(id) {
+    const shareAccount = this._AccountCore.accounts[this.accountId][0];
     const transactions =
-      await this._DBOperator.transactionDao.findAllTransactionsById(accountId);
-
-    const txNull = transactions.filter((t) => t.timestamp === null);
-    const txReady = transactions
-      .filter((t) => t.timestamp !== null)
-      .sort((a, b) => (a.timestamp <= b.timestamp ? 1 : -1));
+      await this._DBOperator.transactionDao.findAllTransactionsById(id);
+    const txNull = [];
+    const txReady = [];
+    transactions.forEach((t) => {
+      t.fee = t.fee + " " + shareAccount.symbol;
+      t.timestamp === null ? txNull.push(t) : txReady.push(t);
+    });
+    // https://dmitripavlutin.com/javascript-array-sort-numbers/
+    txReady.sort((a, b) => (a.timestamp <= b.timestamp ? 1 : -1)); //(a, b) => a.timestamp - b.timestamp
     return [...txNull, ...txReady];
   }
 
