@@ -129,7 +129,6 @@ class AccountServiceBase extends AccountService {
                 token.blockchainId,
                 token.currencyId
               );
-              console.log("newTokens res", res);
               if (res != null) {
                 const token = this._DBOperator.currencyDao.entity(res);
                 await this._DBOperator.currencyDao.insertCurrency(token);
@@ -395,7 +394,6 @@ class AccountServiceBase extends AccountService {
 
     if (now - this._lastSyncTimestamp > this._syncInterval || force) {
       const accounts = await this._getData();
-      console.log(accounts);
       await this._DBOperator.accountDao.insertAccounts(accounts);
       this._lastSyncTimestamp = now;
     }

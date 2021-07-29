@@ -11,7 +11,7 @@ const SafeMath = require("../helpers/SafeMath");
 const UnspentTxOut = require("../models/utxo.model");
 
 class AccountCore {
-  static syncInterval = 24 * 60 * 60 * 1000;
+  static syncInterval = 24 * 60 * 60; // second
   static instance;
   _accounts = {};
   _messenger = null;
@@ -75,10 +75,19 @@ class AccountCore {
   async _initAccounts() {
     this.close();
     this._isInit = true;
+    const user = await this._DBOperator.userDao.findUser(
+      this._TideWalletCore.userInfo.id
+    );
+    const timestamp = Math.floor(new Date() / 1000);
+    const update = user.lastSyncTime - timestamp > AccountCore.syncInterval;
     const fiat = await this._trader.getSelectedFiat();
-    const chains = await this._getNetworks();
-    const accounts = await this._getAccounts();
-    const currencies = await this._getSupportedCurrencies();
+    const chains = await this._getNetworks(update);
+    const accounts = await this._getAccounts(update);
+    const currencies = await this._getSupportedCurrencies(update);
+    if (update) {
+      user.lastSyncTime = timestamp;
+      await this._DBOperator.userDao.insertUser(user);
+    }
     const srvStart = [];
     for (const acc of accounts) {
       // Join Account with Currency
@@ -240,11 +249,11 @@ class AccountCore {
    * @returns NetworkDao entity
    */
   // get supported blockchain from DB
-  async _getNetworks() {
+  async _getNetworks(update) {
     let networks = await this._DBOperator.networkDao.findAllNetworks();
 
     // if DB is empty get supported blockchain from backend service
-    if (!networks || networks.length < 1) {
+    if (!networks || networks.length < 1 || update) {
       try {
         const res = await this._TideWalletCommunicator.BlockchainList();
         const enties = res?.map((n) =>
@@ -275,7 +284,7 @@ class AccountCore {
    *
    * @returns AccountDao entity
    */
-  async _getAccounts() {
+  async _getAccounts(update) {
     let accounts = await this._DBOperator.accountDao.findAllAccounts();
 
     // Filter accounts by current User
@@ -283,16 +292,7 @@ class AccountCore {
       (acc) => acc.userId === this._TideWalletCore.userInfo.id
     );
 
-    const user = await this._DBOperator.userDao.findUser(
-      this._TideWalletCore.userInfo.id
-    );
-    const timestamp = Date.now();
-
-    if (
-      !accounts ||
-      accounts.length < 1 ||
-      user.lastSyncTime - timestamp > AccountCore.syncInterval
-    ) {
+    if (!accounts || accounts.length < 1 || update) {
       try {
         const res = await this._TideWalletCommunicator.AccountList();
         /**
@@ -320,12 +320,10 @@ class AccountCore {
             chain_id: a["network_id"],
             number_of_used_external_key: a["number_of_used_external_key"] ?? 0,
             number_of_used_internal_key: a["number_of_used_internal_key"] ?? 0,
-            last_sync_time: timestamp,
+            last_sync_time: Date.now(),
           })
         );
         accounts = enties;
-        user.lastSyncTime = timestamp;
-        await this._DBOperator.userDao.insertUser(user);
       } catch (error) {
         console.log(error); // ++ throw exception
       }
@@ -338,12 +336,12 @@ class AccountCore {
    *
    * @returns CurrencyDao entity
    */
-  async _getSupportedCurrencies() {
+  async _getSupportedCurrencies(update) {
     // get supported currencies from DB
     let currencies = await this._DBOperator.currencyDao.findAllCurrencies();
 
     // if DB is empty get supported currencies from backend service
-    if (!currencies || currencies.length < 1) {
+    if (!currencies || currencies.length < 1 || update) {
       try {
         const res = await this._TideWalletCommunicator.CurrencyList();
         /**
