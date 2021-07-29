@@ -130,8 +130,8 @@ class AccountServiceBase extends AccountService {
                 token.currencyId
               );
               if (res != null) {
-                const token = this._DBOperator.currencyDao.entity(res);
-                await this._DBOperator.currencyDao.insertCurrency(token);
+                const curr = this._DBOperator.currencyDao.entity(res);
+                await this._DBOperator.currencyDao.insertCurrency(curr);
                 token.image = res["icon"]; // Join Currency || url
                 token.exchangeRate = res["exchange_rate"]; // ++ Join Currency || inUSD,
                 resolve(token);
