@@ -452,6 +452,8 @@ class TideWalletCommunicator {
   /**
    * ListTransactions
    * @param {string} accountID 
+   * @param {string} limit 
+   * @param {string} page 
    * @returns [{
    *   txid: string,
    *   status: string,
@@ -468,12 +470,12 @@ class TideWalletCommunicator {
    *   gas_used: string | null
    * }]
    */
-  async ListTransactions(accountID) {
+  async ListTransactions(accountID, limit = 20, page = 0) {
     try {
       if (!accountID) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
-      const res = await this.httpAgent.get(this.apiURL + '/wallet/account/txs/' + accountID);
+      const res = await this.httpAgent.get(this.apiURL + '/wallet/account/txs/' + accountID + '?limit=' + limit + '&page=' + page);
       if (res.success) {
         return res.data;
       }
