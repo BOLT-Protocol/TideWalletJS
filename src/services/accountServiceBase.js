@@ -9,6 +9,8 @@ class AccountServiceBase extends AccountService {
     this._AccountCore = AccountCore;
     this._DBOperator = AccountCore._DBOperator;
     this._TideWalletCommunicator = AccountCore._TideWalletCommunicator;
+
+    this._newestId = '';
   }
 
   /**
@@ -190,53 +192,94 @@ class AccountServiceBase extends AccountService {
    * @returns {Array} The sorted transactions
    */
   async _getTransaction(account) {
-    let shareAccount,
-      transactions = [];
-    try {
-      const res = await this._TideWalletCommunicator.ListTransactions(
-        account.id
-      );
-      if (account.type === "token") {
-        shareAccount = this._AccountCore.accounts[this.accountId][0];
-        transactions =
-          await this._DBOperator.transactionDao.findAllTransactionsById(
-            account.id
+    if (!this._newestId) {
+      // sync all on initial
+      let lastOldestID = '';
+      while(true) {
+        try {
+          const res = await this._TideWalletCommunicator.ListTransactions(
+            account.id,
+            '20',
+            lastOldestID,
+            'true'
           );
-        if (transactions.length > res.length) {
-          transactions = transactions.filter(
-            (tx) =>
-              res.findIndex((r) => r.txid === tx.txid) < 0 &&
-              tx.status === "pending"
-          );
-          transactions = transactions.filter(async (tx) => {
-            const shareTx =
-              await this._DBOperator.transactionDao.findTransactionById(
-                shareAccount.id + tx.txid
-              );
-            if (!shareTx) this._DBOperator.transactionDao.deleteById(tx.id);
-            if (shareTx.status === "success") {
-              tx.status = "fail";
-              this._DBOperator.transactionDao.updateTransaction(tx);
-              return true;
-            }
-          });
+          if (!res || res.length === 0 || res[res.length - 1].id === lastOldestID) break;
+          // save newest id, id is string
+          if (Number(this._newestId) < Number(res[0].id)) this._newestId = res[0].id;
+          // save oldest id, id is string
+          if (Number(lastOldestID) > Number(res[res.length - 1].id)) lastOldestID = res[res.length - 1].id;
+
+          await this._saveSyncResult(account, res);
+        } catch (error) {
+          console.log(error);
+          break;
         }
       }
-      const txs = res.map((t) => {
-        const enity = this._DBOperator.transactionDao.entity({
-          ...t,
-          message: t.note,
-          accountId: account.id,
-        });
-
-        return enity;
-      });
-      await this._DBOperator.transactionDao.insertTransactions(txs);
-    } catch (error) {
-      console.log(error);
+    } else {
+      // sync newer transaction
+      while(true) {
+        try {
+          const res = await this._TideWalletCommunicator.ListTransactions(
+            account.id,
+            '20',
+            this._newestId,
+            'false'
+          );
+          if (!res || res.length === 0 || res[0].id === this._newestId) break;
+          // save newest id, id is string
+          if (Number(this._newestId) < Number(res[0].id)) this._newestId = res[0].id;
+  
+          await this._saveSyncResult(account, res);
+        } catch (error) {
+          console.log(error);
+          break;
+        }
+      }
     }
 
     return this._loadTransactions(account.id);
+  }
+
+  async _saveSyncResult(account, res) {
+    let shareAccount,
+      transactions = [];
+
+    if (account.type === "token") {
+      shareAccount = this._AccountCore.accounts[this.accountId][0];
+      transactions =
+        await this._DBOperator.transactionDao.findAllTransactionsById(
+          account.id
+        );
+      if (transactions.length > res.length) {
+        transactions = transactions.filter(
+          (tx) =>
+            res.findIndex((r) => r.txid === tx.txid) < 0 &&
+            tx.status === "pending"
+        );
+        transactions = transactions.filter(async (tx) => {
+          const shareTx =
+            await this._DBOperator.transactionDao.findTransactionById(
+              shareAccount.id + tx.txid
+            );
+          if (!shareTx) this._DBOperator.transactionDao.deleteById(tx.id);
+          if (shareTx.status === "success") {
+            tx.status = "fail";
+            this._DBOperator.transactionDao.updateTransaction(tx);
+            return true;
+          }
+        });
+      }
+    }
+    const txs = res.map((t) => {
+      const enity = this._DBOperator.transactionDao.entity({
+        ...t,
+        message: t.note,
+        accountId: account.id,
+      });
+
+      return enity;
+    });
+    await this._DBOperator.transactionDao.insertTransactions(txs);
   }
 
   async getTransactions(id) {
