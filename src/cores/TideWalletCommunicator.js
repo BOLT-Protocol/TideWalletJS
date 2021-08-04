@@ -477,7 +477,7 @@ class TideWalletCommunicator {
       if (!accountID) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
-      const res = await this.httpAgent.get(this.apiURL + '/wallet/account/txs/' + accountID + '?limit=' + limit + '&startID=' + startID + '&isGetOlder' + isGetOlder);
+      const res = await this.httpAgent.get(this.apiURL + '/wallet/account/txs/' + accountID + '?limit=' + limit + '&startID=' + startID + '&isGetOlder=' + isGetOlder);
       if (res.success) {
         return res.data;
       }
