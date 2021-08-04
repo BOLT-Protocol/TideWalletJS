@@ -3,6 +3,8 @@ const SafeMath = require("../helpers/SafeMath");
 const { ACCOUNT_EVT } = require("../models/account.model");
 const AccountService = require("./accountService");
 
+const LIMIT = 20;
+
 class AccountServiceBase extends AccountService {
   constructor(AccountCore) {
     super();
@@ -199,7 +201,7 @@ class AccountServiceBase extends AccountService {
         try {
           const res = await this._TideWalletCommunicator.ListTransactions(
             account.id,
-            '20',
+            LIMIT,
             lastOldestID,
             'true'
           );
@@ -221,11 +223,11 @@ class AccountServiceBase extends AccountService {
         try {
           const res = await this._TideWalletCommunicator.ListTransactions(
             account.id,
-            '20',
+            LIMIT,
             this._newestId,
             'false'
           );
-          if (!res || res.length === 0 || res[0].id === this._newestId) break;
+          if (!res || res.length === 0 || res.length < LIMIT || res[0].id === this._newestId) break;
           // save newest id, id is string
           if (!this._newestId || Number(this._newestId) < Number(res[0].id)) this._newestId = res[0].id;
   
