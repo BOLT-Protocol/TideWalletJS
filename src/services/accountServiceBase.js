@@ -205,9 +205,9 @@ class AccountServiceBase extends AccountService {
           );
           if (!res || res.length === 0 || res[res.length - 1].id === lastOldestID) break;
           // save newest id, id is string
-          if (Number(this._newestId) < Number(res[0].id)) this._newestId = res[0].id;
+          if (!this._newestId || Number(this._newestId) < Number(res[0].id)) this._newestId = res[0].id;
           // save oldest id, id is string
-          if (Number(lastOldestID) > Number(res[res.length - 1].id)) lastOldestID = res[res.length - 1].id;
+          if (!lastOldestID || Number(lastOldestID) > Number(res[res.length - 1].id)) lastOldestID = res[res.length - 1].id;
 
           await this._saveSyncResult(account, res);
         } catch (error) {
@@ -227,7 +227,7 @@ class AccountServiceBase extends AccountService {
           );
           if (!res || res.length === 0 || res[0].id === this._newestId) break;
           // save newest id, id is string
-          if (Number(this._newestId) < Number(res[0].id)) this._newestId = res[0].id;
+          if (!this._newestId || Number(this._newestId) < Number(res[0].id)) this._newestId = res[0].id;
   
           await this._saveSyncResult(account, res);
         } catch (error) {
