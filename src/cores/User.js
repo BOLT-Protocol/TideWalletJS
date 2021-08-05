@@ -92,7 +92,7 @@ class User {
       userId = _res.userId;
       userSecret = _res.userSecret;
     } catch (error) {
-      console.log("_getUser:", error);
+      throw error;
     }
     return [userId, userSecret];
   }
