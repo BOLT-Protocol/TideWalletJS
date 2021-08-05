@@ -4,15 +4,15 @@ const sqlite3 = require('sqlite3').verbose();
 const DB_NAME = "tidebitwallet";
 const DB_VERSION = 1;
 
-const OBJ_ACCOUNT = "account";
-const OBJ_TX = "transaction";
-const OBJ_UTXO = "utxo";
-const OBJ_USER = "user";
-const OBJ_CURRENCY = "currency";
-const OBJ_NETWORK = "network";
-const OBJ_EXCHANGE_RATE = "exchange_rate";
+const TBL_ACCOUNT = "account";
+const TBL_TX = "transaction";
+const TBL_UTXO = "utxo";
+const TBL_USER = "user";
+const TBL_CURRENCY = "currency";
+const TBL_NETWORK = "network";
+const TBL_EXCHANGE_RATE = "exchange_rate";
 
-const OBJ_PREF = "pref";
+const TBL_PREF = "pref";
 
 
 // primary key ?
@@ -50,27 +50,143 @@ class Sqlite {
   async _createDB(dbName = DB_NAME, dbVersion = DB_VERSION) {
     // const request = indexedDB.open(dbName, dbVersion);
     const DBName = `${dbName}.db`;
-    const dbPath = path.join(path.resolve('.') + '/' + DBName);
+    const dbPath = path.join(path.resolve('.'), DBName);
     this.db = new sqlite3.Database(dbPath);
 
-    this._userDao = new UserDao(this.db, OBJ_USER);
-    this._accountDao = new AccountDao(this.db, OBJ_ACCOUNT);
-    this._currencyDao = new CurrencyDao(this.db, OBJ_CURRENCY);
-    this._networkDao = new NetworkDao(this.db, OBJ_NETWORK);
-    this._txDao = new TransactionDao(this.db, OBJ_TX);
-    this._utxoDao = new UtxoDao(this.db, OBJ_UTXO);
-    this._exchangeRateDao = new ExchangeRateDao(this.db, OBJ_EXCHANGE_RATE);
-    this._prefDao = new PrefDao(this.db, OBJ_PREF);
+    this._userDao = new UserDao(this.db, TBL_USER);
+    this._accountDao = new AccountDao(this.db, TBL_ACCOUNT);
+    this._currencyDao = new CurrencyDao(this.db, TBL_CURRENCY);
+    this._networkDao = new NetworkDao(this.db, TBL_NETWORK);
+    this._txDao = new TransactionDao(this.db, TBL_TX);
+    this._utxoDao = new UtxoDao(this.db, TBL_UTXO);
+    this._exchangeRateDao = new ExchangeRateDao(this.db, TBL_EXCHANGE_RATE);
+    this._prefDao = new PrefDao(this.db, TBL_PREF);
 
     await this._createTable(dbVersion);
     return this.db;
   }
 
   async _createTable(version) {
+    const accountSQL = `CREATE TABLE IF NOT EXISTS ${TBL_ACCOUNT} (
+      id TEXT PRIMARY KEY,
+      userId TEXT,
+      accountId TEXT,
+      blockchainId TEXT,
+      currencyId TEXT,
+      balance TEXT,
+      lastSyncTime INTEGER,
+      numberOfUsedExternalKey INTEGER,
+      numberOfUsedInternalKey INTEGER,
+      purpose INTEGER,
+      accountCoinType INTEGER,
+      accountIndex TEXT,
+      curveType INTEGER,
+      network TEXT,
+      blockchainCoinType INTEGER,
+      publish BOOLEAN,
+      chainId INTEGER,
+      name TEXT,
+      description TEXT,
+      symbol TEXT,
+      decimals INTEGER,
+      totalSupply TEXT,
+      contract TEXT,
+      type TEXT,
+      image TEXT,
+      exchangeRate TEXT
+    )`;
+    const txsSQL = `CREATE TABLE IF NOT EXISTS ${TBL_TX} (
+      id TEXT PRIMARY KEY,
+      accountId TEXT,
+      txid TEXT,
+      confirmations INTEGER,
+      sourceAddresses TEXT,
+      destinationAddresses TEXT,
+      gasPrice TEXT,
+      gasUsed INTEGER,
+      message TEXT,
+      fee TEXT,
+      status TEXT,
+      timestamp INTEGER,
+      direction TEXT,
+      amount TEXT
+    )`;
+    const currencySQL = `CREATE TABLE IF NOT EXISTS ${TBL_CURRENCY} (
+      currencyId TEXT PRIMARY KEY,
+      decimals INTEGER,
+      exchangeRate TEXT,
+      image TEXT,
+      name TEXT,
+      symbol TEXT,
+      type TEXT,
+      publish BOOLEAN,
+      blockchainId TEXT,
+      description TEXT,
+      address TEXT,
+      totalSupply TEXT,
+      contract TEXT
+    )`;
+    const userSQL = `CREATE TABLE IF NOT EXISTS ${TBL_USER} (
+      userId TEXT PRIMARY KEY,
+      keystore TEXT,
+      thirdPartyId TEXT,
+      installId TEXT,
+      timestamp INTEGER,
+      backupStatus BOOLEAN,
+      lastSyncTime INTEGER
+    )`;
+    const networkSQL = `CREATE TABLE IF NOT EXISTS ${TBL_NETWORK} (
+      blockchainId TEXT PRIMARY KEY,
+      network TEXT,
+      coinType INTEGER,
+      publish BOOLEAN,
+      chainId INTEGER
+    )`;
+    const utxoSQL = `CREATE TABLE IF NOT EXISTS ${TBL_UTXO} (
+      utxoId TEXT PRIMARY KEY,
+      accountId TEXT,
+      txid TEXT,
+      vout INTEGER,
+      type TEXT,
+      amount TEXT,
+      changeIndex INTEGER,
+      keyIndex INTEGER,
+      script TEXT,
+      timestamp INTEGER,
+      locked BOOLEAN,
+      address TEXT,
+      sequence INTEGER
+    )`;
+    const rateSQL = `CREATE TABLE IF NOT EXISTS ${TBL_EXCHANGE_RATE} (
+      exchangeRateId TEXT PRIMARY KEY,
+      name TEXT,
+      rate TEXT,
+      lastSyncTime INTEGER,
+      type TEXT
+    )`;
+    const prefSQL = `CREATE TABLE IF NOT EXISTS ${TBL_PREF} (
+      prefId TEXT PRIMARY KEY,
+      name TEXT,
+      token TEXT,
+      tokenSecret TEXT,
+      debugMode BOOLEAN
+    )`;
+    try {
+      await this._runDB(accountSQL);
+      // await this._runDB(txsSQL);
+      await this._runDB(currencySQL);
+      await this._runDB(userSQL);
+      await this._runDB(networkSQL);
+      await this._runDB(utxoSQL);
+      await this._runDB(rateSQL);
+      await this._runDB(prefSQL);
+    } catch (error) {
+      console.log('create table error:', error);
+    }
     // if (version <= 1) {
-    //   const accounts = this.db.createObjectStore(OBJ_ACCOUNT, {
+    //   const accounts = this.db.createObjectStore(TBL_ACCOUNT, {
     //     keyPath: "id",
-    //   });
+    //   });V
 
     //   let accountIndex = accounts.createIndex("accountId", "accountId");
     //   let blockchainIndex = accounts.createIndex(
@@ -78,41 +194,36 @@ class Sqlite {
     //     "blockchainId"
     //   );
 
-    //   const txs = this.db.createObjectStore(OBJ_TX, {
+    //   const txs = this.db.createObjectStore(TBL_TX, {
     //     keyPath: "id",
-    //   });
+    //   });V
     //   let accountIdIndex = txs.createIndex("accountId", "accountId");
     //   let txIndex = txs.createIndex("id", "id");
 
-    //   const currency = this.db.createObjectStore(OBJ_CURRENCY, {
+    //   const currency = this.db.createObjectStore(TBL_CURRENCY, {
     //     keyPath: "currencyId",
-    //   });
+    //   });V
     //   let currencyIndex = currency.createIndex("blockchainId", "blockchainId");
 
-    //   const user = this.db.createObjectStore(OBJ_USER, {
-    //     keyPath: "userId",
-    //   });
-
-    //   const network = this.db.createObjectStore(OBJ_NETWORK, {
-    //     keyPath: "blockchainId",
-    //   });
-
-    //   const utxo = this.db.createObjectStore(OBJ_UTXO, {
+    //   const utxo = this.db.createObjectStore(TBL_UTXO, {
     //     keyPath: "utxoId",
-    //   });
+    //   });V
     //   let utxoIndex = utxo.createIndex("accountId", "accountId");
+  }
 
-    //   const rate = this.db.createObjectStore(OBJ_EXCHANGE_RATE, {
-    //     keyPath: "exchangeRateId",
-    //   });
-
-    //   const pref = this.db.createObjectStore(OBJ_PREF, {
-    //     keyPath: "prefId",
-    //   });
-    // }
-    await setTimeout(() => {
-      console.log('wait 1 sec');
-    }, 1000);
+  _runDB(sql, params = []) {
+    return new Promise((resolve, reject) => {
+      this.db.run(sql, params, function (err) {
+        if (err) {
+          console.log('Error running sql ' + sql)
+          console.log(err)
+          reject(err)
+        } else {
+          console.log('run sql id:', this.lastID)
+          resolve({ id: this.lastID })
+        }
+      });
+    });
   }
 
   close() {
@@ -341,7 +452,6 @@ class UserDao extends DAO {
       installId: install_id,
       timestamp,
       backupStatus: backup_status,
-      keystore,
       lastSyncTime: last_sync_time,
     };
   }
