@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
+    "start": "node bin/main.js",
     "build": "browserify -r buffer src/index.js -o dist/TideWallet.js "
   },
   "author": "",

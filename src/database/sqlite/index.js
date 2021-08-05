@@ -1,3 +1,4 @@
+const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 
 const DB_NAME = "tidebitwallet";
@@ -49,7 +50,7 @@ class Sqlite {
   async _createDB(dbName = DB_NAME, dbVersion = DB_VERSION) {
     // const request = indexedDB.open(dbName, dbVersion);
     const DBName = `${dbName}.db`;
-    const dbPath = process.env.NODE_ENV === 'development' ? path.join(__dirname + '/' + DBName) : path.resolve(App.getPath('userData'), DBName);
+    const dbPath = path.join(path.resolve('.') + '/' + DBName);
     this.db = new sqlite3.Database(dbPath);
 
     this._userDao = new UserDao(this.db, OBJ_USER);
@@ -237,7 +238,7 @@ class DAO {
       //   console.log("Read DB Error: " + e.error);
       //   reject(e.error);
       // };
-      resolve({});
+      resolve();
     });
   }
 
