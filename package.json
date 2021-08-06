@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
+    "start": "node bin/main.js",
     "build": "browserify -r buffer src/index.js -o dist/TideWallet.js "
   },
   "author": "",
@@ -33,6 +34,7 @@
     "key-store": "^1.2.0",
     "rlp": "^2.2.6",
     "rxjs": "^7.1.0",
-    "sha3": "^2.1.4"
+    "sha3": "^2.1.4",
+    "sqlite3": "^5.0.2"
   }
 }

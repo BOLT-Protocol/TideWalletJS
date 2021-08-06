@@ -1,4 +1,5 @@
 const IndexedDB = require("./indexedDB");
+const Sqlite = require("./sqlite");
 const { isBrowser } = require("../helpers/env");
 
 class DBOperator {
@@ -48,7 +49,7 @@ class DBOperator {
 
   async init(inMemory = false) {
     if (this._isInit) return;
-    this.database = isBrowser() ? new IndexedDB() : null;
+    this.database = isBrowser() ? new IndexedDB() : new Sqlite();
     this._isInit = true;
 
     return this.database.init();

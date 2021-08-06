@@ -1,15 +1,19 @@
+const path = require('path');
+const sqlite3 = require('sqlite3').verbose();
+
 const DB_NAME = "tidebitwallet";
 const DB_VERSION = 1;
 
-const OBJ_ACCOUNT = "account";
-const OBJ_TX = "transaction";
-const OBJ_UTXO = "utxo";
-const OBJ_USER = "user";
-const OBJ_CURRENCY = "currency";
-const OBJ_NETWORK = "network";
-const OBJ_EXCHANGE_RATE = "exchange_rate";
+const TBL_ACCOUNT = "account";
+const TBL_TX = "transactions";
+const TBL_UTXO = "utxo";
+const TBL_USER = "user";
+const TBL_CURRENCY = "currency";
+const TBL_NETWORK = "network";
+const TBL_EXCHANGE_RATE = "exchange_rate";
 
-const OBJ_PREF = "pref";
+const TBL_PREF = "pref";
+
 
 // primary key ?
 function _uuid() {
@@ -27,7 +31,57 @@ function _uuid() {
   });
 }
 
-class IndexedDB {
+class sqliteDB {
+  constructor(dbPath) {
+    this.db = new sqlite3.Database(dbPath);
+    return this;
+  }
+
+  runDB(sql, params = []) {
+    return new Promise((resolve, reject) => {
+      this.db.run(sql, params, function (err) {
+        if (err) {
+          console.log('Error running sql ' + sql)
+          console.log(err)
+          reject(err)
+        } else {
+          console.log('run sql id:', this.lastID)
+          resolve({ id: this.lastID })
+        }
+      });
+    });
+  }
+
+  get(sql, params = []) {
+    return new Promise((resolve, reject) => {
+      this.db.get(sql, params, (err, result) => {
+        if (err) {
+          console.log('Error running sql: ' + sql)
+          console.log(err)
+          reject(err)
+        } else {
+          resolve(result)
+        }
+      });
+    });
+  }
+
+  all(sql, params = []) {
+    return new Promise((resolve, reject) => {
+      this.db.all(sql, params, (err, rows) => {
+        if (err) {
+          console.log('Error running sql: ' + sql)
+          console.log(err)
+          reject(err)
+        } else {
+          resolve(rows)
+        }
+      })
+    })
+  }
+}
+
+class Sqlite {
   constructor() {}
   db = null;
   _userDao = null;
@@ -43,81 +97,166 @@ class IndexedDB {
     return this._createDB();
   }
 
-  _createDB(dbName = DB_NAME, dbVersion = DB_VERSION) {
-    const request = indexedDB.open(dbName, dbVersion);
+  async _createDB(dbName = DB_NAME, dbVersion = DB_VERSION) {
+    // const request = indexedDB.open(dbName, dbVersion);
+    const DBName = `${dbName}.db`;
+    const dbPath = path.join(path.resolve('.'), DBName);
+    this.db = new sqliteDB(dbPath);
 
-    return new Promise((resolve, reject) => {
-      //on upgrade needed
-      request.onupgradeneeded = (e) => {
-        this.db = e.target.result;
-        this._createTable(dbVersion);
-      };
+    this._userDao = new UserDao(this.db, TBL_USER);
+    this._accountDao = new AccountDao(this.db, TBL_ACCOUNT);
+    this._currencyDao = new CurrencyDao(this.db, TBL_CURRENCY);
+    this._networkDao = new NetworkDao(this.db, TBL_NETWORK);
+    this._txDao = new TransactionDao(this.db, TBL_TX);
+    this._utxoDao = new UtxoDao(this.db, TBL_UTXO);
+    this._exchangeRateDao = new ExchangeRateDao(this.db, TBL_EXCHANGE_RATE);
+    this._prefDao = new PrefDao(this.db, TBL_PREF);
 
-      request.onsuccess = (e) => {
-        this.db = e.target.result;
-
-        this._userDao = new UserDao(this.db, OBJ_USER);
-        this._accountDao = new AccountDao(this.db, OBJ_ACCOUNT);
-        this._currencyDao = new CurrencyDao(this.db, OBJ_CURRENCY);
-        this._networkDao = new NetworkDao(this.db, OBJ_NETWORK);
-        this._txDao = new TransactionDao(this.db, OBJ_TX);
-        this._utxoDao = new UtxoDao(this.db, OBJ_UTXO);
-        this._exchangeRateDao = new ExchangeRateDao(this.db, OBJ_EXCHANGE_RATE);
-        this._prefDao = new PrefDao(this.db, OBJ_PREF);
-
-        resolve(this.db);
-      };
-
-      request.onerror = (e) => {
-        reject(this.db);
-      };
-    });
+    await this._createTable(dbVersion);
+    return this.db;
   }
 
-  _createTable(version) {
-    if (version <= 1) {
-      const accounts = this.db.createObjectStore(OBJ_ACCOUNT, {
-        keyPath: "id",
-      });
-
-      let accountIndex = accounts.createIndex("accountId", "accountId");
-      let blockchainIndex = accounts.createIndex(
-        "blockchainId",
-        "blockchainId"
-      );
-
-      const txs = this.db.createObjectStore(OBJ_TX, {
-        keyPath: "id",
-      });
-      let accountIdIndex = txs.createIndex("accountId", "accountId");
-      let txIndex = txs.createIndex("id", "id");
-
-      const currency = this.db.createObjectStore(OBJ_CURRENCY, {
-        keyPath: "currencyId",
-      });
-      let currencyIndex = currency.createIndex("blockchainId", "blockchainId");
-
-      const user = this.db.createObjectStore(OBJ_USER, {
-        keyPath: "userId",
-      });
-
-      const network = this.db.createObjectStore(OBJ_NETWORK, {
-        keyPath: "blockchainId",
-      });
-
-      const utxo = this.db.createObjectStore(OBJ_UTXO, {
-        keyPath: "utxoId",
-      });
-      let utxoIndex = utxo.createIndex("accountId", "accountId");
-
-      const rate = this.db.createObjectStore(OBJ_EXCHANGE_RATE, {
-        keyPath: "exchangeRateId",
-      });
-
-      const pref = this.db.createObjectStore(OBJ_PREF, {
-        keyPath: "prefId",
-      });
+  async _createTable(version) {
+    const accountSQL = `CREATE TABLE IF NOT EXISTS ${TBL_ACCOUNT} (
+      id TEXT PRIMARY KEY,
+      userId TEXT,
+      accountId TEXT,
+      blockchainId TEXT,
+      currencyId TEXT,
+      balance TEXT,
+      lastSyncTime INTEGER,
+      numberOfUsedExternalKey INTEGER,
+      numberOfUsedInternalKey INTEGER,
+      purpose INTEGER,
+      accountCoinType INTEGER,
+      accountIndex TEXT,
+      curveType INTEGER,
+      network TEXT,
+      blockchainCoinType INTEGER,
+      publish BOOLEAN,
+      chainId INTEGER,
+      name TEXT,
+      description TEXT,
+      symbol TEXT,
+      decimals INTEGER,
+      totalSupply TEXT,
+      contract TEXT,
+      type TEXT,
+      image TEXT,
+      exchangeRate TEXT,
+      inFiat TEXT
+    )`;
+    const txsSQL = `CREATE TABLE IF NOT EXISTS ${TBL_TX} (
+      id TEXT PRIMARY KEY,
+      accountId TEXT,
+      txid TEXT,
+      confirmations INTEGER,
+      sourceAddresses TEXT,
+      destinationAddresses TEXT,
+      gasPrice TEXT,
+      gasUsed INTEGER,
+      message TEXT,
+      fee TEXT,
+      status TEXT,
+      timestamp INTEGER,
+      direction TEXT,
+      amount TEXT
+    )`;
+    const currencySQL = `CREATE TABLE IF NOT EXISTS ${TBL_CURRENCY} (
+      currencyId TEXT PRIMARY KEY,
+      decimals INTEGER,
+      exchangeRate TEXT,
+      image TEXT,
+      name TEXT,
+      symbol TEXT,
+      type TEXT,
+      publish BOOLEAN,
+      blockchainId TEXT,
+      description TEXT,
+      address TEXT,
+      totalSupply TEXT,
+      contract TEXT
+    )`;
+    const userSQL = `CREATE TABLE IF NOT EXISTS ${TBL_USER} (
+      userId TEXT PRIMARY KEY,
+      keystore TEXT,
+      thirdPartyId TEXT,
+      installId TEXT,
+      timestamp INTEGER,
+      backupStatus BOOLEAN,
+      lastSyncTime INTEGER
+    )`;
+    const networkSQL = `CREATE TABLE IF NOT EXISTS ${TBL_NETWORK} (
+      blockchainId TEXT PRIMARY KEY,
+      network TEXT,
+      coinType INTEGER,
+      publish BOOLEAN,
+      chainId INTEGER
+    )`;
+    const utxoSQL = `CREATE TABLE IF NOT EXISTS ${TBL_UTXO} (
+      utxoId TEXT PRIMARY KEY,
+      accountId TEXT,
+      txid TEXT,
+      vout INTEGER,
+      type TEXT,
+      amount TEXT,
+      changeIndex INTEGER,
+      keyIndex INTEGER,
+      script TEXT,
+      timestamp INTEGER,
+      locked BOOLEAN,
+      address TEXT,
+      sequence INTEGER
+    )`;
+    const rateSQL = `CREATE TABLE IF NOT EXISTS ${TBL_EXCHANGE_RATE} (
+      exchangeRateId TEXT PRIMARY KEY,
+      name TEXT,
+      rate TEXT,
+      lastSyncTime INTEGER,
+      type TEXT
+    )`;
+    const prefSQL = `CREATE TABLE IF NOT EXISTS ${TBL_PREF} (
+      prefId TEXT PRIMARY KEY,
+      value TEXT
+    )`;
+    try {
+      await this.db.runDB(accountSQL);
+      await this.db.runDB(txsSQL);
+      await this.db.runDB(currencySQL);
+      await this.db.runDB(userSQL);
+      await this.db.runDB(networkSQL);
+      await this.db.runDB(utxoSQL);
+      await this.db.runDB(rateSQL);
+      await this.db.runDB(prefSQL);
+    } catch (error) {
+      console.log('create table error:', error);
     }
+    // if (version <= 1) {
+    //   const accounts = this.db.createObjectStore(TBL_ACCOUNT, {
+    //     keyPath: "id",
+    //   });V
+
+    //   let accountIndex = accounts.createIndex("accountId", "accountId");
+    //   let blockchainIndex = accounts.createIndex(
+    //     "blockchainId",
+    //     "blockchainId"
+    //   );
+
+    //   const txs = this.db.createObjectStore(TBL_TX, {
+    //     keyPath: "id",
+    //   });V
+    //   let accountIdIndex = txs.createIndex("accountId", "accountId");
+    //   let txIndex = txs.createIndex("id", "id");
+
+    //   const currency = this.db.createObjectStore(TBL_CURRENCY, {
+    //     keyPath: "currencyId",
+    //   });V
+    //   let currencyIndex = currency.createIndex("blockchainId", "blockchainId");
+
+    //   const utxo = this.db.createObjectStore(TBL_UTXO, {
+    //     keyPath: "utxoId",
+    //   });V
+    //   let utxoIndex = utxo.createIndex("accountId", "accountId");
   }
 
   close() {
@@ -158,9 +297,10 @@ class IndexedDB {
 }
 
 class DAO {
-  constructor(db, name) {
+  constructor(db, name, pk) {
     this._db = db;
     this._name = name;
+    this._pk = pk
   }
 
   entity() {}
@@ -171,153 +311,66 @@ class DAO {
    * @param {Object} [options]
    */
   _write(data, options) {
-    return new Promise((resolve, reject) => {
-      const tx = this._db.transaction(this._name, "readwrite");
-      // const request = tx.objectStore(this._name).add(data);
-      const request = tx.objectStore(this._name).put(data);
-
-      request.onsuccess = (e) => {
-        resolve(true);
-      };
-
-      request.onerror = (e) => {
-        console.log("Write DB Error: " + e.error);
-        reject(false);
-      };
-
-      tx.onabort = () => {
-        console.log("Write DB Error: Transaction Abort");
-
-        reject(false);
-      };
-    });
+    const sql = `
+      INSERT OR REPLACE INTO ${this._name} (${Object.keys(data).join(', ')})
+      VALUES (${Object.keys(data).map((k) => '?').join(', ')})
+    `;
+    return this._db.runDB(sql, Object.values(data));
   }
 
   _writeAll(entities) {
-    return new Promise((resolve, reject) => {
-      const tx = this._db.transaction(this._name, "readwrite");
-      entities.forEach((entity) => {
-        tx.objectStore(this._name).put(entity);
-      });
-
-      tx.oncomplete = (e) => {
-        resolve(true);
-      };
-
-      tx.onabort = (e) => {
-        reject(false);
-      };
-    });
+    if (entities.length > 0) {
+      let sql = `INSERT OR REPLACE INTO ${this._name} (${Object.keys(entities[0]).join(', ')}) VALUES`;
+      let values = [];
+      for (const entity of entities) {
+        sql += ` (${Object.keys(entity).map((k) => '?').join(', ')}),`;
+        values = [...values, ...Object.values(entity)]
+      }
+      sql = sql.slice(0, -1);
+      return this._db.runDB(sql, values);
+    }
+    return Promise.resolve(true);
   }
 
   _read(value = null, index) {
-    return new Promise((resolve, reject) => {
-      const tx = this._db.transaction(this._name, "readonly");
-      const store = tx.objectStore(this._name);
-
-      if (index) {
-        store = store.index(index);
-      }
-
-      let request;
-
-      if (!value) {
-        request = store.openCursor();
-        request.onsuccess = (e) => {
-          if (e.target.result) {
-            resolve(e.target.result.value);
-          } else {
-            resolve(null);
-          }
-        };
-      } else {
-        request = store.get(value);
-        request.onsuccess = (e) => {
-          resolve(e.target.result);
-        };
-      }
-
-      request.onerror = (e) => {
-        console.log("Read DB Error: " + e.error);
-        reject(e.error);
-      };
-    });
+    const where = index ? `${index} = ?` : `${this._pk} = ?`;
+    const findOne = `
+      SELECT * FROM ${this._name} WHERE ${where}
+    `;
+    return this._db.get(findOne, value);
   }
 
   _readAll(value = null, index) {
-    return new Promise((resolve, reject) => {
-      const tx = this._db.transaction(this._name, "readonly");
-      let store = tx.objectStore(this._name);
-
-      if (index) {
-        store = store.index(index);
-      }
-
-      const request = store.getAll(value);
-
-      request.onsuccess = (e) => {
-        resolve(e.target.result);
-      };
-
-      request.onerror = (e) => {
-        console.log("Read DB Error: " + e.error);
-
-        reject(e.error);
-      };
-    });
+    const where = index ? `${index} = ?` : `${this._pk} = ?`;
+    const find = `
+      SELECT * FROM ${this._name} WHERE ${where}
+    `;
+    return this._db.all(find, value);
   }
 
   _update(data) {
-    return new Promise((resolve, reject) => {
-      const tx = this._db.transaction(this._name, "readwrite");
-      const request = tx.objectStore(this._name).put(data);
-
-      request.onsuccess = (e) => {
-        resolve(true);
-      };
-
-      request.onerror = (e) => {
-        console.log("Update DB Error: " + e.error);
-        reject(false);
-      };
-
-      tx.onabort = () => {
-        console.log("Update DB Error: Transaction Abort");
-
-        reject(false);
-      };
-    });
+    const where = `${this._pk} = ?`;
+    const params = Object.values(data);
+    params.push(data[this._pk]);
+    const sql = `UPDATE ${this._name} SET (${Object.keys(data).join(' = ?, ')}) WHERE ${where}`;
+    return this._db.runDB(sql, params);
   }
 
   _delete(key) {
-    return new Promise((resolve, reject) => {
-      let store = this._db
-        .transaction(this._name, "readwrite")
-        .objectStore(this._name);
-
-      const request = store.delete(key);
-
-      request.onsuccess = (e) => {
-        resolve(true);
-      };
-
-      request.onerror = (e) => {
-        reject(false);
-      };
-    });
+    const where = `${this._pk} = ?`;
+    const sql = `DELETE FROM ${this._name} WHERE ${where}`;
+    return this._db.runDB(sql, key)
   }
 
   _deleteAll() {
-    let store = this._db
-      .transaction(this._name, "readwrite")
-      .objectStore(this._name);
-    store.clear();
+    const sql = `DELETE FROM ${this._name}`;
+    return this._db.runDB(sql)
   }
 }
 
 class UserDao extends DAO {
   constructor(db, name) {
-    super(db, name);
+    super(db, name, 'userId');
   }
 
   /**
@@ -339,7 +392,6 @@ class UserDao extends DAO {
       installId: install_id,
       timestamp,
       backupStatus: backup_status,
-      keystore,
       lastSyncTime: last_sync_time,
     };
   }
@@ -363,7 +415,7 @@ class UserDao extends DAO {
 
 class AccountDao extends DAO {
   constructor(db, name) {
-    super(db, name);
+    super(db, name, 'id');
   }
 
   /**
@@ -425,7 +477,7 @@ class AccountDao extends DAO {
       type,
       image,
       exchangeRate: exchange_rate,
-      inFiat,
+      inFiat
       // tokens,
     };
   }
@@ -492,7 +544,7 @@ class CurrencyDao extends DAO {
     };
   }
   constructor(db, name) {
-    super(db, name);
+    super(db, name, 'currencyId');
   }
 
   insertCurrency(currencyEntity) {
@@ -529,7 +581,7 @@ class NetworkDao extends DAO {
     };
   }
   constructor(db, name) {
-    super(db, name);
+    super(db, name, 'blockchainId');
   }
 
   findAllNetworks() {
@@ -544,6 +596,10 @@ class NetworkDao extends DAO {
 }
 
 class TransactionDao extends DAO {
+  constructor(db, name) {
+    super(db, name, 'id');
+  }
+
   /**
    * @override
    * @param {string} accountId ,this is the id of the account, not the accountId of the account
@@ -617,7 +673,7 @@ class ExchangeRateDao extends DAO {
     };
   }
   constructor(db, name) {
-    super(db, name);
+    super(db, name, 'exchangeRateId');
   }
 
   insertExchangeRates(rates) {
@@ -666,7 +722,7 @@ class UtxoDao extends DAO {
   }
 
   constructor(db, name) {
-    super(db, name);
+    super(db, name, 'utxoId');
   }
 
   async insertUtxos(utxos) {
@@ -694,39 +750,48 @@ class PrefDao extends DAO {
     };
   }
   constructor(db, name) {
-    super(db, name);
+    super(db, name, 'prefId');
   }
 
   async getAuthItem(userId) {
     const result = await this._read(`${PrefDao.AUTH_ITEM_KEY}-${userId}`);
 
-    return result;
+    return JSON.parse(result.value);
   }
 
   setAuthItem(userId, token, tokenSecret) {
-    return this._write({
+    const strValue = JSON.stringify({
       prefId: `${PrefDao.AUTH_ITEM_KEY}-${userId}`,
       token,
       tokenSecret,
+    });
+    return this._write({
+      prefId: `${PrefDao.AUTH_ITEM_KEY}-${userId}`,
+      value: strValue,
     });
   }
 
   async getSelectedFiat() {
     const result = await this._read(PrefDao.SELECTED_FIAT_KEY);
-    return result.name;
+
+    return JSON.parse(result.value).name;
   }
 
   setSelectedFiat(name) {
+    const strValue = JSON.stringify({
+      prefId: PrefDao.MODE_ITEM_KEY,
+      name
+    });
     return this._write({
       prefId: PrefDao.SELECTED_FIAT_KEY,
-      name,
+      value: strValue,
     });
   }
 
   async getDebugMode() {
     const result = await this._read(PrefDao.MODE_ITEM_KEY);
-    console.log("getDebugMode", result);
-    return result.value;
+    console.log("getDebugMode", JSON.parse(result.value));
+    return JSON.parse(result.value).value;
   }
   /**
    *
@@ -734,9 +799,13 @@ class PrefDao extends DAO {
    * @returns
    */
   setDebugMode(value) {
+    const strValue = JSON.stringify({
+      prefId: PrefDao.MODE_ITEM_KEY,
+      value
+    });
     return this._write({
       prefId: PrefDao.MODE_ITEM_KEY,
-      value,
+      value: strValue,
     });
   }
 
@@ -745,12 +814,4 @@ class PrefDao extends DAO {
   }
 }
 
-// *************************************************** //
-// if only use on browser, comment out this line
-// *************************************************** //
-module.exports = IndexedDB;
-
-// *************************************************** //
-// If not only using on browser, comment out this line
-// *************************************************** //
-// window.IndexedDB = IndexedDB;
+module.exports = Sqlite;
