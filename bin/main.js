@@ -39,8 +39,9 @@ async function main() {
   // await tw.partialSync("cb955812-37df-476a-95a8-d69295b28347");
   // console.log('backup:', await tw.backup());
   setTimeout(async () => {
-    await tw.close();
-  }, 30000);
+    await tw.resetWallet();
+    // await tw.close();
+  }, 10000);
 }
 
 main();

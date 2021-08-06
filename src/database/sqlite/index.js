@@ -346,77 +346,25 @@ class DAO {
       SELECT * FROM ${this._name} WHERE ${where}
     `;
     return this._db.all(find, value);
-    return new Promise((resolve, reject) => {
-      // const tx = this._db.transaction(this._name, "readonly");
-      // let store = tx.objectStore(this._name);
-
-      // if (index) {
-      //   store = store.index(index);
-      // }
-
-      // const request = store.getAll(value);
-
-      // request.onsuccess = (e) => {
-      //   resolve(e.target.result);
-      // };
-
-      // request.onerror = (e) => {
-      //   console.log("Read DB Error: " + e.error);
-
-      //   reject(e.error);
-      // };
-      resolve([]);
-    });
   }
 
   _update(data) {
-    return new Promise((resolve, reject) => {
-      // const tx = this._db.transaction(this._name, "readwrite");
-      // const request = tx.objectStore(this._name).put(data);
-
-      // request.onsuccess = (e) => {
-      //   resolve(true);
-      // };
-
-      // request.onerror = (e) => {
-      //   console.log("Update DB Error: " + e.error);
-      //   reject(false);
-      // };
-
-      // tx.onabort = () => {
-      //   console.log("Update DB Error: Transaction Abort");
-
-      //   reject(false);
-      // };
-      resolve(true);
-    });
+    const where = `${this._pk} = ?`;
+    const params = Object.values(data);
+    params.push(data[this._pk]);
+    const sql = `UPDATE ${this._name} SET (${Object.keys(data).join(' = ?, ')}) WHERE ${where}`;
+    return this._db.runDB(sql, params);
   }
 
   _delete(key) {
-    return new Promise((resolve, reject) => {
-      // let store = this._db
-      //   .transaction(this._name, "readwrite")
-      //   .objectStore(this._name);
-
-      // const request = store.delete(key);
-
-      // request.onsuccess = (e) => {
-      //   resolve(true);
-      // };
-
-      // request.onerror = (e) => {
-      //   reject(false);
-      // };
-      resolve(true);
-    });
+    const where = `${this._pk} = ?`;
+    const sql = `DELETE FROM ${this._name} WHERE ${where}`;
+    return this._db.runDB(sql, key)
   }
 
   _deleteAll() {
-    // let store = this._db
-    //   .transaction(this._name, "readwrite")
-    //   .objectStore(this._name);
-    // store.clear();
-    return true;
+    const sql = `DELETE FROM ${this._name}`;
+    return this._db.runDB(sql)
   }
 }
 
