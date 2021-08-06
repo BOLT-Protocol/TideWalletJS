@@ -396,6 +396,7 @@ class AccountDao extends DAO {
     type, // Join Currency
     image, // Join Currency || url
     exchange_rate, // ++ Join Currency || inUSD,
+    inFiat,
   }) {
     return {
       id,
@@ -424,6 +425,7 @@ class AccountDao extends DAO {
       type,
       image,
       exchangeRate: exchange_rate,
+      inFiat,
       // tokens,
     };
   }

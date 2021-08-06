@@ -5,7 +5,7 @@ const DB_NAME = "tidebitwallet";
 const DB_VERSION = 1;
 
 const TBL_ACCOUNT = "account";
-const TBL_TX = "transaction";
+const TBL_TX = "transactions";
 const TBL_UTXO = "utxo";
 const TBL_USER = "user";
 const TBL_CURRENCY = "currency";
@@ -31,6 +31,56 @@ function _uuid() {
   });
 }
 
+class sqliteDB {
+  constructor(dbPath) {
+    this.db = new sqlite3.Database(dbPath);
+    return this;
+  }
+
+  runDB(sql, params = []) {
+    return new Promise((resolve, reject) => {
+      this.db.run(sql, params, function (err) {
+        if (err) {
+          console.log('Error running sql ' + sql)
+          console.log(err)
+          reject(err)
+        } else {
+          console.log('run sql id:', this.lastID)
+          resolve({ id: this.lastID })
+        }
+      });
+    });
+  }
+
+  get(sql, params = []) {
+    return new Promise((resolve, reject) => {
+      this.db.get(sql, params, (err, result) => {
+        if (err) {
+          console.log('Error running sql: ' + sql)
+          console.log(err)
+          reject(err)
+        } else {
+          resolve(result)
+        }
+      });
+    });
+  }
+
+  all(sql, params = []) {
+    return new Promise((resolve, reject) => {
+      this.db.all(sql, params, (err, rows) => {
+        if (err) {
+          console.log('Error running sql: ' + sql)
+          console.log(err)
+          reject(err)
+        } else {
+          resolve(rows)
+        }
+      })
+    })
+  }
+}
+
 class Sqlite {
   constructor() {}
   db = null;
@@ -51,7 +101,7 @@ class Sqlite {
     // const request = indexedDB.open(dbName, dbVersion);
     const DBName = `${dbName}.db`;
     const dbPath = path.join(path.resolve('.'), DBName);
-    this.db = new sqlite3.Database(dbPath);
+    this.db = new sqliteDB(dbPath);
 
     this._userDao = new UserDao(this.db, TBL_USER);
     this._accountDao = new AccountDao(this.db, TBL_ACCOUNT);
@@ -93,7 +143,8 @@ class Sqlite {
       contract TEXT,
       type TEXT,
       image TEXT,
-      exchangeRate TEXT
+      exchangeRate TEXT,
+      inFiat TEXT
     )`;
     const txsSQL = `CREATE TABLE IF NOT EXISTS ${TBL_TX} (
       id TEXT PRIMARY KEY,
@@ -166,20 +217,17 @@ class Sqlite {
     )`;
     const prefSQL = `CREATE TABLE IF NOT EXISTS ${TBL_PREF} (
       prefId TEXT PRIMARY KEY,
-      name TEXT,
-      token TEXT,
-      tokenSecret TEXT,
-      debugMode BOOLEAN
+      value TEXT
     )`;
     try {
-      await this._runDB(accountSQL);
-      // await this._runDB(txsSQL);
-      await this._runDB(currencySQL);
-      await this._runDB(userSQL);
-      await this._runDB(networkSQL);
-      await this._runDB(utxoSQL);
-      await this._runDB(rateSQL);
-      await this._runDB(prefSQL);
+      await this.db.runDB(accountSQL);
+      await this.db.runDB(txsSQL);
+      await this.db.runDB(currencySQL);
+      await this.db.runDB(userSQL);
+      await this.db.runDB(networkSQL);
+      await this.db.runDB(utxoSQL);
+      await this.db.runDB(rateSQL);
+      await this.db.runDB(prefSQL);
     } catch (error) {
       console.log('create table error:', error);
     }
@@ -209,21 +257,6 @@ class Sqlite {
     //     keyPath: "utxoId",
     //   });V
     //   let utxoIndex = utxo.createIndex("accountId", "accountId");
-  }
-
-  _runDB(sql, params = []) {
-    return new Promise((resolve, reject) => {
-      this.db.run(sql, params, function (err) {
-        if (err) {
-          console.log('Error running sql ' + sql)
-          console.log(err)
-          reject(err)
-        } else {
-          console.log('run sql id:', this.lastID)
-          resolve({ id: this.lastID })
-        }
-      });
-    });
   }
 
   close() {
@@ -264,9 +297,10 @@ class Sqlite {
 }
 
 class DAO {
-  constructor(db, name) {
+  constructor(db, name, pk) {
     this._db = db;
     this._name = name;
+    this._pk = pk
   }
 
   entity() {}
@@ -277,83 +311,41 @@ class DAO {
    * @param {Object} [options]
    */
   _write(data, options) {
-    return new Promise((resolve, reject) => {
-      // const tx = this._db.transaction(this._name, "readwrite");
-      // // const request = tx.objectStore(this._name).add(data);
-      // const request = tx.objectStore(this._name).put(data);
-
-      // request.onsuccess = (e) => {
-      //   resolve(true);
-      // };
-
-      // request.onerror = (e) => {
-      //   console.log("Write DB Error: " + e.error);
-      //   reject(false);
-      // };
-
-      // tx.onabort = () => {
-      //   console.log("Write DB Error: Transaction Abort");
-
-      //   reject(false);
-      // };
-      resolve(true);
-    });
+    const sql = `
+      INSERT OR REPLACE INTO ${this._name} (${Object.keys(data).join(', ')})
+      VALUES (${Object.keys(data).map((k) => '?').join(', ')})
+    `;
+    return this._db.runDB(sql, Object.values(data));
   }
 
   _writeAll(entities) {
-    return new Promise((resolve, reject) => {
-      // const tx = this._db.transaction(this._name, "readwrite");
-      // entities.forEach((entity) => {
-      //   tx.objectStore(this._name).put(entity);
-      // });
-
-      // tx.oncomplete = (e) => {
-      //   resolve(true);
-      // };
-
-      // tx.onabort = (e) => {
-      //   reject(false);
-      // };
-      resolve(true);
-    });
+    if (entities.length > 0) {
+      let sql = `INSERT OR REPLACE INTO ${this._name} (${Object.keys(entities[0]).join(', ')}) VALUES`;
+      let values = [];
+      for (const entity of entities) {
+        sql += ` (${Object.keys(entity).map((k) => '?').join(', ')}),`;
+        values = [...values, ...Object.values(entity)]
+      }
+      sql = sql.slice(0, -1);
+      return this._db.runDB(sql, values);
+    }
+    return Promise.resolve(true);
   }
 
   _read(value = null, index) {
-    return new Promise((resolve, reject) => {
-      // const tx = this._db.transaction(this._name, "readonly");
-      // const store = tx.objectStore(this._name);
-
-      // if (index) {
-      //   store = store.index(index);
-      // }
-
-      // let request;
-
-      // if (!value) {
-      //   request = store.openCursor();
-      //   request.onsuccess = (e) => {
-      //     if (e.target.result) {
-      //       resolve(e.target.result.value);
-      //     } else {
-      //       resolve(null);
-      //     }
-      //   };
-      // } else {
-      //   request = store.get(value);
-      //   request.onsuccess = (e) => {
-      //     resolve(e.target.result);
-      //   };
-      // }
-
-      // request.onerror = (e) => {
-      //   console.log("Read DB Error: " + e.error);
-      //   reject(e.error);
-      // };
-      resolve();
-    });
+    const where = index ? `${index} = ?` : `${this._pk} = ?`;
+    const findOne = `
+      SELECT * FROM ${this._name} WHERE ${where}
+    `;
+    return this._db.get(findOne, value);
   }
 
   _readAll(value = null, index) {
+    const where = index ? `${index} = ?` : `${this._pk} = ?`;
+    const find = `
+      SELECT * FROM ${this._name} WHERE ${where}
+    `;
+    return this._db.all(find, value);
     return new Promise((resolve, reject) => {
       // const tx = this._db.transaction(this._name, "readonly");
       // let store = tx.objectStore(this._name);
@@ -430,7 +422,7 @@ class DAO {
 
 class UserDao extends DAO {
   constructor(db, name) {
-    super(db, name);
+    super(db, name, 'userId');
   }
 
   /**
@@ -475,7 +467,7 @@ class UserDao extends DAO {
 
 class AccountDao extends DAO {
   constructor(db, name) {
-    super(db, name);
+    super(db, name, 'id');
   }
 
   /**
@@ -508,6 +500,7 @@ class AccountDao extends DAO {
     type, // Join Currency
     image, // Join Currency || url
     exchange_rate, // ++ Join Currency || inUSD,
+    inFiat,
   }) {
     return {
       id,
@@ -536,6 +529,7 @@ class AccountDao extends DAO {
       type,
       image,
       exchangeRate: exchange_rate,
+      inFiat
       // tokens,
     };
   }
@@ -602,7 +596,7 @@ class CurrencyDao extends DAO {
     };
   }
   constructor(db, name) {
-    super(db, name);
+    super(db, name, 'currencyId');
   }
 
   insertCurrency(currencyEntity) {
@@ -639,7 +633,7 @@ class NetworkDao extends DAO {
     };
   }
   constructor(db, name) {
-    super(db, name);
+    super(db, name, 'blockchainId');
   }
 
   findAllNetworks() {
@@ -654,6 +648,10 @@ class NetworkDao extends DAO {
 }
 
 class TransactionDao extends DAO {
+  constructor(db, name) {
+    super(db, name, 'id');
+  }
+
   /**
    * @override
    * @param {string} accountId ,this is the id of the account, not the accountId of the account
@@ -727,7 +725,7 @@ class ExchangeRateDao extends DAO {
     };
   }
   constructor(db, name) {
-    super(db, name);
+    super(db, name, 'exchangeRateId');
   }
 
   insertExchangeRates(rates) {
@@ -776,7 +774,7 @@ class UtxoDao extends DAO {
   }
 
   constructor(db, name) {
-    super(db, name);
+    super(db, name, 'utxoId');
   }
 
   async insertUtxos(utxos) {
@@ -804,39 +802,48 @@ class PrefDao extends DAO {
     };
   }
   constructor(db, name) {
-    super(db, name);
+    super(db, name, 'prefId');
   }
 
   async getAuthItem(userId) {
     const result = await this._read(`${PrefDao.AUTH_ITEM_KEY}-${userId}`);
 
-    return result;
+    return JSON.parse(result.value);
   }
 
   setAuthItem(userId, token, tokenSecret) {
-    return this._write({
+    const strValue = JSON.stringify({
       prefId: `${PrefDao.AUTH_ITEM_KEY}-${userId}`,
       token,
       tokenSecret,
+    });
+    return this._write({
+      prefId: `${PrefDao.AUTH_ITEM_KEY}-${userId}`,
+      value: strValue,
     });
   }
 
   async getSelectedFiat() {
     const result = await this._read(PrefDao.SELECTED_FIAT_KEY);
-    return result.name;
+
+    return JSON.parse(result.value).name;
   }
 
   setSelectedFiat(name) {
+    const strValue = JSON.stringify({
+      prefId: PrefDao.MODE_ITEM_KEY,
+      name
+    });
     return this._write({
       prefId: PrefDao.SELECTED_FIAT_KEY,
-      name,
+      value: strValue,
     });
   }
 
   async getDebugMode() {
     const result = await this._read(PrefDao.MODE_ITEM_KEY);
-    console.log("getDebugMode", result);
-    return result.value;
+    console.log("getDebugMode", JSON.parse(result.value));
+    return JSON.parse(result.value).value;
   }
   /**
    *
@@ -844,9 +851,13 @@ class PrefDao extends DAO {
    * @returns
    */
   setDebugMode(value) {
+    const strValue = JSON.stringify({
+      prefId: PrefDao.MODE_ITEM_KEY,
+      value
+    });
     return this._write({
       prefId: PrefDao.MODE_ITEM_KEY,
-      value,
+      value: strValue,
     });
   }
 

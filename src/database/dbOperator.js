@@ -49,7 +49,7 @@ class DBOperator {
 
   async init(inMemory = false) {
     if (this._isInit) return;
-    this.database = isBrowser() ? new IndexedDB() : new Sqlite;
+    this.database = isBrowser() ? new IndexedDB() : new Sqlite();
     this._isInit = true;
 
     return this.database.init();

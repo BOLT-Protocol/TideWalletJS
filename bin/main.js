@@ -20,28 +20,27 @@ async function main() {
     installId:
       "11f6d3e524f367952cb838bf7ef24e0cfb5865d7b8a8fe5c699f748b2fada249",
   };
+  const userW = {
+    thirdPartyId: '116632174227441198441',
+    installId: 'cTfD4pJXY3yzDeMXt5fQ94E2Pj4oFLLu'
+  }
   const user = await tw.init({
-    user: user2,
+    user: userW,
     api,
-    debugMode: false,
+    debugMode: true,
     networkPublish: false,
   });
   //test
   if (user) await tw.createUser({ user });
   console.log("overview:", await tw.overview());
-  console.log(
-    "getTransactionFee:",
-    await tw.getTransactionFee({
-      id: "a7255d05-eacf-4278-9139-0cfceb9abed6",
-    })
-  );
   // console.log('getTransactionDetail:', await tw.getTransactionDetail({ id: "a7255d05-eacf-4278-9139-0cfceb9abed6", transactionId:"" }));
   // console.log('getReceivingAddress:', await tw.getReceivingAddress({ id: "a7255d05-eacf-4278-9139-0cfceb9abed6" }));
-  // console.log('getWalletConfig:', await tw.getWalletConfig());
   // await tw.sync();
-  await tw.partialSync("cb955812-37df-476a-95a8-d69295b28347");
+  // await tw.partialSync("cb955812-37df-476a-95a8-d69295b28347");
   // console.log('backup:', await tw.backup());
-  // await tw.close();
+  setTimeout(async () => {
+    await tw.close();
+  }, 30000);
 }
 
 main();

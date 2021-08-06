@@ -434,10 +434,9 @@ class AccountServiceBase extends AccountService {
       const accounts = await this._getData();
       await this._DBOperator.accountDao.insertAccounts(accounts);
       this._lastSyncTimestamp = now;
+      await this._pushResult();
+      await this._syncTransactions();
     }
-
-    await this._pushResult();
-    await this._syncTransactions();
   }
 }
 
