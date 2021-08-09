@@ -14,35 +14,33 @@
     // browserify -r buffer src/index.js -o dist/bundle.js
     ```
 
-## Node
-    
-    const tidewallet = require('./src/index');
-    
+## Use TideWallet in Node
+```javascript
+const TideWallet = require('./src/index.js');
+const tw = new TideWallet();
+tw.on('ready', () => { console.log('TideWallet is Ready'); });
+tw.on('notice', () => { console.log('TideWallet Say Hello'); });
+tw.on('update', (ev) => {
+  console.log('TideWallet Data Updated');
+  console.log(ev);
+});
 
-### Account {}
-- properties
-    - messenger<Subject$>
-    - accounts
-    - currencies
 
+const api = {
+  apiURL: 'https://staging.tidewallet.io/api/v1',
+  apiKey: 'f2a76e8431b02f263a0e1a0c34a70466',
+  apiSecret: '9e37d67450dc906042fde75113ecb78c',
+};
+const user = {
+  OAuthID: 'myAppleID',
+  TideWalletID: 'myTideWalletID',
+  InstallID: 'myInstallID'
+};
+const debugMode = false;
+const networkPublish = true
 
-### PaperWallet
-
-- getExtendedPublicKey
-
-  ```
-    const seed = Buffer.from(hex_string, 'hex');
-
-    const exPub = tidewallet.PaperWallet.getExtendedPublicKey(seed);
-  ```
-
-## Used Libraries
-[web3](https://web3js.readthedocs.io/en/v1.3.4/)
-
-[bitcoinjs-lib](https://github.com/bitcoinjs/bitcoinjs-lib)
-
-[bip39](https://github.com/bitcoinjs/bip39)
-
+tw.init({ user, api, debugMode, networkPublish });
+```    
 
 ### Use TideWallet in Browser
 - Build JS Library
