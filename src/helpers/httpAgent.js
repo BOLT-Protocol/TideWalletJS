@@ -1,27 +1,72 @@
+const axios = require("axios");
+const { url } = require("../constants/config");
 class HTTPAgent {
   static instance;
 
-  constructor() {
+  constructor({ apiURL = '' } = {}) {
+    this.url = apiURL || url
     if (!HTTPAgent.instance) {
+      this.axios = axios.create({
+        baseURL: this.url,
+      });
       HTTPAgent.instance = this;
     }
-
     return HTTPAgent.instance;
   }
 
-  setInterceptor() {}
+  setInterceptor() {
+    // TODO: retry, logger?
+  }
 
-  setToken() {}
+  setToken(token) {
+    this.axios.defaults.headers.common["token"] = token;
+  }
 
-  get() {}
+  getToken() {
+    try {
+      const { token } = this.axios.defaults.headers.common
+      return token || null
+    } catch (e) {
+      return null
+    }
+  }
 
-  post() {}
+  _request(request) {
+    return request().then((res) => {
+      if (!res.data) {
+        return {
+          success: fasle,
+        };
+      }
 
-  delete() {}
+      return {
+        success: res.data.success,
+        data: res.data.payload,
+        message: res.data.message,
+        code: res.data.code,
+      };
+    });
+  }
 
-  put() {}
+  get(path) {
+    return this._request(() => this.axios.get(path));
+  }
 
-  _request() {}
+  post(path, body) {
+    return this._request(() => this.axios.post(path, body));
+  }
 
-  _refreshToken() {}
+  delete(path, body) {
+    return this._request(() => this.axios.delete(path, body));
+  }
+
+  put(path, body) {
+    return this._request(() => this.axios.put(path, body));
+  }
+
+  _refreshToken() {
+    //TODO:
+  }
 }
+
+module.exports = HTTPAgent;
