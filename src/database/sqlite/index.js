@@ -1,3 +1,9 @@
+const { isBrowser } = require("../../helpers/env");
+if(isBrowser()) {
+  module.exports = {};
+  return;
+}
+
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 
