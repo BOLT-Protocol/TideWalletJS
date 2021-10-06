@@ -9,9 +9,6 @@ class AccountServiceBase extends AccountService {
   constructor(AccountCore) {
     super();
     this._AccountCore = AccountCore;
-    this._DBOperator = AccountCore._DBOperator;
-    this._TideWalletCommunicator = AccountCore._TideWalletCommunicator;
-
     this._newestId = '';
   }
 

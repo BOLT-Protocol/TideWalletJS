@@ -1,6 +1,5 @@
 const SafeMath = require("./helpers/SafeMath");
 const config = require("./constants/config");
-const PaperWallet = require("./cores/PaperWallet");
 const Account = require("./cores/Account");
 const Trader = require("./cores/Trader");
 const User = require("./cores/User");

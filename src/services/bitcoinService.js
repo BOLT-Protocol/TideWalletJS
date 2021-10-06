@@ -5,11 +5,10 @@ const { SegwitType } = require("../models/transactionBTC.model");
 const SafeMath = require("../helpers/SafeMath");
 
 class BitcoinService extends AccountServiceDecorator {
-  constructor(service, TideWalletCommunicator, DBOperator) {
-    super();
-    this.service = service;
+  constructor(AccountCore, TideWalletCommunicator, DBOperator) {
+    super(AccountCore);
     this._base = ACCOUNT.BTC;
-    this._syncInterval = 10 * 60 * 1000;
+    this._syncInterval = 600 * 1000;
 
     this._numberOfUsedExternalKey = null;
     this._numberOfUsedInternalKey = null;
@@ -23,17 +22,6 @@ class BitcoinService extends AccountServiceDecorator {
   /**
     @override
   **/
-  init(accountId, base, interval) {
-    this.service.init(
-      accountId,
-      base || this._base,
-      interval !== this._syncInterval ? interval : this._syncInterval
-    );
-  }
-
-  /**
-    @override
-  **/
   async start() {
     console.log(
       this.base,
@@ -42,21 +30,11 @@ class BitcoinService extends AccountServiceDecorator {
       this._syncInterval
     );
 
-    await this.service.start();
-    this.lastSyncUtxoTimestamp = this.service.lastSyncTimestamp;
-
     await this.synchro(true);
 
-    this.service.timer = setInterval(() => {
+    this.timer = setInterval(() => {
       this.synchro();
     }, this._syncInterval);
-  }
-
-  /**
-    @override
-  **/
-  stop() {
-    this.service.stop();
   }
 
   /**
@@ -262,16 +240,15 @@ class BitcoinService extends AccountServiceDecorator {
 
     if (now - this.lastSyncUtxoTimestamp > this._syncInterval || force) {
       console.log("_syncUTXO");
-      const accountId = this.service.accountId;
-      console.log("_syncUTXO currencyId:", accountId);
+      console.log("_syncUTXO currencyId:", this.accountId);
 
       try {
-        const response = await this._TideWalletCommunicator.GetUTXO(accountId);
+        const response = await this._TideWalletCommunicator.GetUTXO(this.accountId);
         const datas = response;
         const utxos = datas.map((data) =>
           this._DBOperator.utxoDao.entity({
             ...data,
-            accountId,
+            accountId: this.accountId,
           })
         );
         await this._DBOperator.utxoDao.insertUtxos(utxos);
@@ -294,28 +271,6 @@ class BitcoinService extends AccountServiceDecorator {
   }
 
   /**
-   * updateTransaction
-   * @override
-   * @param {String} currencyId
-   * @param {Object} payload
-   * @returns {Object} transaction table object
-   */
-  async updateTransaction(currencyId, payload) {
-    return await this.service.updateTransaction(currencyId, payload);
-  }
-
-  /**
-   * updateCurrency
-   * @override
-   * @param {String} currencyId
-   * @param {Object} payload
-   * @returns {Object} currency table object
-   */
-  async updateCurrency(currencyId, payload) {
-    return await this.service.updateCurrency(currencyId, payload);
-  }
-
-  /**
    * updateUTXO
    * @override
    * @param {String} currencyId
@@ -332,7 +287,7 @@ class BitcoinService extends AccountServiceDecorator {
    * @override
    **/
   async synchro(force = false) {
-    await this.service.synchro(force);
+    await super.synchro(force);
     await this._syncUTXO(force);
   }
 }

@@ -126,7 +126,7 @@ class AccountCore {
           case 0:
           case 1:
             svc = new BitcoinService(
-              new AccountServiceBase(this),
+              this,
               this._TideWalletCommunicator,
               this._DBOperator
             );
@@ -135,7 +135,7 @@ class AccountCore {
           case 60:
           case 603:
             svc = new EthereumService(
-              new AccountServiceBase(this),
+              this,
               this._TideWalletCommunicator,
               this._DBOperator
             );
@@ -143,7 +143,7 @@ class AccountCore {
             break;
           case 8017:
             svc = new EthereumService(
-              new AccountServiceBase(this),
+              this,
               this._TideWalletCommunicator,
               this._DBOperator
             );
