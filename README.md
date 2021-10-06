@@ -20,9 +20,9 @@ const TideWallet = require('./src/index.js');
 const tw = new TideWallet();
 tw.on('ready', () => { console.log('TideWallet is Ready'); });
 tw.on('notice', () => { console.log('TideWallet Say Hello'); });
-tw.on('update', (ev) => {
+tw.on('update', (data) => {
   console.log('TideWallet Data Updated');
-  console.log(ev);
+  console.log(data.evt);
 });
 
 
@@ -32,12 +32,11 @@ const api = {
   apiSecret: '9e37d67450dc906042fde75113ecb78c',
 };
 const user = {
-  OAuthID: 'myAppleID',
-  TideWalletID: 'myTideWalletID',
-  InstallID: 'myInstallID'
+  thirdPartyId: 'myAppleID',
+  installId: 'myInstallID'
 };
-const debugMode = false;
-const networkPublish = true
+const debugMode = true;
+const networkPublish = false;
 
 tw.init({ user, api, debugMode, networkPublish });
 ```    
@@ -79,9 +78,9 @@ const user = {
   InstallID: 'myInstallID'
 };
 
-const debugMode = false;
+const debugMode = true;
 
-const networkPublish = true
+const networkPublish = false;
 
 tidewallet.init({ user, api, debugMode, networkPublish });
 ```
@@ -95,8 +94,7 @@ const api = {
 };
 
 const user = {
-  OAuthID: 'myAppleID',
-  TideWalletID: 'myTideWalletID',
+  thirdPartyId: 'myAppleID',
   InstallID: 'myInstallID',
   mnemonic: 'pudding cupboard inherit dry rate wet rough venture kitten parrot belt slush',
   passphase: 'asdf1234'
