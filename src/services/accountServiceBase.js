@@ -9,7 +9,6 @@ class AccountServiceBase extends AccountService {
   constructor(AccountCore) {
     super();
     this._AccountCore = AccountCore;
-    this._newestId = '';
   }
 
   /**
@@ -191,22 +190,22 @@ class AccountServiceBase extends AccountService {
    * @returns {Array} The sorted transactions
    */
   async _getTransaction(account) {
-    if (!this._newestId) {
+    if (!this._newestTimestamp) {
       // sync all on initial
-      let lastOldestID = '';
+      let lastOldestTimestamp;
       while(true) {
         try {
           const res = await this._TideWalletCommunicator.ListTransactions(
             account.id,
             LIMIT,
-            lastOldestID,
+            lastOldestTimestamp,
             'true'
           );
-          if (!res || res.length === 0 || res[res.length - 1].id === lastOldestID) break;
-          // save newest id, id is string
-          if (!this._newestId || Number(this._newestId) < Number(res[0].id)) this._newestId = res[0].id;
-          // save oldest id, id is string
-          if (!lastOldestID || Number(lastOldestID) > Number(res[res.length - 1].id)) lastOldestID = res[res.length - 1].id;
+          if (!res || res.length === 0 || res[res.length - 1].timestamp === lastOldestTimestamp) break;
+          // save newest timestamp
+          if (!this._newestTimestamp || Number(this._newestTimestamp) < Number(res[0].timestamp)) this._newestTimestamp = res[0].timestamp;
+          // save oldest timestamp
+          if (!lastOldestTimestamp || Number(lastOldestTimestamp) > Number(res[res.length - 1].timestamp)) lastOldestTimestamp = res[res.length - 1].timestamp;
 
           await this._saveSyncResult(account, res);
         } catch (error) {
@@ -221,12 +220,12 @@ class AccountServiceBase extends AccountService {
           const res = await this._TideWalletCommunicator.ListTransactions(
             account.id,
             LIMIT,
-            this._newestId,
+            this._newestTimestamp,
             'false'
           );
-          if (!res || res.length === 0 || res.length < LIMIT || res[0].id === this._newestId) break;
-          // save newest id, id is string
-          if (!this._newestId || Number(this._newestId) < Number(res[0].id)) this._newestId = res[0].id;
+          if (!res || res.length === 0 || res.length < LIMIT || res[0].timestamp === this._newestTimestamp) break;
+          // save newest timestamp
+          if (!this._newestTimestamp || Number(this._newestTimestamp) < Number(res[0].timestamp)) this._newestTimestamp = res[0].timestamp;
   
           await this._saveSyncResult(account, res);
         } catch (error) {
