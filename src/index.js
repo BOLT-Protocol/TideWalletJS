@@ -19,6 +19,7 @@ class TideWallet {
   static Core = TideWalletCore;
 
   constructor() {
+    this.db = new DBOperator();
     return this;
   }
 
@@ -65,15 +66,12 @@ class TideWallet {
     debugMode = config.debug_mode,
     networkPublish = config.network_publish,
   }) {
+    await this.db.init();
+    this.communicator = new TideWalletCommunicator(api);
     this.debugMode = debugMode;
     this.networkPublish = networkPublish;
-
-    const communicator = new TideWalletCommunicator(api);
-    const db = new DBOperator();
-    await db.init();
-    this.initObj = { TideWalletCommunicator: communicator, DBOperator: db };
+    this.initObj = { TideWalletCommunicator: this.communicator, DBOperator: this.db };
     await this.initObj.DBOperator.prefDao.setDebugMode(this.debugMode);
-
     this.user = new User(this.initObj);
 
     const exist = await this.user.checkUser(user.thirdPartyId);
@@ -82,7 +80,8 @@ class TideWallet {
       await this._init();
       return null;
     } else {
-      return user;
+      await this.createUser({user});
+      return null;
     }
   }
 
