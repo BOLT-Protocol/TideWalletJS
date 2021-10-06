@@ -472,7 +472,7 @@ class TideWalletCommunicator {
    *   gas_used: string | null
    * }]
    */
-  async ListTransactions(accountID, limit = 20, timestamp = '', isGetOlder = 'false') {
+  async ListTransactions(accountID, limit = 20, timestamp = Math.floor(Date.now() / 1000), isGetOlder = 'false') {
     try {
       if (!accountID) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
