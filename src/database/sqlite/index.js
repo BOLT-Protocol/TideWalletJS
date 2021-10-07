@@ -51,7 +51,7 @@ class sqliteDB {
           console.log(err)
           reject(err)
         } else {
-          console.log('run sql id:', this.lastID)
+          // console.log('run sql id:', this.lastID)
           resolve({ id: this.lastID })
         }
       });

@@ -1,3 +1,5 @@
+const { mnemonicToSeed } = require("bip39");
+
 const SafeMath = require("./helpers/SafeMath");
 const config = require("./constants/config");
 const Account = require("./cores/Account");
@@ -8,7 +10,7 @@ const DBOperator = require("./database/dbOperator");
 const TideWalletCommunicator = require("./cores/TideWalletCommunicator");
 const TideWalletCore = require("./cores/TideWalletCore");
 const packageInfo = require("../package.json");
-const { mnemonicToSeed } = require("bip39");
+const { ACCOUNT_EVT } = require("./models/account.model");
 
 class TideWallet {
   // eventType: ready, update, notice
@@ -50,7 +52,12 @@ class TideWallet {
     });
 
     this.account.messenger.subscribe((v) => {
-      this.notice(v, "update");
+      switch(v.evt) {
+        case ACCOUNT_EVT.OnUpdateTransaction:
+          this.notice(v, "notice");
+        default:
+          this.notice(v, "update");
+      }
     });
     this.notice({ debugMode: this.debugMode }, "ready");
   }
