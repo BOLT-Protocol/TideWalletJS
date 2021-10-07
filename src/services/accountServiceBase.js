@@ -171,6 +171,7 @@ class AccountServiceBase extends AccountService {
           };
 
           this._AccountCore.messenger.next(txMsg);
+          this._pushResult();
         }
 
         resolve(true);
@@ -219,6 +220,7 @@ class AccountServiceBase extends AccountService {
     } else {
       // sync newer transaction
       account.isUpdated = false;
+      let txs = [];
       while(true) {
         try {
           const res = await this._TideWalletCommunicator.ListTransactions(
@@ -227,16 +229,40 @@ class AccountServiceBase extends AccountService {
             this._newestTimestamp,
             'false'
           );
-          if (!res || res.length === 0 || res.length < LIMIT || res[0].timestamp === this._newestTimestamp) break;
+          if (!res || res.length === 0 || Number(res[0].timestamp) == Number(this._newestTimestamp)) break;
           // save newest timestamp
           if (!this._newestTimestamp || Number(this._newestTimestamp) < Number(res[0].timestamp)) this._newestTimestamp = res[0].timestamp;
   
           await this._saveSyncResult(account, res);
           account.isUpdated = true;
+
+          const resTxs = res.map((t) => {
+            const enity = this._DBOperator.transactionDao.entity({
+              ...t,
+              message: t.note,
+              accountId: account.id,
+            });
+      
+            return enity;
+          });
+
+          txs = txs.concat(resTxs);
         } catch (error) {
           console.log(error);
           break;
         }
+      }
+
+      for(const tx of txs) {
+        const txMsg = {
+          evt: ACCOUNT_EVT.OnUpdateTransaction,
+          value: {
+            account,
+            tx,
+          },
+        };
+
+        this._AccountCore.messenger.next(txMsg);
       }
     }
 
@@ -253,6 +279,7 @@ class AccountServiceBase extends AccountService {
         await this._DBOperator.transactionDao.findAllTransactionsById(
           account.id
         );
+        // ++ need fix if sync limit < length
       if (transactions.length > res.length) {
         transactions = transactions.filter(
           (tx) =>
@@ -435,7 +462,7 @@ class AccountServiceBase extends AccountService {
       const accounts = await this._getData();
       await this._DBOperator.accountDao.insertAccounts(accounts);
       this._lastSyncTimestamp = now;
-      await this._pushResult();
+      // await this._pushResult();
       await this._syncTransactions();
     }
   }

@@ -32,7 +32,7 @@ async function main() {
   });
   tw.on('ready', () => { console.log('TideWallet is Ready'); });
   tw.on('update', () => { console.log('TideWallet Data Updated'); });
-  tw.on('notice', () => { console.log('TideWallet Say Hello'); });
+  tw.on('notice', (v) => { console.log('TideWallet notice', v); });
   //test
   if (user) await tw.createUser({ user });
   console.log("overview:", await tw.overview());
@@ -42,7 +42,7 @@ async function main() {
   // await tw.partialSync("cb955812-37df-476a-95a8-d69295b28347");
   // console.log('backup:', await tw.backup());
   setTimeout(async () => {
-    await tw.resetWallet();
+    // await tw.resetWallet();
     // await tw.close();
   }, 10000);
 }
