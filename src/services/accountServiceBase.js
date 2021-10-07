@@ -160,15 +160,18 @@ class AccountServiceBase extends AccountService {
     const qureries = accounts.map((account) => {
       return new Promise(async (resolve) => {
         const transactions = await this._getTransaction(account);
-        const txMsg = {
-          evt: ACCOUNT_EVT.OnUpdateTransactions,
-          value: {
-            account,
-            transactions,
-          },
-        };
+        if (account.isUpdated) {
+          console.log(`account(${this._accountId}) transaction isUpdated`);
+          const txMsg = {
+            evt: ACCOUNT_EVT.OnUpdateTransactions,
+            value: {
+              account,
+              transactions,
+            },
+          };
 
-        this._AccountCore.messenger.next(txMsg);
+          this._AccountCore.messenger.next(txMsg);
+        }
 
         resolve(true);
       });
@@ -215,6 +218,7 @@ class AccountServiceBase extends AccountService {
       }
     } else {
       // sync newer transaction
+      account.isUpdated = false;
       while(true) {
         try {
           const res = await this._TideWalletCommunicator.ListTransactions(
@@ -228,6 +232,7 @@ class AccountServiceBase extends AccountService {
           if (!this._newestTimestamp || Number(this._newestTimestamp) < Number(res[0].timestamp)) this._newestTimestamp = res[0].timestamp;
   
           await this._saveSyncResult(account, res);
+          account.isUpdated = true;
         } catch (error) {
           console.log(error);
           break;

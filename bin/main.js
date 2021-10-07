@@ -30,6 +30,9 @@ async function main() {
     debugMode: true,
     networkPublish: false,
   });
+  tw.on('ready', () => { console.log('TideWallet is Ready'); });
+  tw.on('update', () => { console.log('TideWallet Data Updated'); });
+  tw.on('notice', () => { console.log('TideWallet Say Hello'); });
   //test
   if (user) await tw.createUser({ user });
   console.log("overview:", await tw.overview());
