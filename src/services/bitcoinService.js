@@ -23,13 +23,6 @@ class BitcoinService extends AccountServiceDecorator {
     @override
   **/
   async start() {
-    console.log(
-      this.base,
-      " Service Start ",
-      this.accountId,
-      this._syncInterval
-    );
-
     await this.synchro(true);
 
     this.timer = setInterval(() => {
@@ -233,15 +226,8 @@ class BitcoinService extends AccountServiceDecorator {
 
   async _syncUTXO(force = false) {
     const now = Date.now();
-    console.log(
-      "now - this.lastSyncUtxoTimestamp > this._syncInterval",
-      now - this.lastSyncUtxoTimestamp > this._syncInterval
-    );
 
     if (now - this.lastSyncUtxoTimestamp > this._syncInterval || force) {
-      console.log("_syncUTXO");
-      console.log("_syncUTXO currencyId:", this.accountId);
-
       try {
         const response = await this._TideWalletCommunicator.GetUTXO(this.accountId);
         const datas = response;
