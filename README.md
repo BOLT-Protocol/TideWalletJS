@@ -22,7 +22,7 @@ tw.on('ready', () => { console.log('TideWallet is Ready'); });
 tw.on('notice', () => { console.log('TideWallet Say Hello'); });
 tw.on('update', (data) => {
   console.log('TideWallet Data Updated');
-  console.log(data.evt);
+  console.log(data);
 });
 
 

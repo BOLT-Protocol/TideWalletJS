@@ -14,6 +14,8 @@ class AccountService {
 
   _AccountCore = null;
 
+  _newestTimestamp = null;
+
   get accountId() {
     return this._accountId;
   }

@@ -1,17 +1,17 @@
-const AccountService = require("./accountService");
+const AccountServiceBase = require("./accountServiceBase");
 
 /**
  @abstract
 **/
-class AccountServiceDecorator extends AccountService {
+class AccountServiceDecorator extends AccountServiceBase {
   service = null;
 
   get accountId() {
-      return this.service.accountId;
+      return this._accountId;
   }
 
   get base() {
-    return this.service.base;
+    return this._base;
   }
 }
 

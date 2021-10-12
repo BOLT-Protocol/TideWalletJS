@@ -92,7 +92,6 @@ class Signer {
 
   constructor() {
     if (!Signer.instance) {
-      this._paperWallet = null;
       Signer.instance = this;
     }
 

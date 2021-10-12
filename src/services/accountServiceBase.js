@@ -9,10 +9,6 @@ class AccountServiceBase extends AccountService {
   constructor(AccountCore) {
     super();
     this._AccountCore = AccountCore;
-    this._DBOperator = AccountCore._DBOperator;
-    this._TideWalletCommunicator = AccountCore._TideWalletCommunicator;
-
-    this._newestId = '';
   }
 
   /**
@@ -164,15 +160,19 @@ class AccountServiceBase extends AccountService {
     const qureries = accounts.map((account) => {
       return new Promise(async (resolve) => {
         const transactions = await this._getTransaction(account);
-        const txMsg = {
-          evt: ACCOUNT_EVT.OnUpdateTransactions,
-          value: {
-            account,
-            transactions,
-          },
-        };
+        if (account.isUpdated) {
+          console.log(`account(${this._accountId}) transaction isUpdated`);
+          const txMsg = {
+            evt: ACCOUNT_EVT.OnUpdateTransactions,
+            value: {
+              account,
+              transactions,
+            },
+          };
 
-        this._AccountCore.messenger.next(txMsg);
+          this._AccountCore.messenger.next(txMsg);
+          this._pushResult();
+        }
 
         resolve(true);
       });
@@ -194,22 +194,22 @@ class AccountServiceBase extends AccountService {
    * @returns {Array} The sorted transactions
    */
   async _getTransaction(account) {
-    if (!this._newestId) {
+    if (!this._newestTimestamp) {
       // sync all on initial
-      let lastOldestID = '';
+      let lastOldestTimestamp;
       while(true) {
         try {
           const res = await this._TideWalletCommunicator.ListTransactions(
             account.id,
             LIMIT,
-            lastOldestID,
+            lastOldestTimestamp,
             'true'
           );
-          if (!res || res.length === 0 || res[res.length - 1].id === lastOldestID) break;
-          // save newest id, id is string
-          if (!this._newestId || Number(this._newestId) < Number(res[0].id)) this._newestId = res[0].id;
-          // save oldest id, id is string
-          if (!lastOldestID || Number(lastOldestID) > Number(res[res.length - 1].id)) lastOldestID = res[res.length - 1].id;
+          if (!res || res.length === 0 || res[res.length - 1].timestamp === lastOldestTimestamp) break;
+          // save newest timestamp
+          if (!this._newestTimestamp || Number(this._newestTimestamp) < Number(res[0].timestamp)) this._newestTimestamp = res[0].timestamp;
+          // save oldest timestamp
+          if (!lastOldestTimestamp || Number(lastOldestTimestamp) > Number(res[res.length - 1].timestamp)) lastOldestTimestamp = res[res.length - 1].timestamp;
 
           await this._saveSyncResult(account, res);
         } catch (error) {
@@ -219,23 +219,50 @@ class AccountServiceBase extends AccountService {
       }
     } else {
       // sync newer transaction
+      account.isUpdated = false;
+      let txs = [];
       while(true) {
         try {
           const res = await this._TideWalletCommunicator.ListTransactions(
             account.id,
             LIMIT,
-            this._newestId,
+            this._newestTimestamp,
             'false'
           );
-          if (!res || res.length === 0 || res.length < LIMIT || res[0].id === this._newestId) break;
-          // save newest id, id is string
-          if (!this._newestId || Number(this._newestId) < Number(res[0].id)) this._newestId = res[0].id;
+          if (!res || res.length === 0 || Number(res[0].timestamp) == Number(this._newestTimestamp)) break;
+          // save newest timestamp
+          if (!this._newestTimestamp || Number(this._newestTimestamp) < Number(res[0].timestamp)) this._newestTimestamp = res[0].timestamp;
   
           await this._saveSyncResult(account, res);
+          account.isUpdated = true;
+
+          const resTxs = res.map((t) => {
+            const enity = this._DBOperator.transactionDao.entity({
+              ...t,
+              message: t.note,
+              accountId: account.id,
+            });
+      
+            return enity;
+          });
+
+          txs = txs.concat(resTxs);
         } catch (error) {
           console.log(error);
           break;
         }
+      }
+
+      for(const tx of txs) {
+        const txMsg = {
+          evt: ACCOUNT_EVT.OnUpdateTransaction,
+          value: {
+            account,
+            tx,
+          },
+        };
+
+        this._AccountCore.messenger.next(txMsg);
       }
     }
 
@@ -252,6 +279,7 @@ class AccountServiceBase extends AccountService {
         await this._DBOperator.transactionDao.findAllTransactionsById(
           account.id
         );
+        // ++ need fix if sync limit < length
       if (transactions.length > res.length) {
         transactions = transactions.filter(
           (tx) =>
@@ -434,7 +462,17 @@ class AccountServiceBase extends AccountService {
       const accounts = await this._getData();
       await this._DBOperator.accountDao.insertAccounts(accounts);
       this._lastSyncTimestamp = now;
-      await this._pushResult();
+      // await this._pushResult();
+      let allAccounts = await this._DBOperator.accountDao.findAllByAccountId(
+        this._accountId
+      );
+  
+      allAccounts = allAccounts.map((a) => ({
+        ...a,
+        accountType: this._base,
+      }));
+  
+      this._AccountCore.accounts[this._accountId] = allAccounts;
       await this._syncTransactions();
     }
   }
