@@ -1,4 +1,5 @@
 const HTTPAgent = require('./../helpers/httpAgent');
+const Code = require("./Codes");
 
 class TideWalletCommunicator {
   static instance;
@@ -36,7 +37,7 @@ class TideWalletCommunicator {
       const body = {
         id: userIdentifier
       }
-      const res = await this.httpAgent.post(this.apiURL + '/user/id', body);
+      const res = await this._post(this.apiURL + '/user/id', body);
       if (res.success) {
         userId = res.data['user_id'];
         userSecret = res.data['user_secret'];
@@ -124,7 +125,7 @@ class TideWalletCommunicator {
    */
   async BlockchainList() {
     try {
-      const res = await this.httpAgent.get(this.apiURL + '/blockchain');
+      const res = await this._get(this.apiURL + '/blockchain');
       if (res.success) {
         return res.data;
       }
@@ -149,7 +150,7 @@ class TideWalletCommunicator {
   async BlockchainDetail(blockchainID) {
     try {
       if (!blockchainID) return { message: 'invalid input' };
-      const res = await this.httpAgent.get(this.apiURL + '/blockchain/' + blockchainID);
+      const res = await this._get(this.apiURL + '/blockchain/' + blockchainID);
       if (res.success) {
         return res.data;
       }
@@ -180,7 +181,7 @@ class TideWalletCommunicator {
    */
   async CurrencyList() {
     try {
-      const res = await this.httpAgent.get(this.apiURL + '/currency');
+      const res = await this._get(this.apiURL + '/currency');
       if (res.success) {
         return res.data;
       }
@@ -213,7 +214,7 @@ class TideWalletCommunicator {
   async CurrencyDetail(currencyID) {
     try {
       if (!currencyID) return { message: 'invalid input' };
-      const res = await this.httpAgent.get(this.apiURL + '/currency/' + currencyID);
+      const res = await this._get(this.apiURL + '/currency/' + currencyID);
       if (res.success) {
         return res.data;
       }
@@ -245,7 +246,7 @@ class TideWalletCommunicator {
    */
   async TokenList(blockchainID) {
     try {
-      const res = await this.httpAgent.get(this.apiURL + '/blockchain/' + blockchainID + '/token?type=TideWallet');
+      const res = await this._get(this.apiURL + '/blockchain/' + blockchainID + '/token?type=TideWallet');
       if (res.success) {
         return res.data;
       }
@@ -278,7 +279,7 @@ class TideWalletCommunicator {
    */
   async TokenDetail(blockchainID, currencyID) {
     try {
-      const res = await this.httpAgent.get(this.apiURL + '/blockchain/' + blockchainID + '/token/' + currencyID);
+      const res = await this._get(this.apiURL + '/blockchain/' + blockchainID + '/token/' + currencyID);
       if (res.success) {
         return res.data;
       }
@@ -329,7 +330,7 @@ class TideWalletCommunicator {
       if (!blockchainID || !contractAddress) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
-      const res = await this.httpAgent.post(this.apiURL + '/wallet/blockchain/' + blockchainID + '/contract/' + contractAddress, {});
+      const res = await this._post(this.apiURL + '/wallet/blockchain/' + blockchainID + '/contract/' + contractAddress, {});
       if (res.success) {
         return res.data;
       }
@@ -359,7 +360,7 @@ class TideWalletCommunicator {
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
       console.log(this.apiURL + '/wallet/accounts');
-      const res = await this.httpAgent.get(this.apiURL + '/wallet/accounts');
+      const res = await this._get(this.apiURL + '/wallet/accounts');
       if (res.success) {
         return res.data;
       }
@@ -390,7 +391,7 @@ class TideWalletCommunicator {
       if (!accountID) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
-      const res = await this.httpAgent.get(this.apiURL + '/wallet/account/' + accountID);
+      const res = await this._get(this.apiURL + '/wallet/account/' + accountID);
       if (res.success) {
         return res.data;
       }
@@ -414,7 +415,7 @@ class TideWalletCommunicator {
       if (!accountID) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
-      const res = await this.httpAgent.get(this.apiURL + '/wallet/account/address/' + accountID + '/receive');
+      const res = await this._get(this.apiURL + '/wallet/account/address/' + accountID + '/receive');
       if (res.success) {
         return res.data;
       }
@@ -438,7 +439,7 @@ class TideWalletCommunicator {
       if (!accountID) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
-      const res = await this.httpAgent.get(this.apiURL + '/wallet/account/address/' + accountID + '/change');
+      const res = await this._get(this.apiURL + '/wallet/account/address/' + accountID + '/change');
       if (res.success) {
         return res.data;
       }
@@ -477,7 +478,7 @@ class TideWalletCommunicator {
       if (!accountID) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
-      const res = await this.httpAgent.get(this.apiURL + '/wallet/account/txs/' + accountID + '?limit=' + limit + '&timestamp=' + timestamp + '&isGetOlder=' + isGetOlder);
+      const res = await this._get(this.apiURL + '/wallet/account/txs/' + accountID + '?limit=' + limit + '&timestamp=' + timestamp + '&isGetOlder=' + isGetOlder);
       if (res.success) {
         return res.data;
       }
@@ -512,7 +513,7 @@ class TideWalletCommunicator {
       if (!txid) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
-      const res = await this.httpAgent.get(this.apiURL + '/wallet/account/tx/' + txid);
+      const res = await this._get(this.apiURL + '/wallet/account/tx/' + txid);
       if (res.success) {
         return res.data;
       }
@@ -540,7 +541,7 @@ class TideWalletCommunicator {
       if (!accountID) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
-      const res = await this.httpAgent.get(this.apiURL + '/wallet/account/txs/uxto/' + accountID);
+      const res = await this._get(this.apiURL + '/wallet/account/txs/uxto/' + accountID);
       if (res.success) {
         return res.data;
       }
@@ -564,7 +565,7 @@ class TideWalletCommunicator {
     try {
       if (!blockchainID) return { message: 'invalid input' };
 
-      const res = await this.httpAgent.get(this.apiURL + '/blockchain/' + blockchainID + '/fee');
+      const res = await this._get(this.apiURL + '/blockchain/' + blockchainID + '/fee');
       if (res.success) {
         return res.data;
       }
@@ -597,7 +598,7 @@ class TideWalletCommunicator {
         || !data
         ) return { message: 'invalid input' };
 
-      const res = await this.httpAgent.post(this.apiURL + '/blockchain/' + blockchainID + '/gas-limit', body);
+      const res = await this._post(this.apiURL + '/blockchain/' + blockchainID + '/gas-limit', body);
       if (res.success) {
         return res.data;
       }
@@ -621,7 +622,7 @@ class TideWalletCommunicator {
       if (!blockchainID || !address) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
-      const res = await this.httpAgent.get(this.apiURL + '/blockchain/'+ blockchainID + '/address/' + address + '/nonce');
+      const res = await this._get(this.apiURL + '/blockchain/'+ blockchainID + '/address/' + address + '/nonce');
       if (res.success) {
         return res.data;
       }
@@ -646,7 +647,7 @@ class TideWalletCommunicator {
       if (!hex) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
-      const res = await this.httpAgent.post(this.apiURL + '/blockchain/' + blockchainID + '/push-tx/', body);
+      const res = await this._post(this.apiURL + '/blockchain/' + blockchainID + '/push-tx/', body);
       if (res.success) {
         return res.data;
       }
@@ -667,7 +668,7 @@ class TideWalletCommunicator {
    */
   async FiatsRate() {
     try {
-      const res = await this.httpAgent.get(this.apiURL + '/fiats/rate');
+      const res = await this._get(this.apiURL + '/fiats/rate');
       if (res.success) {
         return res.data;
       }
@@ -688,7 +689,7 @@ class TideWalletCommunicator {
    */
    async CryptoRate() {
     try {
-      const res = await this.httpAgent.get(this.apiURL + '/crypto/rate');
+      const res = await this._get(this.apiURL + '/crypto/rate');
       if (res.success) {
         return res.data;
       }
@@ -717,7 +718,7 @@ class TideWalletCommunicator {
     try {
       if (!blockchainID || !contractAddress) return { message: 'invalid input' };
 
-      const res = await this.httpAgent.get(this.apiURL + '/blockchain/' + blockchainID + '/contract/' + contractAddress);
+      const res = await this._get(this.apiURL + '/blockchain/' + blockchainID + '/contract/' + contractAddress);
       if (res.success) {
         return res.data;
       }
@@ -727,7 +728,93 @@ class TideWalletCommunicator {
     }
   }
 
-  
+  // use for need jwt request
+  async _get(url) {
+    try {
+      let res = await this.httpAgent.get(url);
+      if (res.code === Code.EXPIRED_ACCESS_TOKEN) {
+        await this.AccessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
+        res = await this.httpAgent.get(url);
+      }
+      return res;
+    } catch (e) {
+      if (e.code === Code.EXPIRED_ACCESS_TOKEN) {
+        try {
+          await this.AccessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
+          return this.httpAgent.get(url);
+        } catch (error) {
+          return Promise.reject(e);
+        }
+      }
+      return Promise.reject(e);
+    }
+  }
+
+  // use for need jwt request
+  async _post(url, body) {
+    try {
+      let res = await this.httpAgent.post(url, body);
+      if (res.code === Code.EXPIRED_ACCESS_TOKEN) {
+        await this.AccessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
+        res = await this.httpAgent.post(url, body);
+      }
+      return res;
+    } catch (e) {
+      if (e.code === Code.EXPIRED_ACCESS_TOKEN) {
+        try {
+          await this.AccessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
+          return this.httpAgent.post(url, body);
+        } catch (error) {
+          return Promise.reject(e);
+        }
+      }
+      return Promise.reject(e);
+    }
+  }
+
+  // use for need jwt request
+  async _delete(url, body) {
+    try {
+      let res = await this.httpAgent.delete(url, body);
+      if (res.code === Code.EXPIRED_ACCESS_TOKEN) {
+        await this.AccessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
+        res = await this.httpAgent.delete(url, body);
+      }
+      return res;
+    } catch (e) {
+      if (e.code === Code.EXPIRED_ACCESS_TOKEN) {
+        try {
+          await this.AccessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
+          return this.httpAgent.delete(url, body);
+        } catch (error) {
+          return Promise.reject(e);
+        }
+      }
+      return Promise.reject(e);
+    }
+  }
+
+  // use for need jwt request
+  async _put(url, body) {
+    try {
+      let res = await this.httpAgent.put(url, body);
+      if (res.code === Code.EXPIRED_ACCESS_TOKEN) {
+        await this.AccessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
+        res = await this.httpAgent.put(url, body);
+      }
+      return res;
+    } catch (e) {
+      if (e.code === Code.EXPIRED_ACCESS_TOKEN) {
+        try {
+          await this.AccessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
+          return this.httpAgent.put(url, body);
+        } catch (error) {
+          return Promise.reject(e);
+        }
+      }
+      return Promise.reject(e);
+    }
+  }
 }
 
 module.exports = TideWalletCommunicator;
