@@ -1,6 +1,8 @@
 const TideWalletCommunicator = require('../src/cores/TideWalletCommunicator');
 const PaperWallet = require('../src/cores/PaperWallet');
 
+jest.useFakeTimers();
+
 const twc = new TideWalletCommunicator({ apiURL: 'https://staging.tidewallet.io/api/v1', apiKey:'123', apiSecret: '123'});
 // const twc = new TideWalletCommunicator({ apiURL: 'http://127.0.0.1/api/v1', apiKey:'123', apiSecret: '123'});
 
