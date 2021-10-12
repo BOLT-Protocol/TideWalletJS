@@ -1,5 +1,6 @@
 const HTTPAgent = require('./../helpers/httpAgent');
 const Code = require("./Codes");
+const JWT = require('jsonwebtoken');
 
 class TideWalletCommunicator {
   static instance;
@@ -16,6 +17,7 @@ class TideWalletCommunicator {
   
       this.token;
       this.tokenSecret;
+      this.tokenRenewTimeout;
       TideWalletCommunicator.instance = this;
     }
     return TideWalletCommunicator.instance;
@@ -73,9 +75,7 @@ class TideWalletCommunicator {
       }
       const res = await this.httpAgent.post(this.apiURL + '/user', body);
       if (res.success) {
-        this.token = res.data.token;
-        this.tokenSecret = res.data.tokenSecret;
-        this.httpAgent.setToken(res.data.token);
+        this._setInfo(res.data.token, res.data.tokenSecret);
         return { success: true, token: res.data.token, tokenSecret: res.data.tokenSecret, userID: res.data.user_id };
       }
       this.token = null;
@@ -99,9 +99,7 @@ class TideWalletCommunicator {
     try {
       const res = await this.httpAgent.get(this.apiURL + '/token/verify?token=' + token);
       if (res.success) {
-        this.token = token;
-        this.tokenSecret = tokenSecret;
-        this.httpAgent.setToken(token);
+        this._setInfo(token, tokenSecret);
         return { userID: res.data.user_id };
       }
       this.token = null;
@@ -305,9 +303,7 @@ class TideWalletCommunicator {
       }
       const res = await this.httpAgent.post(this.apiURL + '/token/renew', body);
       if (res.success) {
-        this.token = res.data.token;
-        this.tokenSecret = res.data.tokenSecret;
-        this.httpAgent.setToken(this.token);
+        this._setInfo(res.data.token, res.data.tokenSecret);
         return res.data;
       }
       return Promise.reject({ message: res.message, code: res.code });
@@ -813,6 +809,26 @@ class TideWalletCommunicator {
         }
       }
       return Promise.reject(e);
+    }
+  }
+
+  _setInfo(token, tokenSecret) {
+    this.token = token;
+    this.tokenSecret = tokenSecret;
+    this.httpAgent.setToken(token);
+    try {
+      const data = JWT.decode(token);
+      const time = (data.exp * 1000) - Date.now() - 5000;
+      console.log('renew token timeout', time);
+      if (this.tokenRenewTimeout) {
+        clearTimeout(this.tokenRenewTimeout);
+        this.tokenRenewTimeout = null;
+      }
+      this.tokenRenewTimeout = setTimeout(async () => {
+        await this.AccessTokenRenew({ token, tokenSecret });
+      }, time);
+    } catch (error) {
+      this.tokenRenewTimeout = null;
     }
   }
 }
