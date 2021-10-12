@@ -463,6 +463,16 @@ class AccountServiceBase extends AccountService {
       await this._DBOperator.accountDao.insertAccounts(accounts);
       this._lastSyncTimestamp = now;
       // await this._pushResult();
+      let allAccounts = await this._DBOperator.accountDao.findAllByAccountId(
+        this._accountId
+      );
+  
+      allAccounts = allAccounts.map((a) => ({
+        ...a,
+        accountType: this._base,
+      }));
+  
+      this._AccountCore.accounts[this._accountId] = allAccounts;
       await this._syncTransactions();
     }
   }
