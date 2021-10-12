@@ -5,11 +5,16 @@ const { toBuffer, pad, intToHex } = require("../helpers/utils");
 const Cryptor = require("../helpers/Cryptor");
 
 class EthereumService extends AccountServiceDecorator {
-  constructor(service, TideWalletCommunicator, DBOperator) {
-    super();
-    this.service = service;
+  /**
+   * 
+   * @param {accountService} service
+   * @param {TideWalletCommunicator} TideWalletCommunicator 
+   * @param {DBOperator} DBOperator 
+   */
+  constructor(AccountCore, TideWalletCommunicator, DBOperator) {
+    super(AccountCore);
     this._base = ACCOUNT.ETH;
-    this._syncInterval = 15000;
+    this._syncInterval = 15 * 1000;
 
     this._address = null;
     this._fee = null;
@@ -24,17 +29,6 @@ class EthereumService extends AccountServiceDecorator {
   /**
     @override
   **/
-  init(accountId, base, interval) {
-    this.service.init(
-      accountId,
-      base || this._base,
-      interval !== this._syncInterval ? interval : this._syncInterval
-    );
-  }
-
-  /**
-    @override
-  **/
   async start() {
     console.log(
       this.base,
@@ -43,20 +37,13 @@ class EthereumService extends AccountServiceDecorator {
       this._syncInterval
     );
 
-    await this.service.start();
+    super.start();
 
     await this.synchro(true);
 
-    this.service.timer = setInterval(() => {
+    this.timer = setInterval(() => {
       this.synchro();
     }, this._syncInterval);
-  }
-
-  /**
-    @override
-  **/
-  stop() {
-    this.service.stop();
   }
 
   /**
@@ -238,7 +225,7 @@ class EthereumService extends AccountServiceDecorator {
    * @returns {Object} transaction table object
    */
   async updateTransaction(currencyId, payload) {
-    return await this.service.updateTransaction(currencyId, payload);
+    return await this.updateTransaction(currencyId, payload);
   }
 
   /**
@@ -249,14 +236,7 @@ class EthereumService extends AccountServiceDecorator {
    * @returns {Object} currency table object
    */
   async updateCurrency(currencyId, payload) {
-    return await this.service.updateCurrency(currencyId, payload);
-  }
-
-  /**
-   * @override
-   **/
-  async synchro(force = false) {
-    await this.service.synchro(force);
+    return await this.updateCurrency(currencyId, payload);
   }
 
   /**

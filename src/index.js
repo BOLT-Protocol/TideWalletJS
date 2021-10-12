@@ -1,6 +1,7 @@
+const { mnemonicToSeed } = require("bip39");
+
 const SafeMath = require("./helpers/SafeMath");
 const config = require("./constants/config");
-const PaperWallet = require("./cores/PaperWallet");
 const Account = require("./cores/Account");
 const Trader = require("./cores/Trader");
 const User = require("./cores/User");
@@ -9,7 +10,7 @@ const DBOperator = require("./database/dbOperator");
 const TideWalletCommunicator = require("./cores/TideWalletCommunicator");
 const TideWalletCore = require("./cores/TideWalletCore");
 const packageInfo = require("../package.json");
-const { mnemonicToSeed } = require("bip39");
+const { ACCOUNT_EVT } = require("./models/account.model");
 
 class TideWallet {
   // eventType: ready, update, notice
@@ -19,6 +20,7 @@ class TideWallet {
   static Core = TideWalletCore;
 
   constructor() {
+    this.db = new DBOperator();
     return this;
   }
 
@@ -50,7 +52,12 @@ class TideWallet {
     });
 
     this.account.messenger.subscribe((v) => {
-      this.notice(v, "update");
+      switch(v.evt) {
+        case ACCOUNT_EVT.OnUpdateTransaction:
+          this.notice(v, "notice");
+        default:
+          this.notice(v, "update");
+      }
     });
     this.notice({ debugMode: this.debugMode }, "ready");
   }
@@ -65,15 +72,12 @@ class TideWallet {
     debugMode = config.debug_mode,
     networkPublish = config.network_publish,
   }) {
+    await this.db.init();
+    this.communicator = new TideWalletCommunicator(api);
     this.debugMode = debugMode;
     this.networkPublish = networkPublish;
-
-    const communicator = new TideWalletCommunicator(api);
-    const db = new DBOperator();
-    await db.init();
-    this.initObj = { TideWalletCommunicator: communicator, DBOperator: db };
+    this.initObj = { TideWalletCommunicator: this.communicator, DBOperator: this.db };
     await this.initObj.DBOperator.prefDao.setDebugMode(this.debugMode);
-
     this.user = new User(this.initObj);
 
     const exist = await this.user.checkUser(user.thirdPartyId);
@@ -82,7 +86,8 @@ class TideWallet {
       await this._init();
       return null;
     } else {
-      return user;
+      await this.createUser({user});
+      return null;
     }
   }
 
