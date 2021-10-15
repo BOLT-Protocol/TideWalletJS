@@ -55,6 +55,7 @@ class TideWallet {
       switch(v.evt) {
         case ACCOUNT_EVT.OnUpdateTransaction:
           this.notice(v, "notice");
+          break;
         default:
           this.notice(v, "update");
       }
