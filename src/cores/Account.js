@@ -620,7 +620,7 @@ class AccountCore {
    * @param {string} transaction.amount
    * @param {string} transaction.feePerUnit
    * @param {string} transaction.feeUnit
-   * @returns {boolean}} success
+   * @returns {string | null}} txid
    */
   async sendTransaction(id, transaction) {
     const account = this.getAllCurrencies.find((acc) => acc.id === id);
@@ -741,8 +741,9 @@ class AccountCore {
         await this._DBOperator.accountDao.insertAccount(account);
         await this._DBOperator.transactionDao.insertTransaction(tx);
       }
+      return tx.txid;
     }
-    return success;
+    return null;
   }
 }
 
