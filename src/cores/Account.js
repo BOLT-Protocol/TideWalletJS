@@ -738,8 +738,10 @@ class AccountCore {
           tx.fee
         );
         console.log("_txEsendTransaction account.balance", account.balance); //-- debug info
-        await this._DBOperator.accountDao.insertAccount(account);
-        await this._DBOperator.transactionDao.insertTransaction(tx);
+        const entAccount = this._DBOperator.accountDao.entity(account);
+        const entTx = this._DBOperator.transactionDao.entity(tx);
+        await this._DBOperator.accountDao.insertAccount(entAccount);
+        await this._DBOperator.transactionDao.insertTransaction(entTx);
       }
       return tx.txid;
     }
