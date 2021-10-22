@@ -490,7 +490,7 @@ class AccountCore {
    * @param {string} message [optional]
    * @returns
    */
-  async getTransactionFee({ id, to, amount, message, speed }) {
+  async getTransactionFee({ id, to, amount, data: message, speed }) {
     console.log("getTransactionFee to", to);
     console.log("getTransactionFee amount", amount);
     const account = this.getAllCurrencies.find((acc) => acc.id === id);
