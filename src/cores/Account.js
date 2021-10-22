@@ -490,7 +490,7 @@ class AccountCore {
    * @param {string} message [optional]
    * @returns
    */
-  async getTransactionFee({ id, to, amount, message, speed }) {
+  async getTransactionFee({ id, to, amount, data: message, speed }) {
     console.log("getTransactionFee to", to);
     console.log("getTransactionFee amount", amount);
     const account = this.getAllCurrencies.find((acc) => acc.id === id);
@@ -620,7 +620,7 @@ class AccountCore {
    * @param {string} transaction.amount
    * @param {string} transaction.feePerUnit
    * @param {string} transaction.feeUnit
-   * @returns {boolean}} success
+   * @returns {string | null}} txid
    */
   async sendTransaction(id, transaction) {
     const account = this.getAllCurrencies.find((acc) => acc.id === id);
@@ -738,11 +738,14 @@ class AccountCore {
           tx.fee
         );
         console.log("_txEsendTransaction account.balance", account.balance); //-- debug info
-        await this._DBOperator.accountDao.insertAccount(account);
-        await this._DBOperator.transactionDao.insertTransaction(tx);
+        const entAccount = this._DBOperator.accountDao.entity(account);
+        const entTx = this._DBOperator.transactionDao.entity(tx);
+        await this._DBOperator.accountDao.insertAccount(entAccount);
+        await this._DBOperator.transactionDao.insertTransaction(entTx);
       }
+      return tx.txid;
     }
-    return success;
+    return null;
   }
 }
 
