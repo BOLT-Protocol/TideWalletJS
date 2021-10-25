@@ -559,7 +559,7 @@ class AccountCore {
   }
 
   async sendETHBasedTx(account, svc, safeSigner, transaction) {
-    const nonce = await svc.getNonce(account.blockchainId, transaction.from);
+    const nonce = Number.parseInt(transaction.nonce) > -1 ? Number.parseInt(transaction.nonce) : await svc.getNonce(account.blockchainId, transaction.from);
     const txSvc = new ETHTransactionSvc(new TransactionBase(), safeSigner);
     const signedTx = await txSvc.prepareTransaction({
       transaction,
@@ -615,12 +615,13 @@ class AccountCore {
    * Send transaction
    * @method sendTransaction
    * @param {string} id The account id
-   * @param {Transaction} transaction The transaction content
+   * @param {Object} transaction The transaction content
    * @param {string} transaction.to
    * @param {string} transaction.amount
    * @param {string} transaction.feePerUnit
    * @param {string} transaction.feeUnit
-   * @returns {string | null}} txid
+   * @param {number?} transaction.nonce
+   * @returns {string | null} txid
    */
   async sendTransaction(id, transaction) {
     const account = this.getAllCurrencies.find((acc) => acc.id === id);
