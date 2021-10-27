@@ -720,13 +720,21 @@ class AccountCore {
         };
         account.balance = SafeMath.minus(account.balance, _tokenTx.amount);
         shareAccount.balance = SafeMath.minus(shareAccount.balance, tx.fee);
+        const entAccount = {...account};
+        Object.keys(entAccount).filter((k) => !Object.keys(this._DBOperator.accountDao.entity({})).includes(k)).map((k)=> delete entAccount[k]);
+        const entShareAccount = {...account};
+        Object.keys(entShareAccount).filter((k) => !Object.keys(this._DBOperator.accountDao.entity({})).includes(k)).map((k)=> delete entShareAccount[k]);
+        const entTokenTx = {..._tokenTx};
+        Object.keys(entTokenTx).filter((k) => !Object.keys(this._DBOperator.transactionDao.entity({})).includes(k)).map((k)=> delete entTokenTx[k]);
+        const entAccTx = {..._accTx};
+        Object.keys(entAccTx).filter((k) => !Object.keys(this._DBOperator.transactionDao.entity({})).includes(k)).map((k)=> delete entAccTx[k]);
         await this._DBOperator.accountDao.insertAccounts([
-          account,
-          shareAccount,
+          entAccount,
+          entShareAccount,
         ]);
         await this._DBOperator.transactionDao.insertTransactions([
-          _tokenTx,
-          _accTx,
+          entTokenTx,
+          entAccTx,
         ]);
       } else {
         tx.amount = SafeMath.toCurrencyUint(
@@ -740,9 +748,9 @@ class AccountCore {
         );
         console.log("_txEsendTransaction account.balance", account.balance); //-- debug info
         const entAccount = {...account};
-        Object.keys(entAccount).filter((k) => !Object.keys(this._DBOperator.accountDao.entity({})).includes(k)).map((k)=> delete entAccount[k])
+        Object.keys(entAccount).filter((k) => !Object.keys(this._DBOperator.accountDao.entity({})).includes(k)).map((k)=> delete entAccount[k]);
         const entTx = {...tx};
-        Object.keys(entTx).filter((k) => !Object.keys(this._DBOperator.transactionDao.entity({})).includes(k)).map((k)=> delete entTx[k])
+        Object.keys(entTx).filter((k) => !Object.keys(this._DBOperator.transactionDao.entity({})).includes(k)).map((k)=> delete entTx[k]);
         await this._DBOperator.accountDao.insertAccount(entAccount);
         await this._DBOperator.transactionDao.insertTransaction(entTx);
       }
