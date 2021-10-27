@@ -739,8 +739,10 @@ class AccountCore {
           tx.fee
         );
         console.log("_txEsendTransaction account.balance", account.balance); //-- debug info
-        const entAccount = this._DBOperator.accountDao.entity(account);
-        const entTx = this._DBOperator.transactionDao.entity(tx);
+        const entAccount = {...account};
+        Object.keys(entAccount).filter((k) => !Object.keys(this._DBOperator.accountDao.entity({})).includes(k)).map((k)=> delete entAccount[k])
+        const entTx = {...tx};
+        Object.keys(entTx).filter((k) => !Object.keys(this._DBOperator.transactionDao.entity({})).includes(k)).map((k)=> delete entTx[k])
         await this._DBOperator.accountDao.insertAccount(entAccount);
         await this._DBOperator.transactionDao.insertTransaction(entTx);
       }
