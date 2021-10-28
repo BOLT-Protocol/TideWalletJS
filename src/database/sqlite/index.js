@@ -358,7 +358,7 @@ class DAO {
     const where = `${this._pk} = ?`;
     const params = Object.values(data);
     params.push(data[this._pk]);
-    const sql = `UPDATE ${this._name} SET (${Object.keys(data).join(' = ?, ')}) WHERE ${where}`;
+    const sql = `UPDATE ${this._name} SET ${Object.keys(data).map((k) => `${k} = ?`).join(', ')} WHERE ${where}`;
     return this._db.runDB(sql, params);
   }
 
