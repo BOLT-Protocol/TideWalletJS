@@ -720,13 +720,21 @@ class AccountCore {
         };
         account.balance = SafeMath.minus(account.balance, _tokenTx.amount);
         shareAccount.balance = SafeMath.minus(shareAccount.balance, tx.fee);
+        const entAccount = {...account}; // -- work around
+        Object.keys(entAccount).filter((k) => !Object.keys(this._DBOperator.accountDao.entity({})).includes(k)).map((k)=> delete entAccount[k]); // -- work around
+        const entShareAccount = {...account}; // -- work around
+        Object.keys(entShareAccount).filter((k) => !Object.keys(this._DBOperator.accountDao.entity({})).includes(k)).map((k)=> delete entShareAccount[k]); // -- work around
+        const entTokenTx = {..._tokenTx}; // -- work around
+        Object.keys(entTokenTx).filter((k) => !Object.keys(this._DBOperator.transactionDao.entity({})).includes(k)).map((k)=> delete entTokenTx[k]); // -- work around
+        const entAccTx = {..._accTx}; // -- work around
+        Object.keys(entAccTx).filter((k) => !Object.keys(this._DBOperator.transactionDao.entity({})).includes(k)).map((k)=> delete entAccTx[k]); // -- work around
         await this._DBOperator.accountDao.insertAccounts([
-          account,
-          shareAccount,
+          entAccount,
+          entShareAccount,
         ]);
         await this._DBOperator.transactionDao.insertTransactions([
-          _tokenTx,
-          _accTx,
+          entTokenTx,
+          entAccTx,
         ]);
       } else {
         tx.amount = SafeMath.toCurrencyUint(
@@ -739,8 +747,10 @@ class AccountCore {
           tx.fee
         );
         console.log("_txEsendTransaction account.balance", account.balance); //-- debug info
-        const entAccount = this._DBOperator.accountDao.entity(account);
-        const entTx = this._DBOperator.transactionDao.entity(tx);
+        const entAccount = {...account}; // -- work around
+        Object.keys(entAccount).filter((k) => !Object.keys(this._DBOperator.accountDao.entity({})).includes(k)).map((k)=> delete entAccount[k]); // -- work around
+        const entTx = {...tx}; // -- work around
+        Object.keys(entTx).filter((k) => !Object.keys(this._DBOperator.transactionDao.entity({})).includes(k)).map((k)=> delete entTx[k]); // -- work around
         await this._DBOperator.accountDao.insertAccount(entAccount);
         await this._DBOperator.transactionDao.insertTransaction(entTx);
       }
