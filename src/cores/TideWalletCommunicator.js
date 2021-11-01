@@ -733,7 +733,7 @@ class TideWalletCommunicator {
    *  keyIndex: number
    * }
    */
-  async AccountReceive(accountID) {
+  async BridgeAccountReceive(accountID) {
     try {
       if (!accountID) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
