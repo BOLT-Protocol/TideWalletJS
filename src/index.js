@@ -206,6 +206,11 @@ class TideWallet {
     return true;
   }
 
+  async BridgeAccountReceive(id) {
+    const address = await this.account.BridgeAccountReceive(id);
+    return address
+  }
+
   async backup() {
     return this.user.getKeystore();
   }
