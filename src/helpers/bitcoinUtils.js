@@ -177,10 +177,10 @@ class bitcoinUtils{
       const p2wpkh = bitcoin.payments.p2wpkh({ pubKey, network: bitcoin.networks.testnet });
       address = p2wpkh.address
     } else if (bech32Hrp == 'ltc') {
-      const p2wpkh = bitcoin.payments.p2wpkh({ pubkey, network: LITECOIN_MAIN });
+      const p2wpkh = bitcoin.payments.p2wpkh({ pubKey, network: LITECOIN_MAIN });
       address = p2wpkh.address
     } else if (bech32Hrp == 'tltc') {
-      const p2wpkh = bitcoin.payments.p2wpkh({ pubkey, network: LITECOIN_TEST });
+      const p2wpkh = bitcoin.payments.p2wpkh({ pubKey, network: LITECOIN_TEST });
       address = p2wpkh.address
     }
     return address;

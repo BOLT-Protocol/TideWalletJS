@@ -483,6 +483,20 @@ class AccountCore {
   }
 
   /**
+   * Get receive address for bridge by account Id
+   * @method getReceiveAddress
+   * @param {string} id The id of the account
+   * @returns {string} The address
+   */
+   async getBridgeAccountReceive(id) {
+    const account = this.getAllCurrencies.find((acc) => acc.id === id);
+    const svc = this.getService(account.accountId);
+    const address = await this._TideWalletCommunicator.BridgeAccountReceive(account.accountId);
+    console.log(address);
+    return address;
+  }
+
+  /**
    * Get TransactionFee and gasLimit by id
    * @param {string} id
    * @param {string} to [optional]
