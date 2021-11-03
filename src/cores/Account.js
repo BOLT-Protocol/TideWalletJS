@@ -9,6 +9,7 @@ const { Transaction } = require("../models/tranasction.model");
 const BTCTransactionSvc = require("../services/transactionServiceBTC");
 const SafeMath = require("../helpers/SafeMath");
 const UnspentTxOut = require("../models/utxo.model");
+const TideWalletCommunicator = require('./TideWalletCommunicator')
 
 class AccountCore {
   static syncInterval = 24 * 60 * 60; // second
@@ -478,6 +479,20 @@ class AccountCore {
     const account = this.getAllCurrencies.find((acc) => acc.id === id);
     const svc = this.getService(account.accountId);
     const address = await svc.getReceivingAddress(account.accountId);
+    console.log(address);
+    return address;
+  }
+
+  /**
+   * Get receive address for bridge by account Id
+   * @method getReceiveAddress
+   * @param {string} id The id of the account
+   * @returns {string} The address
+   */
+   async getBridgeAccountReceive(id) {
+    const account = this.getAllCurrencies.find((acc) => acc.id === id);
+    const svc = this.getService(account.accountId);
+    const address = await TideWalletCommunicator.BridgeAccountReceive(account.accountId);
     console.log(address);
     return address;
   }

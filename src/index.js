@@ -206,8 +206,8 @@ class TideWallet {
     return true;
   }
 
-  async BridgeAccountReceive(id) {
-    const address = await this.account.BridgeAccountReceive(id);
+  async getBridgeAccountReceive(id) {
+    const address = await this.account.getBridgeAccountReceive(id);
     return address
   }
 
