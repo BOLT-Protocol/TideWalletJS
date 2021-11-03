@@ -724,6 +724,30 @@ class TideWalletCommunicator {
     }
   }
 
+  // system 2. Get Bridge Receive Address
+  /**
+   * BridgeAccountReceive
+   * @param {string} accountID 
+   * @returns {
+   *  address: string,
+   *  keyIndex: number
+   * }
+   */
+  async BridgeAccountReceive(accountID) {
+    try {
+      if (!accountID) return { message: 'invalid input' };
+      if (!this.httpAgent.getToken()) return { message: 'need login' };
+
+      const res = await this._get(this.apiURL + '/system/bridge/address/' + accountID + '/receive');
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      return Promise.reject({ message: error });
+    }
+  }
+
   // use for need jwt request
   async _get(url) {
     try {
