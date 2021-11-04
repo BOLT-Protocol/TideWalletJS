@@ -242,7 +242,8 @@ class AccountServiceBase extends AccountService {
               message: t.note,
               accountId: account.id,
             });
-      
+            // ++ TODO: modify db and entity add owner column
+            enity.owner = t.owner;  // -- work around
             return enity;
           });
 
@@ -262,6 +263,21 @@ class AccountServiceBase extends AccountService {
           },
         };
 
+        /*
+         * on update transaction
+         * ----------------------
+         * account
+         *   network, blockchainId
+         *   symbol, currencyId
+         *   decimals
+         * transaction
+         *   direction
+         *   owner, sourceAddresses, destinationAddresses
+         *   amount
+         *   txid
+         *   message
+         *   status
+         */
         this._AccountCore.messenger.next(txMsg);
       }
     }
@@ -270,6 +286,7 @@ class AccountServiceBase extends AccountService {
   }
 
   async _saveSyncResult(account, res) {
+    // ++ TODO: modify db and entity add owner column
     let shareAccount,
       transactions = [];
 
