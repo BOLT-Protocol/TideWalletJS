@@ -263,6 +263,21 @@ class AccountServiceBase extends AccountService {
           },
         };
 
+        /*
+         * on update transaction
+         * ----------------------
+         * account
+         *   network, blockchainId
+         *   symbol, currencyId
+         *   decimals
+         * transaction
+         *   direction
+         *   owner, sourceAddresses, destinationAddresses
+         *   amount
+         *   txid
+         *   message
+         *   status
+         */
         this._AccountCore.messenger.next(txMsg);
       }
     }
