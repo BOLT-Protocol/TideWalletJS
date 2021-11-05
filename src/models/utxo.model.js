@@ -22,9 +22,9 @@ class UnspentTxOut {
   // String scriptPubKey;
   publickey;
 
-  get script() { return data };
-  get hash() { return data };
-  get signature() { return data };
+  get script() { return this.data };
+  get hash() { return this.data };
+  get signature() { return this.data };
   get amountInSmallestUint() {
     return SafeMath.toSmallestUint(this.amount, this.decimals);
   }
@@ -134,7 +134,7 @@ class UnspentTxOut {
       accountId: this.accountId,
       txid: this.txid,
       vout: this.vout,
-      type: this.type,
+      type: this.type.value,
       amount: this.amountInSmallestUint,
       change_index: this.changeIndex,
       key_index: this.keyIndex,
