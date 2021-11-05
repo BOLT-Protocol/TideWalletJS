@@ -1,0 +1,32 @@
+module.exports = function({
+  accountId,
+  txid,
+  status,
+  amount,
+  direction,
+  confirmations,
+  timestamp,
+  source_addresses,
+  destination_addresses,
+  fee,
+  gas_price,
+  gas_used,
+  message,
+}) {
+  return {
+    id: accountId + txid,
+    accountId,
+    txid,
+    confirmations,
+    sourceAddresses: source_addresses,
+    destinationAddresses: destination_addresses,
+    gasPrice: gas_price,
+    gasUsed: gas_used,
+    message,
+    fee,
+    status,
+    timestamp,
+    direction,
+    amount,
+  };
+}

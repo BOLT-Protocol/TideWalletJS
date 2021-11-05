@@ -1,3 +1,5 @@
+const Entity = require('../entity');
+
 const DB_NAME = "tidebitwallet";
 const DB_VERSION = 1;
 
@@ -323,25 +325,8 @@ class UserDao extends DAO {
   /**
    * @override
    */
-  entity({
-    user_id,
-    third_party_id,
-    install_id,
-    timestamp,
-    backup_status,
-    keystore,
-    last_sync_time,
-  }) {
-    return {
-      userId: user_id,
-      keystore,
-      thirdPartyId: third_party_id,
-      installId: install_id,
-      timestamp,
-      backupStatus: backup_status,
-      keystore,
-      lastSyncTime: last_sync_time,
-    };
+   entity(param) {
+    return Entity.UserDao(param);
   }
 
   findUser(userId) {
@@ -369,65 +354,8 @@ class AccountDao extends DAO {
   /**
    * @override
    */
-  entity({
-    id, // account_token_id || account_id
-    account_id,
-    user_id,
-    blockchain_id, // || network_id ++,
-    currency_id, // currency_id || token_id
-    balance, // Join AccountCurrency
-    last_sync_time, // Join AccountCurrency
-    number_of_used_external_key,
-    number_of_used_internal_key,
-    purpose, // Join Account
-    coin_type_account, // Join Account
-    account_index, // Join Account
-    curve_type, // Join Account
-    network, // Join Blockchain
-    coin_type_blockchain, // Join Blockchain
-    publish, // Join Blockchain
-    chain_id, // Join Blockchain  || network_id
-    name, // Join Currency
-    description, // Join Currency
-    symbol, // Join Currency
-    decimals, // Join Currency
-    total_supply, // Join Currency
-    contract, // Join Currency
-    type, // Join Currency
-    image, // Join Currency || url
-    exchange_rate, // ++ Join Currency || inUSD,
-    inFiat,
-  }) {
-    return {
-      id,
-      userId: user_id,
-      accountId: account_id,
-      blockchainId: blockchain_id,
-      currencyId: currency_id,
-      balance,
-      lastSyncTime: last_sync_time,
-      numberOfUsedExternalKey: number_of_used_external_key,
-      numberOfUsedInternalKey: number_of_used_internal_key,
-      purpose,
-      accountCoinType: coin_type_account,
-      accountIndex: account_index,
-      curveType: curve_type,
-      network,
-      blockchainCoinType: coin_type_blockchain,
-      publish,
-      chainId: chain_id,
-      name,
-      description,
-      symbol,
-      decimals,
-      totalSupply: total_supply,
-      contract,
-      type,
-      image,
-      exchangeRate: exchange_rate,
-      inFiat,
-      // tokens,
-    };
+   entity(param) {
+    return Entity.AccountDao(param);
   }
 
   findAllAccounts() {
@@ -458,38 +386,8 @@ class CurrencyDao extends DAO {
   /**
    * @override
    */
-  entity({
-    currency_id,
-    decimals,
-    exchange_rate,
-    icon,
-    name,
-    symbol,
-    type,
-    publish,
-    blockchain_id, // ++ for token
-    description, // ++ [Did not provided by Backend Service]
-    // address,  // ++ [Did not provided by Backend Service]
-    total_supply, // ++ [Did not provided by Backend Service]
-    contract, // ++ [Did not provided by Backend Service]
-  }) {
-    const _type = type === 0 ? "fiat" : type === 1 ? "currency" : "token";
-
-    return {
-      currencyId: currency_id,
-      decimals,
-      exchangeRate: exchange_rate,
-      image: icon,
-      name,
-      symbol,
-      type: _type,
-      publish,
-      blockchainId: blockchain_id,
-      description,
-      address: contract,
-      totalSupply: total_supply,
-      contract,
-    };
+   entity(param) {
+    return Entity.CurrencyDao(param);
   }
   constructor(db, name) {
     super(db, name);
@@ -519,14 +417,8 @@ class NetworkDao extends DAO {
   /**
    * @override
    */
-  entity({ blockchain_id, network, coin_type, publish, chain_id }) {
-    return {
-      blockchainId: blockchain_id,
-      network,
-      coinType: coin_type,
-      publish,
-      chainId: chain_id,
-    };
+   entity(param) {
+    return Entity.NetworkDao(param);
   }
   constructor(db, name) {
     super(db, name);
@@ -548,37 +440,8 @@ class TransactionDao extends DAO {
    * @override
    * @param {string} accountId ,this is the id of the account, not the accountId of the account
    */
-  entity({
-    accountId,
-    txid,
-    status,
-    amount,
-    direction,
-    confirmations,
-    timestamp,
-    source_addresses,
-    destination_addresses,
-    fee,
-    gas_price,
-    gas_used,
-    message,
-  }) {
-    return {
-      id: accountId + txid,
-      accountId,
-      txid,
-      confirmations,
-      sourceAddresses: source_addresses,
-      destinationAddresses: destination_addresses,
-      gasPrice: gas_price,
-      gasUsed: gas_used,
-      message,
-      fee,
-      status,
-      timestamp,
-      direction,
-      amount,
-    };
+   entity(param) {
+    return Entity.TransactionDao(param);
   }
 
   findAllTransactionsById(accountId) {
@@ -607,14 +470,8 @@ class TransactionDao extends DAO {
   }
 }
 class ExchangeRateDao extends DAO {
-  entity({ currency_id, name, rate, timestamp, type }) {
-    return {
-      exchangeRateId: currency_id,
-      name,
-      rate,
-      lastSyncTime: timestamp,
-      type,
-    };
+  entity(param) {
+    return Entity.ExchangeRateDao(param)
   }
   constructor(db, name) {
     super(db, name);
@@ -633,36 +490,8 @@ class ExchangeRateDao extends DAO {
 }
 
 class UtxoDao extends DAO {
-  entity({
-    accountId,
-    txid,
-    vout,
-    type,
-    amount,
-    change_index,
-    key_index,
-    script,
-    timestamp,
-    address,
-    locked,
-  }) {
-    const DEFAULT_SEQUENCE = 0xffffffff; // temp
-    return {
-      utxoId: `${txid}-${vout}`,
-      accountId,
-      txid,
-      vout,
-      type,
-      amount,
-      changeIndex: change_index,
-      keyIndex: key_index,
-      script,
-      timestamp,
-      locked: locked ?? false,
-      address,
-      // sequence: BitcoinTransaction.DEFAULT_SEQUENCE,
-      sequence: DEFAULT_SEQUENCE, // temp
-    };
+  entity(param) {
+    return Entity.UtxoDao(param);
   }
 
   constructor(db, name) {
@@ -686,12 +515,8 @@ class PrefDao extends DAO {
   static SELECTED_FIAT_KEY = 2;
   static MODE_ITEM_KEY = "debugMode";
 
-  entity({ userId, token, tokenSecret }) {
-    return {
-      prefId: `${PrefDao.AUTH_ITEM_KEY}-${userId}`,
-      token,
-      tokenSecret,
-    };
+  entity(param) {
+    return Entity.PrefDao(param);
   }
   constructor(db, name) {
     super(db, name);

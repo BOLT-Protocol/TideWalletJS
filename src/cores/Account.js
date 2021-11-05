@@ -691,15 +691,8 @@ class AccountCore {
         if (success) {
           const txOuts = tx.inputs.map((input) => {
             const _txOut = new UnspentTxOut({ ...input.utxo });
-            const txOut = {
-              ..._txOut,
-              utxoId: _txOut.id,
-              amount: _txOut.amountInSmallestUint,
-              locked: true,
-              type: _txOut.type.value,
-              script: _txOut.data.toString("hex"),
-            };
-            return txOut;
+            _txOut.locked = true;
+            return _txOut.toUtxoEntity();
           });
           console.log("insert data:", [...txOuts, tx.changeUtxo]);
           await this._DBOperator.utxoDao.insertUtxos([
