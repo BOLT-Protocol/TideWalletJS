@@ -1,5 +1,6 @@
 const SafeMath = require('../helpers/SafeMath');
 const { BitcoinTransactionType } = require('../models/transactionBTC.model');
+const Entity = require('../database/entity');
 
 class UnspentTxOut {
   id;
@@ -21,9 +22,9 @@ class UnspentTxOut {
   // String scriptPubKey;
   publickey;
 
-  get script() { return data };
-  get hash() { return data };
-  get signature() { return data };
+  get script() { return this.data };
+  get hash() { return this.data };
+  get signature() { return this.data };
   get amountInSmallestUint() {
     return SafeMath.toSmallestUint(this.amount, this.decimals);
   }
@@ -126,6 +127,22 @@ class UnspentTxOut {
       decimals: utxo.decimals,
       sequence: utxo.sequence,
     });
+  }
+
+  toUtxoEntity() {
+    return Entity.UtxoDao({
+      accountId: this.accountId,
+      txid: this.txid,
+      vout: this.vout,
+      type: this.type.value,
+      amount: this.amountInSmallestUint,
+      change_index: this.changeIndex,
+      key_index: this.keyIndex,
+      script: this.script.toString("hex"),
+      timestamp: this.timestamp,
+      address: this.address,
+      locked: this.locked,
+    })
   }
 }
 

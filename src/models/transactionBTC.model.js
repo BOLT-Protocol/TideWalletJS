@@ -386,7 +386,7 @@ class BitcoinTransaction extends Transaction {
       */
       if (outputs.length != 0) {
         console.log('outputs:', Buffer.from(outputs).toString('hex'));
-        const hashOutputs = Cryptor.sha256round(outputs);
+        const hashOutputs = Cryptor.sha256round(Buffer.from(outputs));
         console.log('hashOutputs:', hashOutputs.toString('hex'));
         data.push(...hashOutputs);
       } else {
