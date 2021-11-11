@@ -211,6 +211,12 @@ class TideWallet {
     return address
   }
 
+  async callContract(blockchainID, contractAddress, data) {
+    const body = {data};
+    const result = await this.communicator.CallContract(blockchainID, contractAddress, body);
+    return result;
+  }
+
   async backup() {
     return this.user.getKeystore();
   }
