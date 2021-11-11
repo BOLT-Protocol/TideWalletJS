@@ -724,6 +724,31 @@ class TideWalletCommunicator {
     }
   }
 
+  // explorer 5. Call Contract
+  /**
+   * CallContract
+   * @param {string} blockchainID 
+   * @param {string} contractAddress 
+   * @param {Object} body
+   * @param {string} body.data - call data hex string
+   * @returns {}
+   */
+   async CallContract(blockchainID, contractAddress, body ) {
+    try {
+      const { data } = body;
+
+      if (!data) return { message: 'invalid input' };
+
+      const res = await this._post(this.apiURL + '/explore/blockchain/' + blockchainID + '/contract/' + contractAddress + '/call', body);
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      return Promise.reject({ message: error });
+    }
+  }
+
   // system 2. Get Bridge Receive Address
   /**
    * BridgeAccountReceive
