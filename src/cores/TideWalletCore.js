@@ -283,8 +283,6 @@ class TideWalletCore {
    * @returns
    */
   async signBuffer({ keyPath, data }) {
-    console.log(`keyPath: ${keyPath}`); // --
-    console.log("data", data); // --
     const { changeIndex, keyIndex, options } = Cryptor.pathParse(keyPath);
     const seed = await this._getSeedByKeyStore();
     const privateKey = PaperWallet.getPriKey(
@@ -293,10 +291,7 @@ class TideWalletCore {
       keyIndex,
       options
     );
-    console.log("dataHex", data.toString("hex")); // --
-    console.log("privateKey", privateKey); // --
     const signed = Signer._sign(data, Buffer.from(privateKey, "hex"));
-    console.log("signed", signed); // --
     return signed;
   }
 
