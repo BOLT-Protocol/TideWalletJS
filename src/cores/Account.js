@@ -492,7 +492,6 @@ class AccountCore {
     const account = this.getAllCurrencies.find((acc) => acc.id === id);
     const svc = this.getService(account.accountId);
     const address = await this._TideWalletCommunicator.BridgeAccountReceive(account.accountId);
-    console.log(address);
     return address;
   }
 

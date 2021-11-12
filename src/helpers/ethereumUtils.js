@@ -81,24 +81,20 @@ function encodeToRlp(transaction) {
     parseInt(transaction.feePerUnit),
     parseInt(transaction.gasUsed),
   ];
-  console.log(list);
 
   if (transaction.destinationAddresses) {
     list.push(transaction.destinationAddresses);
   } else {
     list.push("");
   }
-  console.log(list);
 
   list.push(parseInt(transaction.amount));
-  console.log(list);
 
   if (transaction.message) {
     list.push(transaction.message);
   } else {
     list.push("");
   }
-  console.log(list);
 
   if (transaction.signature) {
     list.push(transaction.signature.v);
