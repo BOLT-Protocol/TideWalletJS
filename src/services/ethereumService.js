@@ -111,10 +111,8 @@ class EthereumService extends AccountServiceDecorator {
       toBuffer("transfer(address,uint256)").toString("hex"),
       1
     ).slice(0, 8);
-    console.log("tokenTxMessage amount", amount);
     amount = amount ?? "0";
     console.log("tokenTxMessage amount", amount);
-    console.log("tokenTxMessage to", to);
     to = to ?? "";
     console.log("tokenTxMessage to", to);
     message = `0x${erc20Func}${pad(toBuffer(to).toString("hex"), 64)}${pad(
@@ -137,7 +135,6 @@ class EthereumService extends AccountServiceDecorator {
    * @returns {Boolean} result
    */
   async estimateGasLimit(id, blockchainId, to, amount = "0", message = "0x") {
-    console.log("estimateGasLimit amount", amount);
     if (!to) return 21000;
     const from = await this.getReceivingAddress(id);
     if (message === "0x" && amount === "0" && this._gasLimit != null) {
@@ -194,7 +191,6 @@ class EthereumService extends AccountServiceDecorator {
    */
   async publishTransaction(blockchainId, transaction) {
     const _transaction = { ...transaction };
-    console.log(_transaction); //-- debug info
     try {
       const body = {
         hex:
@@ -247,9 +243,6 @@ class EthereumService extends AccountServiceDecorator {
    * @returns {Number} nonce
    */
   async getNonce(blockchainId, address) {
-    console.log("blockchainId", blockchainId);
-    console.log("address", address);
-
     try {
       const response = await this._TideWalletCommunicator.GetNonce(
         blockchainId,

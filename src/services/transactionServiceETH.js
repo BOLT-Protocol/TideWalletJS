@@ -22,14 +22,13 @@ class TransactionServiceETH extends TransactionDecorator {
   async _signTransaction(transaction) {
     console.log(transaction);
     const payload = transaction.serializeTransaction();
-    console.log(payload);
     console.log(payload.toString("hex"));
 
     const rawDataHash = Buffer.from(
       Cryptor.keccak256round(payload.toString("hex"), 1),
       "hex"
     );
-    console.log(Cryptor.keccak256round(payload.toString("hex"), 1));
+
     console.log(rawDataHash); // -- debug info
 
     let signature = await this.signer.sign({ data: rawDataHash });
@@ -46,7 +45,6 @@ class TransactionServiceETH extends TransactionDecorator {
       r: signature.r,
       s: signature.s,
     });
-    console.log(signature); // -- debug info
 
     transaction.signature = signature;
     return transaction;
