@@ -579,7 +579,6 @@ class AccountCore {
       nonce,
       chainId: account.chainId,
     });
-    console.log(signedTx); //-- debug info
     const response = await svc.publishTransaction(
       account.blockchainId,
       signedTx

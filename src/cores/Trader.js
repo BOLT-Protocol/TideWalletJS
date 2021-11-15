@@ -1,7 +1,7 @@
 const SafeMath = require("../helpers/SafeMath");
 
 class Trader {
-  static syncInterval = 24 * 60 * 60 * 1000;
+  static syncInterval = 10 * 60 * 1000;
   static instance;
 
   constructor({ TideWalletCommunicator, DBOperator }) {
