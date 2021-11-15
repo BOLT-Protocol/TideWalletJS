@@ -5,11 +5,12 @@ if(isBrowser()) {
 }
 
 const path = require('path');
+const fs = require('fs');
 const sqlite3 = require('sqlite3').verbose();
 
 const Entity = require('../entity');
 
-const DB_NAME = "tidebitwallet";
+const DB_DEFAULT_DIR = "tidebitwallet";
 const DB_VERSION = 1;
 
 const TBL_ACCOUNT = "account";
@@ -101,14 +102,15 @@ class Sqlite {
   _exchangeRateDao = null;
   _prefDao = null;
 
-  init() {
-    return this._createDB();
+  init(dir) {
+    return this._createDB(dir);
   }
 
-  async _createDB(dbName = DB_NAME, dbVersion = DB_VERSION) {
+  async _createDB(dbDir = DB_DEFAULT_DIR, dbVersion = DB_VERSION) {
     // const request = indexedDB.open(dbName, dbVersion);
-    const DBName = `${dbName}.db`;
-    const dbPath = path.join(path.resolve('.'), DBName);
+    const DBName = `tidebitwallet.db`;
+    const dbPath = path.join(dbDir, DBName);
+    if (await !fs.existsSync(dbDir)) { await fs.mkdirSync(dbDir, { recursive: true }); }
     this.db = new sqliteDB(dbPath);
 
     this._userDao = new UserDao(this.db, TBL_USER);

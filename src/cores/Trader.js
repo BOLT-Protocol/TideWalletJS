@@ -1,20 +1,15 @@
 const SafeMath = require("../helpers/SafeMath");
 
 class Trader {
-  static syncInterval = 24 * 60 * 60 * 1000;
-  static instance;
+  static syncInterval = 24 * 60 * 60 * 1000; // for wallet to sync rate
 
   constructor({ TideWalletCommunicator, DBOperator }) {
-    if (!Trader.instance) {
-      this._fiats = [];
-      this._cryptos = [];
+    this._fiats = [];
+    this._cryptos = [];
 
-      this._TideWalletCommunicator = TideWalletCommunicator;
-      this._DBOperator = DBOperator;
-      Trader.instance = this;
-    }
-
-    return Trader.instance;
+    this._TideWalletCommunicator = TideWalletCommunicator;
+    this._DBOperator = DBOperator;
+    return this;
   }
 
   async getFiatList() {

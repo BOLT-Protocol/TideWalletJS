@@ -1,17 +1,13 @@
 const axios = require("axios");
 const { url } = require("../constants/config");
 class HTTPAgent {
-  static instance;
 
   constructor({ apiURL = '' } = {}) {
     this.url = apiURL || url
-    if (!HTTPAgent.instance) {
-      this.axios = axios.create({
-        baseURL: this.url,
-      });
-      HTTPAgent.instance = this;
-    }
-    return HTTPAgent.instance;
+    this.axios = axios.create({
+      baseURL: this.url,
+    });
+    return this;
   }
 
   setInterceptor() {

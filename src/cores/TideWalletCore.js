@@ -5,15 +5,9 @@ const Cryptor = require("../helpers/Cryptor");
 const { toBuffer } = require("../helpers/utils");
 
 class TideWalletCore {
-  static instance;
-
   constructor() {
-    if (!TideWalletCore.instance) {
-      this.userInfo = {};
-      TideWalletCore.instance = this;
-    }
-
-    return TideWalletCore.instance;
+    this.userInfo = {};
+    return this;
   }
 
   /**

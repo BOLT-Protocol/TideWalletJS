@@ -1,4 +1,5 @@
 const { mnemonicToSeed } = require("bip39");
+const os = require('os');
 
 const SafeMath = require("./helpers/SafeMath");
 const config = require("./constants/config");
@@ -73,7 +74,8 @@ class TideWallet {
     debugMode = config.debug_mode,
     networkPublish = config.network_publish,
   }) {
-    await this.db.init();
+    const dbDir = `${os.homedir()}/TideWalletJs-${user.thirdPartyId+user.installId}`
+    await this.db.init(dbDir);
     this.communicator = new TideWalletCommunicator(api);
     this.debugMode = debugMode;
     this.networkPublish = networkPublish;

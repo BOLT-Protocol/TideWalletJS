@@ -12,7 +12,6 @@ const UnspentTxOut = require("../models/utxo.model");
 
 class AccountCore {
   static syncInterval = 24 * 60 * 60; // second
-  static instance;
   _accounts = {};
   _messenger = null;
   _settingOptions = [];
@@ -46,19 +45,16 @@ class AccountCore {
   }
 
   constructor({ TideWalletCommunicator, DBOperator, TideWalletCore, Trader }) {
-    if (!AccountCore.instance) {
-      this._messenger = null;
-      this._isInit = false;
-      this._debugMode = false;
-      this._services = [];
-      this._DBOperator = DBOperator;
-      this._TideWalletCommunicator = TideWalletCommunicator;
-      this._TideWalletCore = TideWalletCore;
-      this._trader = Trader;
-      AccountCore.instance = this;
-    }
+    this._messenger = null;
+    this._isInit = false;
+    this._debugMode = false;
+    this._services = [];
+    this._DBOperator = DBOperator;
+    this._TideWalletCommunicator = TideWalletCommunicator;
+    this._TideWalletCore = TideWalletCore;
+    this._trader = Trader;
 
-    return AccountCore.instance;
+    return this;
   }
 
   setMessenger() {
@@ -579,7 +575,6 @@ class AccountCore {
       nonce,
       chainId: account.chainId,
     });
-    console.log(signedTx); //-- debug info
     const response = await svc.publishTransaction(
       account.blockchainId,
       signedTx
