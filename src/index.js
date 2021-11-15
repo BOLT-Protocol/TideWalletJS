@@ -73,7 +73,8 @@ class TideWallet {
     debugMode = config.debug_mode,
     networkPublish = config.network_publish,
   }) {
-    await this.db.init();
+    const dbDir = `${__dirname}/${__dirname, user.thirdPartyId+user.installId}`
+    await this.db.init(dbDir);
     this.communicator = new TideWalletCommunicator(api);
     this.debugMode = debugMode;
     this.networkPublish = networkPublish;
