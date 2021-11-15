@@ -3,7 +3,6 @@ const Sqlite = require("./sqlite");
 const { isBrowser } = require("../helpers/env");
 
 class DBOperator {
-  static instance;
   database = null;
   _isInit = false;
 
@@ -40,11 +39,7 @@ class DBOperator {
   }
 
   constructor() {
-    if (!DBOperator.instance) {
-      DBOperator.instance = this;
-    }
-
-    return DBOperator.instance;
+    return this;
   }
 
   async init(inMemory = false) {

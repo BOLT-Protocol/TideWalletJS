@@ -3,24 +3,20 @@ const Code = require("./Codes");
 const JWT = require('jsonwebtoken');
 
 class TideWalletCommunicator {
-  static instance;
 
   constructor ({ apiURL, apiKey, apiSecret }) {
-    if (!TideWalletCommunicator.instance) {
-      if (!apiURL) throw new Error('Invalid apiURL');
-      if (!apiKey) throw new Error('Invalid apiKey');
-      if (!apiSecret) throw new Error('Invalid apiSecret');
-      this.apiURL = apiURL;
-      this.apiKey = apiKey;
-      this.apiSecret = apiSecret;
-      this.httpAgent = new HTTPAgent({ apiURL });
-  
-      this.token;
-      this.tokenSecret;
-      this.tokenRenewTimeout;
-      TideWalletCommunicator.instance = this;
-    }
-    return TideWalletCommunicator.instance;
+    if (!apiURL) throw new Error('Invalid apiURL');
+    if (!apiKey) throw new Error('Invalid apiKey');
+    if (!apiSecret) throw new Error('Invalid apiSecret');
+    this.apiURL = apiURL;
+    this.apiKey = apiKey;
+    this.apiSecret = apiSecret;
+    this.httpAgent = new HTTPAgent({ apiURL });
+
+    this.token;
+    this.tokenSecret;
+    this.tokenRenewTimeout;
+    return this;
   }
 
   // 0. Get User ID and Secret
