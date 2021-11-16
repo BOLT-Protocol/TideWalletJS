@@ -251,7 +251,7 @@ class AccountCore {
     // if DB is empty get supported blockchain from backend service
     if (!networks || networks.length < 1 || update) {
       try {
-        const res = await this._TideWalletCommunicator.BlockchainList();
+        const res = await this._TideWalletCommunicator.blockchainList();
         const enties = res?.map((n) =>
           this._DBOperator.networkDao.entity({
             blockchain_id: n["blockchain_id"],
@@ -290,7 +290,7 @@ class AccountCore {
 
     if (!accounts || accounts.length < 1 || update) {
       try {
-        const res = await this._TideWalletCommunicator.AccountList();
+        const res = await this._TideWalletCommunicator.accountList();
         /**
          * a
          * account_id
@@ -339,7 +339,7 @@ class AccountCore {
     // if DB is empty get supported currencies from backend service
     if (!currencies || currencies.length < 1 || update) {
       try {
-        const res = await this._TideWalletCommunicator.CurrencyList();
+        const res = await this._TideWalletCommunicator.currencyList();
         /**
          * c
          * currency_id
@@ -379,7 +379,7 @@ class AccountCore {
         );
       if (!tokens || tokens.length < 1) {
         try {
-          const res = await this._TideWalletCommunicator.TokenList(
+          const res = await this._TideWalletCommunicator.tokenList(
             chain.blockchainId
           );
           /**

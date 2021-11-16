@@ -10,7 +10,7 @@ test('getReceivingAddress & ', async () => {
     const service = {}
     // mock http response
     const communicator = {
-      AccountReceive: () => ({
+      accountReceive: () => ({
         address
       }),
     }
@@ -34,7 +34,7 @@ test('getReceivingAddress', async () => {
     const service = {}
     // mock http response
     const communicator = {
-      AccountReceive: () => ({
+      accountReceive: () => ({
         address
       }),
     }
@@ -54,7 +54,7 @@ test('getTransactionFee', async () => {
     const service = {}
     // mock http response
     const communicator = {
-      GetFee: () => ({
+      getFee: () => ({
         slow: '100',
         standard: '100',
         fast: '100'
@@ -75,7 +75,7 @@ test('publishTransaction', async () => {
     const service = {}
     // mock http response
     const communicator = {
-      GetFee: () => ({
+      getFee: () => ({
         slow: '100',
         standard: '100',
         fast: '100'
@@ -98,7 +98,7 @@ test('publishTransaction', async () => {
     const service = {}
     // mock http response
     const communicator = {
-      PublishTransaction: () => ({
+      publishTransaction: () => ({
         txid
       }),
     }
@@ -128,10 +128,10 @@ test('addToken', async () => {
     }
     // mock http response
     const communicator = {
-      TokenRegist: () => ({
+      tokenRegist: () => ({
         token_id
       }),
-      AccountDetail: () => ({
+      accountDetail: () => ({
         blockchain_id: '8000003C',
         currency_id: '5b755dacd5dd99000b3d92b2',
         account_id: 'da46ff0c-ae3c-47eb-a547-ad4b45f9a527',
@@ -196,7 +196,7 @@ test('estimateGasLimit', async () => {
     const service = {}
     // mock http response
     const communicator = {
-      GetGasLimit: () => ({
+      getGasLimit: () => ({
         gasLimit: "1000000"
       }),
     }
@@ -216,7 +216,7 @@ test('getNonce', async () => {
     const service = {}
     // mock http response
     const communicator = {
-      GetNonce: () => ({
+      getNonce: () => ({
         nonce: '20'
       }),
     }

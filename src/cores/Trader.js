@@ -78,8 +78,8 @@ class Trader {
 
   async getRateFromBackend() {
     const works = [
-      this._TideWalletCommunicator.FiatsRate(),
-      this._TideWalletCommunicator.CryptoRate(),
+      this._TideWalletCommunicator.fiatsRate(),
+      this._TideWalletCommunicator.cryptoRate(),
     ];
     const res = await Promise.all(works);
     return res;

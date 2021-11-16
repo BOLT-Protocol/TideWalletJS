@@ -243,3 +243,30 @@ let signBuf = await core.sign({ keyPath, buffer });
 let signData = await signData({ keyPath, jsonData }); // -- not work now
 let signTx = awaitsignTransaction({ keyPath, coinType, value, data }); // -- not work now
 ```
+
+## Function List
+- getVersion
+- init
+- on
+- removeNotifier
+- createUser
+- resetWallet
+- getFiatList
+- changeSelectedFiat
+- getDebugMode
+- overview
+- getAssetDetail
+- getTransactionDetail
+- getReceivingAddress
+- verifyAddress
+- verifyAmount
+- getTransactionFee
+- sendTransaction
+- sync
+- partialSync
+- getBridgeAccountReceive
+- callContract
+- getExchangeRateList
+- backup
+- close
+- notice

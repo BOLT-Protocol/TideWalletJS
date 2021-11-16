@@ -305,7 +305,7 @@ class User {
       let _token = item.token;
       let _tokenSecret = item.tokenSecret;
       try {
-        const res = await this._communicator.AccessTokenRenew({
+        const res = await this._communicator.accessTokenRenew({
           token: _token,
           tokenSecret: _tokenSecret,
         });
