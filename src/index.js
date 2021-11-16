@@ -219,7 +219,7 @@ class TideWallet {
     return result;
   }
 
-  async botGetRateList() {
+  async getExchangeRateList() {
     const list = await this.trader.getRateFromBackend();
     const fiats = list[0];
     const cryptos = list[1];
