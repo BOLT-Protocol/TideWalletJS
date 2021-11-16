@@ -219,6 +219,26 @@ class TideWallet {
     return result;
   }
 
+  async botGetRateList() {
+    const list = await this.trader.getRateFromBackend();
+    const fiats = list[0];
+    const cryptos = list[1];
+
+    const res = {};
+
+    res.fiats = fiats.map((r) => ({
+      currencyId: r.currency_id,
+      name: r.name,
+      exchangeRate: r.rate,
+    }));
+    res.cryptos = cryptos.map((r) => ({
+      currencyId: r.currency_id,
+      name: r.name,
+      exchangeRate: r.rate,
+    }));
+    return res;
+  }
+
   async backup() {
     return this.user.getKeystore();
   }

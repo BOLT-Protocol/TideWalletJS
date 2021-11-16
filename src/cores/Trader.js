@@ -22,11 +22,7 @@ class Trader {
       now - local[0].lastSyncTime > Trader.syncInterval
     ) {
       try {
-        const works = [
-          this._TideWalletCommunicator.FiatsRate(),
-          this._TideWalletCommunicator.CryptoRate(),
-        ];
-        const res = await Promise.all(works);
+        const res = await this.getRateFromBackend();
         const fiats = res[0];
         const cryptos = res[1];
         const rates = [
@@ -78,6 +74,15 @@ class Trader {
     }
 
     return this._fiats;
+  }
+
+  async getRateFromBackend() {
+    const works = [
+      this._TideWalletCommunicator.FiatsRate(),
+      this._TideWalletCommunicator.CryptoRate(),
+    ];
+    const res = await Promise.all(works);
+    return res;
   }
 
   /**
