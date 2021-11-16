@@ -55,7 +55,7 @@ class EthereumService extends AccountServiceDecorator {
   async getReceivingAddress(id) {
     if (!this._address) {
       try {
-        const response = await this._TideWalletCommunicator.AccountReceive(id);
+        const response = await this._TideWalletCommunicator.accountReceive(id);
         const address = response["address"];
         this._address = address;
       } catch (error) {
@@ -92,7 +92,7 @@ class EthereumService extends AccountServiceDecorator {
       Date.now() - this._feeTimestamp > this.AVERAGE_FETCH_FEE_TIME
     ) {
       try {
-        const response = await this._TideWalletCommunicator.GetFee(
+        const response = await this._TideWalletCommunicator.getFee(
           blockchainId
         );
         this._fee = response;
@@ -149,7 +149,7 @@ class EthereumService extends AccountServiceDecorator {
       };
       console.log("estimateGasLimit payload", payload);
       try {
-        const response = await this._TideWalletCommunicator.GetGasLimit(
+        const response = await this._TideWalletCommunicator.getGasLimit(
           blockchainId,
           payload
         );
@@ -198,7 +198,7 @@ class EthereumService extends AccountServiceDecorator {
           Buffer.from(transaction.serializeTransaction()).toString("hex"),
       };
       console.log("publishTransaction body", body);
-      const response = await this._TideWalletCommunicator.PublishTransaction(
+      const response = await this._TideWalletCommunicator.publishTransaction(
         blockchainId,
         body
       );
@@ -244,7 +244,7 @@ class EthereumService extends AccountServiceDecorator {
    */
   async getNonce(blockchainId, address) {
     try {
-      const response = await this._TideWalletCommunicator.GetNonce(
+      const response = await this._TideWalletCommunicator.getNonce(
         blockchainId,
         address
       );

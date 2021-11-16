@@ -1,20 +1,15 @@
 const SafeMath = require("../helpers/SafeMath");
 
 class Trader {
-  static syncInterval = 24 * 60 * 60 * 1000;
-  static instance;
+  static syncInterval = 24 * 60 * 60 * 1000; // for wallet to sync rate
 
   constructor({ TideWalletCommunicator, DBOperator }) {
-    if (!Trader.instance) {
-      this._fiats = [];
-      this._cryptos = [];
+    this._fiats = [];
+    this._cryptos = [];
 
-      this._TideWalletCommunicator = TideWalletCommunicator;
-      this._DBOperator = DBOperator;
-      Trader.instance = this;
-    }
-
-    return Trader.instance;
+    this._TideWalletCommunicator = TideWalletCommunicator;
+    this._DBOperator = DBOperator;
+    return this;
   }
 
   async getFiatList() {
@@ -27,11 +22,7 @@ class Trader {
       now - local[0].lastSyncTime > Trader.syncInterval
     ) {
       try {
-        const works = [
-          this._TideWalletCommunicator.FiatsRate(),
-          this._TideWalletCommunicator.CryptoRate(),
-        ];
-        const res = await Promise.all(works);
+        const res = await this.getRateFromBackend();
         const fiats = res[0];
         const cryptos = res[1];
         const rates = [
@@ -83,6 +74,15 @@ class Trader {
     }
 
     return this._fiats;
+  }
+
+  async getRateFromBackend() {
+    const works = [
+      this._TideWalletCommunicator.fiatsRate(),
+      this._TideWalletCommunicator.cryptoRate(),
+    ];
+    const res = await Promise.all(works);
+    return res;
   }
 
   /**

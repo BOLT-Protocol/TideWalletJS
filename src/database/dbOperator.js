@@ -3,7 +3,6 @@ const Sqlite = require("./sqlite");
 const { isBrowser } = require("../helpers/env");
 
 class DBOperator {
-  static instance;
   database = null;
   _isInit = false;
 
@@ -40,19 +39,15 @@ class DBOperator {
   }
 
   constructor() {
-    if (!DBOperator.instance) {
-      DBOperator.instance = this;
-    }
-
-    return DBOperator.instance;
+    return this;
   }
 
-  async init(inMemory = false) {
+  async init(dir) {
     if (this._isInit) return;
     this.database = isBrowser() ? new IndexedDB() : new Sqlite();
     this._isInit = true;
 
-    return this.database.init();
+    return this.database.init(dir);
   }
 
   down() {

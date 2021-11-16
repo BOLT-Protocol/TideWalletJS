@@ -12,7 +12,6 @@ const UnspentTxOut = require("../models/utxo.model");
 
 class AccountCore {
   static syncInterval = 24 * 60 * 60; // second
-  static instance;
   _accounts = {};
   _messenger = null;
   _settingOptions = [];
@@ -46,19 +45,16 @@ class AccountCore {
   }
 
   constructor({ TideWalletCommunicator, DBOperator, TideWalletCore, Trader }) {
-    if (!AccountCore.instance) {
-      this._messenger = null;
-      this._isInit = false;
-      this._debugMode = false;
-      this._services = [];
-      this._DBOperator = DBOperator;
-      this._TideWalletCommunicator = TideWalletCommunicator;
-      this._TideWalletCore = TideWalletCore;
-      this._trader = Trader;
-      AccountCore.instance = this;
-    }
+    this._messenger = null;
+    this._isInit = false;
+    this._debugMode = false;
+    this._services = [];
+    this._DBOperator = DBOperator;
+    this._TideWalletCommunicator = TideWalletCommunicator;
+    this._TideWalletCore = TideWalletCore;
+    this._trader = Trader;
 
-    return AccountCore.instance;
+    return this;
   }
 
   setMessenger() {
@@ -255,7 +251,7 @@ class AccountCore {
     // if DB is empty get supported blockchain from backend service
     if (!networks || networks.length < 1 || update) {
       try {
-        const res = await this._TideWalletCommunicator.BlockchainList();
+        const res = await this._TideWalletCommunicator.blockchainList();
         const enties = res?.map((n) =>
           this._DBOperator.networkDao.entity({
             blockchain_id: n["blockchain_id"],
@@ -294,7 +290,7 @@ class AccountCore {
 
     if (!accounts || accounts.length < 1 || update) {
       try {
-        const res = await this._TideWalletCommunicator.AccountList();
+        const res = await this._TideWalletCommunicator.accountList();
         /**
          * a
          * account_id
@@ -343,7 +339,7 @@ class AccountCore {
     // if DB is empty get supported currencies from backend service
     if (!currencies || currencies.length < 1 || update) {
       try {
-        const res = await this._TideWalletCommunicator.CurrencyList();
+        const res = await this._TideWalletCommunicator.currencyList();
         /**
          * c
          * currency_id
@@ -383,7 +379,7 @@ class AccountCore {
         );
       if (!tokens || tokens.length < 1) {
         try {
-          const res = await this._TideWalletCommunicator.TokenList(
+          const res = await this._TideWalletCommunicator.tokenList(
             chain.blockchainId
           );
           /**
@@ -579,7 +575,6 @@ class AccountCore {
       nonce,
       chainId: account.chainId,
     });
-    console.log(signedTx); //-- debug info
     const response = await svc.publishTransaction(
       account.blockchainId,
       signedTx

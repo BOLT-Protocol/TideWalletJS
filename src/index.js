@@ -1,4 +1,5 @@
 const { mnemonicToSeed } = require("bip39");
+const os = require('os');
 
 const SafeMath = require("./helpers/SafeMath");
 const config = require("./constants/config");
@@ -73,7 +74,8 @@ class TideWallet {
     debugMode = config.debug_mode,
     networkPublish = config.network_publish,
   }) {
-    await this.db.init();
+    const dbDir = `${os.homedir()}/TideWalletJs-${user.thirdPartyId+user.installId}`
+    await this.db.init(dbDir);
     this.communicator = new TideWalletCommunicator(api);
     this.debugMode = debugMode;
     this.networkPublish = networkPublish;
@@ -213,8 +215,28 @@ class TideWallet {
 
   async callContract(blockchainID, contractAddress, data) {
     const body = {data};
-    const result = await this.communicator.CallContract(blockchainID, contractAddress, body);
+    const result = await this.communicator.callContract(blockchainID, contractAddress, body);
     return result;
+  }
+
+  async getExchangeRateList() {
+    const list = await this.trader.getRateFromBackend();
+    const fiats = list[0];
+    const cryptos = list[1];
+
+    const res = {};
+
+    res.fiats = fiats.map((r) => ({
+      currencyId: r.currency_id,
+      name: r.name,
+      exchangeRate: r.rate,
+    }));
+    res.cryptos = cryptos.map((r) => ({
+      currencyId: r.currency_id,
+      name: r.name,
+      exchangeRate: r.rate,
+    }));
+    return res;
   }
 
   async backup() {

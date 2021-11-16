@@ -42,8 +42,8 @@ test('login', async () => {
   expect(res.userID).toBe(testData.userID);
 })
 
-test('AccessTokenRenew', async () => {
-  const res = await twc.AccessTokenRenew({
+test('accessTokenRenew', async () => {
+  const res = await twc.accessTokenRenew({
     token: testData.token,
     tokenSecret: testData.tokenSecret
   });
@@ -55,8 +55,8 @@ test('AccessTokenRenew', async () => {
   testData.tokenSecret = res.tokenSecret;
 })
 
-// test.only('TokenInfo', async () => {
-//   const res = await twc.TokenInfo('8000003C', '0xc778417e063141139fce010982780140aa0cd5ab');
+// test.only('tokenInfo', async () => {
+//   const res = await twc.tokenInfo('8000003C', '0xc778417e063141139fce010982780140aa0cd5ab');
 //   console.log(res);
 //   // ++ 補條件
 //   // expect(res.userID).toBe(testData.userID);
