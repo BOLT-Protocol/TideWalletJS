@@ -108,7 +108,7 @@ class TideWalletCommunicator {
 
   // 1. List Supported Blockchains
   /**
-   * BlockchainList
+   * blockchainList
    * @returns [{
    *  blockchain_id: string,
    *  name: string,
@@ -117,7 +117,7 @@ class TideWalletCommunicator {
    *  publish: boolean
    * }]
    */
-  async BlockchainList() {
+  async blockchainList() {
     try {
       const res = await this._get(this.apiURL + '/blockchain');
       if (res.success) {
@@ -131,7 +131,7 @@ class TideWalletCommunicator {
 
   // 2. Get Blockchain Detail
   /**
-   * BlockchainDetail
+   * blockchainDetail
    * @param {string} blockchainID 
    * @returns {
    *  blockchain_id: string,
@@ -141,7 +141,7 @@ class TideWalletCommunicator {
    *  publish: boolean
    * }
    */
-  async BlockchainDetail(blockchainID) {
+  async blockchainDetail(blockchainID) {
     try {
       if (!blockchainID) return { message: 'invalid input' };
       const res = await this._get(this.apiURL + '/blockchain/' + blockchainID);
@@ -156,7 +156,7 @@ class TideWalletCommunicator {
 
   // 3. List Supported Currencies
   /**
-   * CurrencyList
+   * currencyList
    * @returns [{
    *  currency_id: string,
    *  blockchain_id: string,
@@ -173,7 +173,7 @@ class TideWalletCommunicator {
    *  icon": string
    * }]
    */
-  async CurrencyList() {
+  async currencyList() {
     try {
       const res = await this._get(this.apiURL + '/currency');
       if (res.success) {
@@ -187,7 +187,7 @@ class TideWalletCommunicator {
 
   // 4. Get Currency Detail
   /**
-   * CurrencyDetail
+   * currencyDetail
    * @param {*} currencyID 
    * @returns {
    *  currency_id: string,
@@ -205,7 +205,7 @@ class TideWalletCommunicator {
    *  icon": string
    * }
    */
-  async CurrencyDetail(currencyID) {
+  async currencyDetail(currencyID) {
     try {
       if (!currencyID) return { message: 'invalid input' };
       const res = await this._get(this.apiURL + '/currency/' + currencyID);
@@ -220,7 +220,7 @@ class TideWalletCommunicator {
 
   // 5. List Supported Tokens
   /**
-   * TokenList
+   * tokenList
    * @param {string} blockchainID 
    * @returns [{
    *  currency_id: string,
@@ -238,7 +238,7 @@ class TideWalletCommunicator {
    *  icon": string
    * }]
    */
-  async TokenList(blockchainID) {
+  async tokenList(blockchainID) {
     try {
       const res = await this._get(this.apiURL + '/blockchain/' + blockchainID + '/token?type=TideWallet');
       if (res.success) {
@@ -252,7 +252,7 @@ class TideWalletCommunicator {
 
   // 6. Get Token Detail
   /**
-   * TokenDetail
+   * tokenDetail
    * @param {string} blockchainID 
    * @param {string} currencyID 
    * @returns {
@@ -271,7 +271,7 @@ class TideWalletCommunicator {
    *  icon": string
    * }
    */
-  async TokenDetail(blockchainID, currencyID) {
+  async tokenDetail(blockchainID, currencyID) {
     try {
       const res = await this._get(this.apiURL + '/blockchain/' + blockchainID + '/token/' + currencyID);
       if (res.success) {
@@ -285,13 +285,13 @@ class TideWalletCommunicator {
 
   // 10. User Token Renew
   /**
-   * AccessTokenRenew
+   * accessTokenRenew
    * @returns {
    *  token: string,
    *  tokenSecret: string
    * }
    */
-  async AccessTokenRenew({ token, tokenSecret }) {
+  async accessTokenRenew({ token, tokenSecret }) {
     try {
       const body = {
         token,
@@ -310,14 +310,14 @@ class TideWalletCommunicator {
 
   // 11. Account Token Regist
   /**
-   * TokenRegist
+   * tokenRegist
    * @param {string} blockchainID 
    * @param {string} contractAddress 
    * @returns {
    *  token_id: string
    * }
    */
-  async TokenRegist(blockchainID, contractAddress) {
+  async tokenRegist(blockchainID, contractAddress) {
     try {
       if (!blockchainID || !contractAddress) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
@@ -334,7 +334,7 @@ class TideWalletCommunicator {
 
   // 12. Get Account List
   /**
-   * AccountList
+   * accountList
    * @returns [{
    *  blockchain_id: string,
    *  currency_id: string,
@@ -347,7 +347,7 @@ class TideWalletCommunicator {
    *  tokens: [tokenDetail]
    * }]
    */
-  async AccountList() {
+  async accountList() {
     try {
       if (!this.httpAgent.getToken()) return { message: 'need login' };
 
@@ -364,7 +364,7 @@ class TideWalletCommunicator {
 
   // 13. Get Account Detail
   /**
-   * AccountDetail
+   * accountDetail
    * @param {string} accountID 
    * @returns {
    *  blockchain_id: string,
@@ -378,7 +378,7 @@ class TideWalletCommunicator {
    *  tokens: [tokenDetail]
    * }
    */
-  async AccountDetail(accountID) {
+  async accountDetail(accountID) {
     try {
       if (!accountID) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
@@ -395,14 +395,14 @@ class TideWalletCommunicator {
 
   // 14. Get Receive Address
   /**
-   * AccountReceive
+   * accountReceive
    * @param {string} accountID 
    * @returns {
    *  address: string,
    *  keyIndex: number
    * }
    */
-  async AccountReceive(accountID) {
+  async accountReceive(accountID) {
     try {
       if (!accountID) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
@@ -419,14 +419,14 @@ class TideWalletCommunicator {
 
   // 15. Get Change Address
   /**
-   * AccountChange
+   * accountChange
    * @param {string} accountID 
    * @returns {
    *  address: string,
    *  keyIndex: number
    * }
    */
-  async AccountChange(accountID) {
+  async accountChange(accountID) {
     try {
       if (!accountID) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
@@ -443,7 +443,7 @@ class TideWalletCommunicator {
 
   // 16. List Transactions
   /**
-   * ListTransactions
+   * listTransactions
    * @param {string} accountID 
    * @param {string} limit 
    * @param {string} timestamp
@@ -465,7 +465,7 @@ class TideWalletCommunicator {
    *   gas_used: string | null
    * }]
    */
-  async ListTransactions(accountID, limit = 20, timestamp = Math.floor(Date.now() / 1000), isGetOlder = 'false') {
+  async listTransactions(accountID, limit = 20, timestamp = Math.floor(Date.now() / 1000), isGetOlder = 'false') {
     try {
       if (!accountID) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
@@ -482,7 +482,7 @@ class TideWalletCommunicator {
 
   // 17. Get Transaction Detail（暫時保留，與 list 資料重複性太高）
   /**
-   * TransactionDetail
+   * transactionDetail
    * @param {string} txid 
    * @returns {
    *   txid: string,
@@ -500,7 +500,7 @@ class TideWalletCommunicator {
    *   gas_used: string | null
    * }
    */
-  async TransactionDetail(txid) {
+  async transactionDetail(txid) {
     try {
       if (!txid) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
@@ -517,7 +517,7 @@ class TideWalletCommunicator {
 
   // 18. List Unspent Transaction Outputs
   /**
-   * GetUTXO
+   * getUTXO
    * @param {string} accountID 
    * @returns [{
    *   txid: string
@@ -528,7 +528,7 @@ class TideWalletCommunicator {
    *   timestamp: number
    * }]
    */
-  async GetUTXO(accountID) {
+  async getUTXO(accountID) {
     try {
       if (!accountID) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
@@ -545,7 +545,7 @@ class TideWalletCommunicator {
 
   // 19. Get Fee
   /**
-   * GetFee
+   * getFee
    * @param {string} blockchainID 
    * @returns {
    *  slow: string,
@@ -553,7 +553,7 @@ class TideWalletCommunicator {
    *  fast: string
    * }
    */
-  async GetFee(blockchainID) {
+  async getFee(blockchainID) {
     try {
       if (!blockchainID) return { message: 'invalid input' };
 
@@ -569,7 +569,7 @@ class TideWalletCommunicator {
 
   // 20. Get Gas Limit
   /**
-   * GetGasLimit
+   * getGasLimit
    * @param {string} blockchainID 
    * @param {string} fromAddress 
    * @param {string} toAddress 
@@ -579,7 +579,7 @@ class TideWalletCommunicator {
    *  gasLimit: string
    * }
    */
-  async GetGasLimit(blockchainID, body) {
+  async getGasLimit(blockchainID, body) {
     try {
       const { fromAddress, toAddress, value, data } = body;
 
@@ -602,14 +602,14 @@ class TideWalletCommunicator {
 
   // 21. Get Nonce
   /**
-   * GetNonce
+   * getNonce
    * @param {string} blockchainID 
    * @param {string} address 
    * @returns {
    *  nonce: string
    * }
    */
-  async GetNonce(blockchainID, address) {
+  async getNonce(blockchainID, address) {
     try {
       if (!blockchainID || !address) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
@@ -626,13 +626,13 @@ class TideWalletCommunicator {
 
   // 22. Publish Transaction
   /**
-   * PublishTransaction
+   * publishTransaction
    * @param {string} blockchainID 
    * @param {string} accountID 
    * @param {string} hex - transaction hex string
    * @returns {}
    */
-  async PublishTransaction(blockchainID, body) {
+  async publishTransaction(blockchainID, body) {
     try {
       const { hex } = body;
 
@@ -651,14 +651,14 @@ class TideWalletCommunicator {
 
   // 23. List Fiat Currency Rate
   /**
-   * FiatsRate
+   * fiatsRate
    * @returns [{
    *  currency_id: string,
    *  name: string,
    *  rate: string
    * }]
    */
-  async FiatsRate() {
+  async fiatsRate() {
     try {
       const res = await this._get(this.apiURL + '/fiats/rate');
       if (res.success) {
@@ -672,14 +672,14 @@ class TideWalletCommunicator {
 
   // 24. List Crypto Currency Rate
   /**
-   * CryptoRate
+   * cryptoRate
    * @returns [{
    *  currency_id: string,
    *  name: string,
    *  rate: string
    * }]
    */
-   async CryptoRate() {
+   async cryptoRate() {
     try {
       const res = await this._get(this.apiURL + '/crypto/rate');
       if (res.success) {
@@ -693,7 +693,7 @@ class TideWalletCommunicator {
 
   // 25. Get Token Info
   /**
-   * TokenInfo
+   * tokenInfo
    * @param {string} blockchainID 
    * @param {string} contractAddress 
    * @returns {
@@ -706,7 +706,7 @@ class TideWalletCommunicator {
    *  imageUrl: string
    * }
    */
-  async TokenInfo(blockchainID, contractAddress) {
+  async tokenInfo(blockchainID, contractAddress) {
     try {
       if (!blockchainID || !contractAddress) return { message: 'invalid input' };
 
@@ -722,14 +722,14 @@ class TideWalletCommunicator {
 
   // explorer 5. Call Contract
   /**
-   * CallContract
+   * callContract
    * @param {string} blockchainID 
    * @param {string} contractAddress 
    * @param {Object} body
    * @param {string} body.data - call data hex string
    * @returns {}
    */
-   async CallContract(blockchainID, contractAddress, body ) {
+   async callContract(blockchainID, contractAddress, body ) {
     try {
       const { data } = body;
 
@@ -747,14 +747,14 @@ class TideWalletCommunicator {
 
   // system 2. Get Bridge Receive Address
   /**
-   * BridgeAccountReceive
+   * bridgeAccountReceive
    * @param {string} accountID 
    * @returns {
    *  address: string,
    *  keyIndex: number
    * }
    */
-  async BridgeAccountReceive(accountID) {
+  async bridgeAccountReceive(accountID) {
     try {
       if (!accountID) return { message: 'invalid input' };
       if (!this.httpAgent.getToken()) return { message: 'need login' };
@@ -774,14 +774,14 @@ class TideWalletCommunicator {
     try {
       let res = await this.httpAgent.get(url);
       if (res.code === Code.EXPIRED_ACCESS_TOKEN) {
-        await this.AccessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
+        await this.accessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
         res = await this.httpAgent.get(url);
       }
       return res;
     } catch (e) {
       if (e.code === Code.EXPIRED_ACCESS_TOKEN) {
         try {
-          await this.AccessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
+          await this.accessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
           return this.httpAgent.get(url);
         } catch (error) {
           return Promise.reject(e);
@@ -796,14 +796,14 @@ class TideWalletCommunicator {
     try {
       let res = await this.httpAgent.post(url, body);
       if (res.code === Code.EXPIRED_ACCESS_TOKEN) {
-        await this.AccessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
+        await this.accessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
         res = await this.httpAgent.post(url, body);
       }
       return res;
     } catch (e) {
       if (e.code === Code.EXPIRED_ACCESS_TOKEN) {
         try {
-          await this.AccessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
+          await this.accessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
           return this.httpAgent.post(url, body);
         } catch (error) {
           return Promise.reject(e);
@@ -818,14 +818,14 @@ class TideWalletCommunicator {
     try {
       let res = await this.httpAgent.delete(url, body);
       if (res.code === Code.EXPIRED_ACCESS_TOKEN) {
-        await this.AccessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
+        await this.accessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
         res = await this.httpAgent.delete(url, body);
       }
       return res;
     } catch (e) {
       if (e.code === Code.EXPIRED_ACCESS_TOKEN) {
         try {
-          await this.AccessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
+          await this.accessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
           return this.httpAgent.delete(url, body);
         } catch (error) {
           return Promise.reject(e);
@@ -840,14 +840,14 @@ class TideWalletCommunicator {
     try {
       let res = await this.httpAgent.put(url, body);
       if (res.code === Code.EXPIRED_ACCESS_TOKEN) {
-        await this.AccessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
+        await this.accessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
         res = await this.httpAgent.put(url, body);
       }
       return res;
     } catch (e) {
       if (e.code === Code.EXPIRED_ACCESS_TOKEN) {
         try {
-          await this.AccessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
+          await this.accessTokenRenew({ token: this.token, tokenSecret: this.tokenSecret });
           return this.httpAgent.put(url, body);
         } catch (error) {
           return Promise.reject(e);
@@ -870,7 +870,7 @@ class TideWalletCommunicator {
         this.tokenRenewTimeout = null;
       }
       this.tokenRenewTimeout = setTimeout(async () => {
-        await this.AccessTokenRenew({ token, tokenSecret });
+        await this.accessTokenRenew({ token, tokenSecret });
       }, time);
     } catch (error) {
       this.tokenRenewTimeout = null;

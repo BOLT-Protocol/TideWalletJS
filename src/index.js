@@ -215,7 +215,7 @@ class TideWallet {
 
   async callContract(blockchainID, contractAddress, data) {
     const body = {data};
-    const result = await this.communicator.CallContract(blockchainID, contractAddress, body);
+    const result = await this.communicator.callContract(blockchainID, contractAddress, body);
     return result;
   }
 

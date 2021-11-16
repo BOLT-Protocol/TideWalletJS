@@ -38,7 +38,7 @@ class BitcoinService extends AccountServiceDecorator {
    */
   async getReceivingAddress(accountId) {
     try {
-      const response = await this._TideWalletCommunicator.AccountReceive(
+      const response = await this._TideWalletCommunicator.accountReceive(
         accountId
       );
       const address = response["address"];
@@ -58,7 +58,7 @@ class BitcoinService extends AccountServiceDecorator {
    */
   async getChangingAddress(accountId) {
     try {
-      const response = await this._TideWalletCommunicator.AccountChange(
+      const response = await this._TideWalletCommunicator.accountChange(
         accountId
       );
       const address = response["address"];
@@ -134,7 +134,7 @@ class BitcoinService extends AccountServiceDecorator {
       Date.now() - this._feeTimestamp > this.AVERAGE_FETCH_FEE_TIME
     ) {
       try {
-        const response = await this._TideWalletCommunicator.GetFee(
+        const response = await this._TideWalletCommunicator.getFee(
           blockchainId
         );
         const { slow, standard, fast } = response;
@@ -204,7 +204,7 @@ class BitcoinService extends AccountServiceDecorator {
         hex: Buffer.from(transaction.serializeTransaction).toString("hex"),
       };
       console.log("publishTransaction", body);
-      const response = await this._TideWalletCommunicator.PublishTransaction(
+      const response = await this._TideWalletCommunicator.publishTransaction(
         blockchainId,
         body
       );
@@ -229,7 +229,7 @@ class BitcoinService extends AccountServiceDecorator {
 
     if (now - this.lastSyncUtxoTimestamp > this._syncInterval || force) {
       try {
-        const response = await this._TideWalletCommunicator.GetUTXO(this.accountId);
+        const response = await this._TideWalletCommunicator.getUTXO(this.accountId);
         const datas = response;
         const utxos = datas.map((data) =>
           this._DBOperator.utxoDao.entity({

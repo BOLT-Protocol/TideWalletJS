@@ -17,7 +17,7 @@ describe('User checkUser', () => {
             const communicator = {
                 login: () => true,
                 oathRegister: () => ({ userId: 'test_id' }),
-                AccessTokenRenew: () => ({
+                accessTokenRenew: () => ({
                     token: 'test_Token',
                     tokenSecret: 'test_TokenSecret'
                 })
@@ -285,7 +285,7 @@ test('User _initUser', async () => {
         // mock http response
         const communicator = {
             login: () => true,
-            AccessTokenRenew: () => ({
+            accessTokenRenew: () => ({
                 token: 'test_Token',
                 tokenSecret: 'test_TokenSecret'
             })

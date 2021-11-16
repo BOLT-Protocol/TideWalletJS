@@ -52,7 +52,7 @@ class AccountServiceBase extends AccountService {
    */
   async _getData() {
     try {
-      const res = await this._TideWalletCommunicator.AccountDetail(
+      const res = await this._TideWalletCommunicator.accountDetail(
         this._accountId
       );
       const account = await this._DBOperator.accountDao.findAccount(
@@ -125,7 +125,7 @@ class AccountServiceBase extends AccountService {
         await Promise.all(
           newTokens.map((token) => {
             return new Promise(async (resolve, reject) => {
-              const res = await this._TideWalletCommunicator.TokenDetail(
+              const res = await this._TideWalletCommunicator.tokenDetail(
                 token.blockchainId,
                 token.currencyId
               );
@@ -199,7 +199,7 @@ class AccountServiceBase extends AccountService {
       let lastOldestTimestamp;
       while(true) {
         try {
-          const res = await this._TideWalletCommunicator.ListTransactions(
+          const res = await this._TideWalletCommunicator.listTransactions(
             account.id,
             LIMIT,
             lastOldestTimestamp,
@@ -223,7 +223,7 @@ class AccountServiceBase extends AccountService {
       let txs = [];
       while(true) {
         try {
-          const res = await this._TideWalletCommunicator.ListTransactions(
+          const res = await this._TideWalletCommunicator.listTransactions(
             account.id,
             LIMIT,
             this._newestTimestamp,
