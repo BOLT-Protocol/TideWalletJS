@@ -30,7 +30,7 @@
     "bitcoinjs-lib": "^5.2.0",
     "bn.js": "^5.2.0",
     "ethereum-cryptography": "^0.1.3",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "keccak": "^3.0.1",
     "key-store": "^1.2.0",
     "rlp": "^2.2.6",
